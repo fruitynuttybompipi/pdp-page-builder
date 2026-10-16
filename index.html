@@ -590,7 +590,7 @@ function autoNames(st) {
 // slot -> {name, kind:'new'|'existing', asset?} or null when empty
 function resolveSlot(slot, ref, names, assets, key) {
   if (!slot) return null;
-  const custom = (slot.name || '').trim().replace(/[\\/]/g, '');
+  const custom = (slot.name || '').trim().split(/[?#]/)[0].split(/[\\/]/).pop(); // a pasted full URL keeps just the file name
   const a = slot.a && assets[slot.a];
   if (a) {
     let n = custom || names[ref] || 'image';
@@ -1897,11 +1897,15 @@ function slotEl(f, obj, ref, names, b) {
         <label class="btn sm" for="${id}">${slot.a ? 'Replace' : 'Upload'}</label><input type="file" id="${id}" accept="image/*" hidden>
         ${slot.a || slot.name ? '<button class="btn sm ghost danger" data-clear>Clear</button>' : ''}
       </div>
-      <label for="${fnId}" style="font-size:11px;color:var(--muted)">${slot.a ? 'Filename (leave blank for automatic)' : 'Or use a file already on the server'}</label>
+      <label for="${fnId}" style="font-size:11px;color:var(--muted)">${slot.a ? 'Filename (leave blank for automatic)' : 'Or use a file already on the server (name or full link)'}</label>
       <input class="fn" id="${fnId}" type="text" placeholder="${esc(slot.a ? auto : 'e.g. ' + (auto || 'brand_PDP_logo.png'))}">
     </div>`;
   const fn = el.querySelector('.fn'); fn.value = slot.name;
-  fn.addEventListener('change', () => { slot.name = fn.value.trim(); renderInspector(); schedulePreview(); });
+  fn.addEventListener('change', () => {
+    const v = fn.value.trim(), base = decodeURIComponent(v.split(/[?#]/)[0].split(/[\\/]/).pop());
+    if (base !== v) toast(`Using ${base} from the server folder`);
+    slot.name = base; renderInspector(); schedulePreview();
+  });
   const take = file => {
     if (!file || !/^image\//.test(file.type)) return toast('That file is not an image.');
     const key = uid('a'); assets[key] = { name: file.name, type: file.type, blob: file, url: URL.createObjectURL(file) };
