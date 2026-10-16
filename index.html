@@ -793,6 +793,11 @@ function buildHTML(st, assets, opt) {
   };
   // Which screens hide this item (none ticked = shown everywhere).
   const hideCls = o => { const h = (o && o.hide) || {}; return ['d', 't', 'm'].filter(k => h[k]).map(k => 'pdp-hide-' + k).join(' '); };
+  // Per-element spacing (px): space above/below and padding. !important beats template margin classes like mb-3.
+  const spCss = el => { const s = el.sp || {}, c = [], n = v => Math.max(0, +v || 0), p = (s.pad || []).map(n);
+    if (setv(s.mt)) c.push(`margin-top:${n(s.mt)}px!important`); if (setv(s.mb)) c.push(`margin-bottom:${n(s.mb)}px!important`);
+    if (p.some(Boolean)) c.push('padding:' + p.map(v => v + 'px').join(' ') + '!important'); return c.join(';'); };
+  const addSty = (html, css) => !css || !html ? html : /^\s*<[a-z]+[^>]*?\sstyle="/i.test(html) ? html.replace(/style="/, `style="${css};`) : html.replace(/^(\s*<[a-z]+)/i, `$1 style="${css}"`);
   // Preview only: tag each element/column/card/row so a click opens its own panel.
   const oid = (html, k) => P && html ? html.replace(/^(\s*<[a-z]+)/i, `$1 data-oid="${k}"`) : html;
   const addCls = (html, c) => !c || !html ? html : /^<[a-z]+[^>]*?\sclass="/i.test(html) ? html.replace(/class="/, `class="${c} `) : html.replace(/^<([a-z]+)/i, `<$1 class="${c}"`);
@@ -917,11 +922,11 @@ function buildHTML(st, assets, opt) {
       if (a[i].t === 'icon' && a[i + 1] && a[i + 1].t === 'icon') {
         let j = i; while (a[j + 1] && a[j + 1].t === 'icon') j++;
         const run = a.slice(i, j + 1), al = (run[0].style || {}).align;
-        const inner = run.map(el => oid(addCls(renderEl(Object.assign({}, el, { style: Object.assign({}, el.style, { align: '' }) }), {}, true), hideCls(el)), el.id)).filter(Boolean);
+        const inner = run.map(el => oid(addSty(addCls(renderEl(Object.assign({}, el, { style: Object.assign({}, el.style, { align: '' }) }), {}, true), hideCls(el)), spCss(el)), el.id)).filter(Boolean);
         if (inner.length) out.push(`<div class="pdp-icons${ctx.stack && j < a.length - 1 ? ' mb-3' : ''}"${al ? ` style="justify-content:${{ left: 'flex-start', center: 'center', right: 'flex-end' }[al]}"` : ''}>${inner.join('')}</div>`);
         i = j; continue;
       }
-      out.push(oid(addCls(renderEl(a[i], ctx, i === a.length - 1), hideCls(a[i])), a[i].id));
+      out.push(oid(addSty(addCls(renderEl(a[i], ctx, i === a.length - 1), hideCls(a[i])), spCss(a[i])), a[i].id));
     }
     return out.filter(Boolean).join('\n' + ind);
   };
@@ -1530,6 +1535,7 @@ function elsEditor(label, els, b, names) {
       body.appendChild(sizeRows(el, false));
       body.appendChild(styleRows(s, () => schedulePreview(), false));
     }
+    body.appendChild(spacingEditor(el));
     body.appendChild(showOnRow(el, 'Show on'));
     if (Object.values(el.hide || {}).some(Boolean)) det.querySelector('.tt').insertAdjacentHTML('afterend', `<span class="psum">${hideSum(el)}</span>`);
     list.appendChild(det);
@@ -1695,6 +1701,18 @@ function padRow(x) {
   box.innerHTML = `<div class="pads">${['Top', 'Right', 'Bottom', 'Left'].map((t, i) => `<label>${t}<span class="pin"><input type="number" min="0" max="45" data-i="${i}" placeholder="Auto" value="${esc(x.pad[i])}">%</span></label>`).join('')}</div><div class="fhint">Padding is a % of the width. Empty means the template default.</div>`;
   box.querySelectorAll('input').forEach(inp => inp.oninput = () => { x.pad[+inp.dataset.i] = inp.value; schedulePreview(); });
   return box;
+}
+// Space above / below and padding of one element, in px. Empty = template default.
+function spacingEditor(el) {
+  const s = el.sp || (el.sp = {}); s.pad = s.pad || ['', '', '', ''];
+  const sum = () => [setv(s.mt) && '↑' + s.mt, setv(s.mb) && '↓' + s.mb, s.pad.some(v => +v > 0) && 'padding'].filter(Boolean).join(' · ') || 'Default';
+  const det = panel('sp' + el.id, 'Spacing', sum()), body = det.querySelector('.body');
+  body.innerHTML = `<div class="pads">${[['mt', 'Space above'], ['mb', 'Space below']].map(([k, l]) => `<label>${l}<span class="pin"><input type="number" min="0" data-k="${k}" placeholder="Auto" value="${esc(s[k] || '')}">px</span></label>`).join('')}</div>
+    <div class="flabel" style="font-size:12px;margin-top:6px">Padding</div>
+    <div class="pads">${['Top', 'Right', 'Bottom', 'Left'].map((l, i) => `<label>${l}<span class="pin"><input type="number" min="0" data-i="${i}" placeholder="Auto" value="${esc(s.pad[i])}">px</span></label>`).join('')}</div>
+    <div class="fhint">Space above/below adds to the gap between elements. Empty means the template default.</div>`;
+  body.querySelectorAll('input').forEach(inp => inp.oninput = () => { if (inp.dataset.k) s[inp.dataset.k] = inp.value; else s.pad[+inp.dataset.i] = inp.value; det.querySelector('.psum').textContent = sum(); schedulePreview(); });
+  return det;
 }
 function boxEditor(label, x, key) {
   const sum = () => [/[1-9]/.test(radiusVal(x, 'r')) && radiusVal(x, 'r').replace(/px/g, '') + ' corners', (x.pad || []).some(v => +v > 0) && 'padding'].filter(Boolean).join(' · ') || 'Default';
