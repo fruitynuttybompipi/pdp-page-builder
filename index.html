@@ -234,6 +234,9 @@ details.el > summary .tt { font-weight: 500 }
 .trtable .src { white-space: pre-wrap; color: var(--muted); overflow-wrap: anywhere; max-height: 160px; overflow: auto }
 .trtable textarea { width: 100%; min-height: 2.4em; resize: vertical; font: inherit; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; background: var(--raised); color: var(--fg) }
 .trtable tr.miss textarea { border-color: #d9a54a }
+.trthumb { width: 48px; height: 48px; flex: none; border-radius: 6px; background: var(--raised); display: grid; place-items: center; overflow: hidden }
+.trthumb img { max-width: 100%; max-height: 100%; object-fit: contain }
+.trtable .slot { margin: 0 }
 .trtable .grp td { background: var(--raised); font-weight: 600; font-size: 12px; padding: 6px }
 .keysbtn { position: fixed; left: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font: 600 15px/1 system-ui, sans-serif; cursor: pointer; z-index: 15; box-shadow: 0 2px 8px rgba(0,0,0,.12) }
 .keysbtn:hover { border-color: var(--accent, #c27a35); color: var(--accent, #c27a35) }
@@ -464,11 +467,31 @@ function trWalk(s, fn) {
   };
   s.blocks.forEach(b => walk(b.data, b.id));
 }
-// The page as it reads in one language. Untranslated texts stay in English.
+// Image slots that can differ per language. Refs match autoNames (element/card id, or block id + .desk/.tab/.mob).
+function imgWalk(s, fn) {
+  s.blocks.forEach(b => {
+    ['desk', 'tab', 'mob'].forEach(k => { const v = b.data[k]; if (v && typeof v === 'object' && 'a' in v) fn(b.id + '.' + k, b.data, k); });
+    const walk = o => {
+      if (Array.isArray(o)) return o.forEach(walk);
+      if (!o || typeof o !== 'object') return;
+      if (o.id && o.img && typeof o.img === 'object' && 'a' in o.img && (!o.t || (EL[o.t] && EL[o.t].img))) fn(o.id, o, 'img');
+      for (const [k, v] of Object.entries(o)) if (v && typeof v === 'object' && k !== 'img') walk(v);
+    };
+    walk(b.data);
+  });
+}
+// The page as it reads in one language. Untranslated texts and images stay in English.
 function langState(s, lang) {
   if (!lang || lang === 'en') return s;
-  const c = JSON.parse(JSON.stringify(s)), tr = (s.tr || {})[lang] || {};
+  const c = JSON.parse(JSON.stringify(s)), tr = (s.tr || {})[lang] || {}, ti = (s.trImg || {})[lang] || {};
   trWalk(c, (k, o, f) => { if (String(tr[k] || '').trim()) o[f] = tr[k]; });
+  if (Object.keys(ti).length) {
+    const names = autoNames(s);
+    imgWalk(c, (ref, h, k) => {
+      const x = ti[ref], nm = String((x && x.name) || '').trim(); if (!x || (!x.a && !nm)) return;
+      h[k] = { a: x.a || null, name: nm || (names[ref] || 'image') + '_' + lang }; // upload: {auto}_ms.ext
+    });
+  }
   return c;
 }
 const trMissing = (s, lang) => { let n = 0; const tr = (s.tr || {})[lang] || {}; trWalk(s, k => { if (!String(tr[k] || '').trim()) n++; }); return n; };
@@ -2337,6 +2360,7 @@ const mb = n => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Ma
 
 function openExport() {
   const { files, html: enHtml } = buildHTML(st, assets, {});
+  for (const l of pageLangs(st).slice(1)) for (const [k, f] of buildHTML(langState(st, l), assets, { lang: l }).files) if (![...files.values()].some(x => x.name === f.name)) files.set(k + '@' + l, f);
   // Images referenced in Custom HTML / page CSS that the builder doesn't track as slots.
   const known = new Set([...files.values()].map(f => f.name));
   const extraRefs = [...new Set([...enHtml.matchAll(/assets\/img\/([^"'()\s>]+)/g)].map(m => decodeURIComponent(m[1])))].filter(n => !known.has(n)).sort();
@@ -2404,7 +2428,7 @@ $('#exZip').onclick = async () => {
   if (!window.JSZip) { $('#exStatus').textContent = 'The zip tool did not load. Reload the page and try again.'; return; }
   $('#exStatus').textContent = O.on ? 'Optimising images…' : 'Building zip…';
   const zip = new JSZip(); zip.file(sku + '_en.html', html);
-  for (const l of pageLangs(st).slice(1)) zip.file(`${sku}_${l}.html`, buildHTML(langState(st, l), assets, { lang: l }).html);
+  for (const l of pageLangs(st).slice(1)) { const o = buildHTML(langState(st, l), assets, { lang: l }); zip.file(`${sku}_${l}.html`, o.html); for (const [k, f] of o.files) if (![...files.values()].some(x => x.name === f.name)) files.set(k + '@' + l, f); }
   let before = 0, after = 0;
   for (const f of files.values()) if (f.kind === 'new') {
     let blob = f.asset.blob; before += blob.size;
@@ -2626,21 +2650,37 @@ function convertRaw(b) {
 }
 
 /* ---------- Translate dialog ---------- */
-function openTranslate(lang) {
+function openTranslate(lang, keepScroll) {
   if (!lang) return;
-  const tr = (st.tr || (st.tr = {}))[lang] || (st.tr[lang] = {}), rows = [], label = {};
-  st.blocks.forEach((b, i) => label[b.id] = `${TYPES[b.type].label} #${i + 1}`);
+  const tr = (st.tr || (st.tr = {}))[lang] || (st.tr[lang] = {});
+  const ti = (st.trImg || (st.trImg = {}))[lang] || (st.trImg[lang] = {});
+  const dlg = $('#trModal .dialog'), sc = keepScroll ? dlg.scrollTop : 0;
   const owner = {}; st.blocks.forEach(b => JSON.stringify(b.data).replace(/"id":"([^"]+)"/g, (m, id) => owner[id] = b.id));
-  trWalk(st, (k, o, f) => rows.push({ k, src: o[f], grp: k.startsWith('page.') ? 'Page settings' : label[owner[k.split('.')[0]] || k.split('.')[0]] || 'Other' }));
-  let lastG = '';
+  const grpOf = k => { if (k.startsWith('page.')) return 'page'; const id = k.split('.')[0]; return owner[id] || id; };
+  const groups = new Map([['page', { label: 'Page settings', texts: [], imgs: [] }]]);
+  st.blocks.forEach((b, i) => groups.set(b.id, { label: `${TYPES[b.type].label} #${i + 1}`, texts: [], imgs: [] }));
+  const texts = [];
+  trWalk(st, (k, o, f) => { const g = groups.get(grpOf(k)); if (g) { g.texts.push(texts.length); texts.push({ k, src: o[f] }); } });
+  const names = autoNames(st), imgs = [];
+  imgWalk(st, (ref, h, k) => { const g = groups.get(grpOf(ref)); const r0 = resolveSlot(h[k], ref, names, assets, k === 'img' ? (h.t || 'image') : k); if (g && r0) { g.imgs.push(imgs.length); imgs.push({ ref, src: r0, kind: k === 'img' ? (h.t || 'image') : 'banner', label: k === 'img' ? (EL[h.t] ? EL[h.t].label : 'Card image') : { desk: 'Banner · desktop', tab: 'Banner · tablet', mob: 'Banner · mobile' }[k] }); } });
+  const base = (st.imgBase || DEFAULT_IMG_BASE).replace(/\/?$/, '/');
   $('#trBody').innerHTML = `<div class="seg" role="group" aria-label="Language" style="margin-bottom:10px">${(st.langs || []).map(l => `<button data-tl="${l}" aria-pressed="${l === lang}">${LANGS[l]}</button>`).join('')}</div>
-    <div class="fhint" style="margin-bottom:8px"><span data-miss>${trMissing(st, lang)}</span> of ${rows.length} texts not translated yet. Empty boxes stay in English. Keep **bold**, *italic* and - list marks as they are.</div>
-    <table class="trtable"><tbody>${rows.map((x, i) => { const g = x.grp !== lastG ? `<tr class="grp"><td colspan="2">${esc(x.grp)}</td></tr>` : ''; lastG = x.grp;
-      return `${g}<tr class="${String(tr[x.k] || '').trim() ? '' : 'miss'}"><td><div class="src">${esc(x.src)}</div></td><td><textarea data-i="${i}" rows="${Math.min(8, Math.max(1, String(x.src).split('\n').length))}" placeholder="${esc(LANGS[lang])}…"></textarea></td></tr>`; }).join('')}</tbody></table>`;
-  $('#trBody').querySelectorAll('textarea').forEach(ta => { const x = rows[+ta.dataset.i]; ta.value = tr[x.k] || '';
+    <div class="fhint" style="margin-bottom:8px"><span data-miss>${trMissing(st, lang)}</span> of ${texts.length} texts not translated yet. Empty boxes stay in English. Keep **bold**, *italic* and - list marks as they are. Images: upload a ${esc(LANGS[lang])} version only where the picture has words on it; others use the English image.</div>
+    <table class="trtable"><tbody>${[...groups.values()].filter(g => g.texts.length || g.imgs.length).map(g => `<tr class="grp"><td colspan="2">${esc(g.label)}</td></tr>`
+      + g.texts.map(i => { const x = texts[i]; return `<tr class="${String(tr[x.k] || '').trim() ? '' : 'miss'}"><td><div class="src">${esc(x.src)}</div></td><td><textarea data-i="${i}" rows="${Math.min(8, Math.max(1, String(x.src).split('\n').length))}" placeholder="${esc(LANGS[lang])}…"></textarea></td></tr>`; }).join('')
+      + g.imgs.map(i => { const x = imgs[i]; return `<tr><td><div class="src" style="display:flex;gap:8px;align-items:center"><span class="trthumb">${x.src.asset ? `<img src="${x.src.asset.url}" alt="">` : `<img src="${esc(base + x.src.name)}" alt="" onerror="this.replaceWith(document.createTextNode('🖼'))">`}</span><span>${esc(x.label)}<br><code>${esc(x.src.name)}</code></span></div></td><td data-img="${i}"></td></tr>`; }).join('')).join('')}</tbody></table>`;
+  $('#trBody').querySelectorAll('textarea').forEach(ta => { const x = texts[+ta.dataset.i]; ta.value = tr[x.k] || '';
     ta.oninput = () => { tr[x.k] = ta.value; ta.closest('tr').classList.toggle('miss', !ta.value.trim()); $('#trBody [data-miss]').textContent = trMissing(st, lang); pvLang = lang; renderPvLang(); schedulePreview(); }; });
+  $('#trBody').querySelectorAll('[data-img]').forEach(td => {
+    const x = imgs[+td.dataset.img], holder = { s: ti[x.ref] || (ti[x.ref] = S()) };
+    const nm = { [x.ref]: (names[x.ref] || 'image') + '_' + lang };
+    td.appendChild(slotEl({ k: 's', ext: x.kind, label: LANGS[lang] + ' version', hint: 'Empty = use the English image' }, holder, x.ref, nm, null));
+    // slotEl re-renders the inspector; redraw this dialog too so it shows the new file.
+    const again = () => setTimeout(() => { pvLang = lang; renderPvLang(); schedulePreview(); openTranslate(lang, true); }, 0);
+    td.addEventListener('change', again); td.addEventListener('drop', again); td.addEventListener('click', e => { if (e.target.closest('[data-clear]')) again(); });
+  });
   $('#trBody').querySelectorAll('[data-tl]').forEach(x => x.onclick = () => openTranslate(x.dataset.tl));
-  $('#trModal').hidden = false;
+  $('#trModal').hidden = false; dlg.scrollTop = sc;
 }
 $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 
