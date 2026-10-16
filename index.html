@@ -74,6 +74,7 @@ header.bar {
 .row .grip { color: var(--muted); cursor: grab; font-size: 13px; text-align: center; user-select: none }
 .row .lbl { min-width: 0 }
 .row .t { font-weight: 600; font-size: 13px }
+.row .s .hid { color: var(--warn); font-weight: 600 }
 .row .s { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
 .row .acts { display: flex; gap: 0; opacity: .55 }
 .row:hover .acts, .row.sel .acts { opacity: 1 }
@@ -159,7 +160,7 @@ details.el > summary .tt { font-weight: 500 }
 .pads label { display: flex; flex-direction: column; gap: 3px }
 .pads input { width: 64px; border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; background: var(--raised) }
 .psum { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55% }
-.prow { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: center; gap: 8px; font-size: 12.5px }
+.prow { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: 8px; font-size: 12.5px }
 .prow select, .pin input[type=number] { border: 1px solid var(--line); border-radius: 6px; padding: 5px 7px; background: var(--raised); min-width: 0 }
 .pin { display: flex; gap: 6px; align-items: center; min-width: 0 }
 .pin input[type=number] { width: 90px }
@@ -528,6 +529,9 @@ const PDP_CSS = `
       .pdp-image img { max-width: 100%; }
       .pdp-logo { width: 20vw; max-width: 100%; }
       .pdp-btn-wrap { align-self: stretch; }
+      @media only screen and (min-width: 1201px) { .pdp-hide-d { display: none !important; } }
+      @media only screen and (min-width: 769px) and (max-width: 1200px) { .pdp-hide-t { display: none !important; } }
+      @media only screen and (max-width: 768px) { .pdp-hide-m { display: none !important; } }
       .pdp-icons { display: flex; flex-wrap: wrap; gap: 2vw; align-items: flex-start; align-self: stretch; }
       .pdp-icon-item { width: var(--isz, 5.5vw); display: flex; flex-direction: column; align-items: center; text-align: center; gap: .4em; }
       .pdp-icon-item img { width: 100%; height: auto; }
@@ -605,7 +609,10 @@ function buildHTML(st, assets, opt) {
     if (+n(x.h) > 0) c.push(`height:${+n(x.h)}${x.hu === 'vh' ? 'vh' : 'px'}`, 'overflow:hidden');
     return c;
   };
-  const sec = (b, cls, extra) => { const c = [...(extra || []), ...boxCss(b)]; return `<section${cls ? ` class="${cls}"` : ''}${bid(b)}${c.length ? ` style="${c.join(';')}"` : ''}>`; };
+  // Which screens hide this item (none ticked = shown everywhere).
+  const hideCls = o => { const h = (o && o.hide) || {}; return ['d', 't', 'm'].filter(k => h[k]).map(k => 'pdp-hide-' + k).join(' '); };
+  const addCls = (html, c) => !c || !html ? html : /^<[a-z]+[^>]*?\sclass="/i.test(html) ? html.replace(/class="/, `class="${c} `) : html.replace(/^<([a-z]+)/i, `<$1 class="${c}"`);
+  const sec = (b, cls, extra) => { const c = [...(extra || []), ...boxCss(b)], k = [cls, hideCls(b)].filter(Boolean).join(' '); return `<section${k ? ` class="${k}"` : ''}${bid(b)}${c.length ? ` style="${c.join(';')}"` : ''}>`; };
 
   // One element (headline, title, paragraph, icon, image, logo) inside a column.
   const ALIGN = { left: ['margin-right:auto', 'align-self:flex-start'], center: ['margin-left:auto', 'margin-right:auto', 'align-self:center'], right: ['margin-left:auto', 'align-self:flex-end'] };
@@ -716,11 +723,11 @@ function buildHTML(st, assets, opt) {
       if (a[i].t === 'icon' && a[i + 1] && a[i + 1].t === 'icon') {
         let j = i; while (a[j + 1] && a[j + 1].t === 'icon') j++;
         const run = a.slice(i, j + 1), al = (run[0].style || {}).align;
-        const inner = run.map(el => renderEl(Object.assign({}, el, { style: Object.assign({}, el.style, { align: '' }) }), {}, true)).filter(Boolean);
+        const inner = run.map(el => addCls(renderEl(Object.assign({}, el, { style: Object.assign({}, el.style, { align: '' }) }), {}, true), hideCls(el))).filter(Boolean);
         if (inner.length) out.push(`<div class="pdp-icons${ctx.stack && j < a.length - 1 ? ' mb-3' : ''}"${al ? ` style="justify-content:${{ left: 'flex-start', center: 'center', right: 'flex-end' }[al]}"` : ''}>${inner.join('')}</div>`);
         i = j; continue;
       }
-      out.push(renderEl(a[i], ctx, i === a.length - 1));
+      out.push(addCls(renderEl(a[i], ctx, i === a.length - 1), hideCls(a[i])));
     }
     return out.filter(Boolean).join('\n' + ind);
   };
@@ -765,7 +772,7 @@ function buildHTML(st, assets, opt) {
         else if (okColor(col.bg) || (col.bgx || {}).type) c.push('padding:3vw');
         c.push(...bgCss(col.bgx, b.id + '.' + col.id + '.bg'));
         const cs = c.length ? ` style="${c.join(';')}"` : '';
-        return `        <div class="pdp-col"${cs}>
+        return `        <div class="pdp-col${hideCls(col) ? ' ' + hideCls(col) : ''}"${cs}>
           ${col.els.length || !P ? renderEls(col.els, { name: 'col' }, '          ') : '<div style="border:2px dashed #c9bfb3;border-radius:8px;padding:5vw 2vw;text-align:center;color:#8a7d70;font:14px/1.4 system-ui,sans-serif">Empty column<br>Add elements in the editor on the right</div>'}
         </div>`;
       }).join('\n');
@@ -1005,7 +1012,7 @@ function renderOutline() {
   const ol = $('#outline'); setTimeout(() => enterIds.clear(), 0);
   ol.innerHTML = st.blocks.map((b, i) => `<li class="row${b.id === selId ? ' sel' : ''}${enterIds.has(b.id) ? ' enter' : ''}" draggable="true" data-id="${b.id}">
     <span class="grip" aria-hidden="true">⋮⋮</span>
-    <span class="lbl"><div class="t">${esc(TYPES[b.type].label)}</div><div class="s">${esc(TYPES[b.type].sum(b.data))}</div></span>
+    <span class="lbl"><div class="t">${esc(TYPES[b.type].label)}</div><div class="s">${Object.values(b.hide || {}).some(Boolean) ? `<b class="hid">${esc(hideSum(b))}</b> · ` : ''}${esc(TYPES[b.type].sum(b.data))}</div></span>
     <span class="acts">
       <button data-act="up" title="Move up" aria-label="Move up" ${i === 0 ? 'disabled' : ''}>↑</button>
       <button data-act="down" title="Move down" aria-label="Move down" ${i === st.blocks.length - 1 ? 'disabled' : ''}>↓</button>
@@ -1071,6 +1078,7 @@ function renderInspector() {
   head.innerHTML = `<h3>${esc(TYPES[b.type].label)}</h3><span class="mono" style="color:var(--muted)">#${st.blocks.indexOf(b) + 1}</span>`;
   box.appendChild(head);
   const names = autoNames(st);
+  box.appendChild(showOnRow(b, 'Show this section on'));
   box.appendChild(sizeEditor(b));
   for (const f of TYPES[b.type].fields) box.appendChild(fieldEl(f, b.data, b.id, names, b));
   for (const [g, lbl] of STYLES[b.type] || []) box.appendChild(styleEditor(b, g, lbl));
@@ -1171,6 +1179,8 @@ function elsEditor(label, els, b, names) {
       body.appendChild(sizeRows(el, false));
       body.appendChild(styleRows(s, () => schedulePreview(), false));
     }
+    body.appendChild(showOnRow(el, 'Show on'));
+    if (Object.values(el.hide || {}).some(Boolean)) det.querySelector('.tt').insertAdjacentHTML('afterend', `<span class="psum">${hideSum(el)}</span>`);
     list.appendChild(det);
   });
   wrapEl.querySelectorAll('[data-add]').forEach(btn => btn.onclick = () => { const el = newEl(btn.dataset.add); els.push(el); openItems.add(el.id); renderAll(); });
@@ -1409,6 +1419,19 @@ function buttonEditor(el, body, names, b, tt) {
   body.appendChild(sizeRows(el, true, { noWidth: true }));
   body.appendChild(styleRows(el.style || (el.style = {}), () => schedulePreview(), false));
 }
+const hideSum = o => { const h = o.hide || {}; const on = [['d', 'Desktop'], ['t', 'Tablet'], ['m', 'Mobile']].filter(([k]) => !h[k]).map(([, l]) => l); return on.length ? on.join(' + ') + ' only' : 'Hidden everywhere'; };
+// Desktop / Tablet / Mobile toggles. Pressed = shown on that screen.
+function showOnRow(o, label) {
+  const h = o.hide || (o.hide = {}), row = document.createElement('div'); row.className = 'prow';
+  row.innerHTML = `<span>${esc(label)}</span><div class="seg" role="group" aria-label="${esc(label)}">${[['d', 'Desktop'], ['t', 'Tablet'], ['m', 'Mobile']].map(([k, l]) => `<button data-h="${k}" aria-pressed="${!h[k]}">${l}</button>`).join('')}</div>`;
+  row.querySelectorAll('[data-h]').forEach(btn => btn.onclick = () => {
+    const k = btn.dataset.h; h[k] = !h[k]; btn.setAttribute('aria-pressed', !h[k]);
+    if (h.d && h.t && h.m) toast('Hidden on every screen. It will not appear anywhere.');
+    else if (h[k]) toast(`Hidden on ${btn.textContent}. Switch the preview to ${btn.textContent} to check.`);
+    renderOutline(); schedulePreview();
+  });
+  return row;
+}
 function colsEditor(d, b, names) {
   const wrapEl = document.createElement('div'); wrapEl.className = 'field';
   wrapEl.innerHTML = `<div class="flabel">Columns</div><div class="list"></div><div><button class="btn sm" data-addcol>+ Add column</button> <span class="fhint">Add as many as you like. Up to 6 sit side by side (change it under Per line), then the next drops to a new line. They stack on mobile.</span></div>`;
@@ -1432,6 +1455,7 @@ function colsEditor(d, b, names) {
       <div class="prow"><label for="${hId}">Height</label><div class="pin"><input type="number" min="1" id="${hId}" placeholder="Auto"><span class="fhint">px, at least</span></div></div>`);
     const wi = body.querySelector('#' + wId), hi = body.querySelector('#' + hId);
     wi.value = col.w || ''; hi.value = col.mh || '';
+    body.appendChild(showOnRow(col, 'Show column on'));
     body.appendChild(radiusRow(col, 'r'));
     wi.oninput = () => { col.w = wi.value; schedulePreview(); };
     hi.oninput = () => { col.mh = hi.value; schedulePreview(); };
