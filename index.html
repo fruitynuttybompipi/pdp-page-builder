@@ -313,7 +313,7 @@ details.item[open] > .body { animation: rise .2s ease-out }
   <div class="work">
     <aside class="pane left">
       <h2>Add a section</h2>
-      <p class="hint">Drag into the page list, or click to add below the selected section.</p>
+      <p class="hint">Drag into the preview or the page list, or click to add below the selected section.</p>
       <div class="lib" id="lib"></div>
       <h2>Page</h2>
       <ol class="outline" id="outline"></ol>
@@ -1113,7 +1113,7 @@ ${items}
   if (body.includes('pdp-') || body.includes('--tw:')) css += PDP_CSS;
   if (P) {
     const hl = (sel ? `[data-bid="${sel}"]{outline:3px solid #c27a35!important;outline-offset:-3px}` : '') + (selEl ? `[data-oid="${selEl}"]{outline:2px solid #ec206e!important;outline-offset:2px}` : '');
-    return { html: `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${LIB_CSS}</style><style>${PREVIEW_BASE}</style><style>${css}</style><style>body{font-family:"GT Walsheim Pro",system-ui,-apple-system,"Segoe UI",sans-serif}${clean ? '' : `[data-bid]{cursor:pointer}[data-bid]:hover{outline:2px dashed rgba(194,122,53,.7);outline-offset:-2px}${hl}`}${grid ? GRID_CSS : ''}</style></head><body>\n${body}\n</body></html>`, files, warns };
+    return { html: `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${LIB_CSS}</style><style>${PREVIEW_BASE}</style><style>${css}</style><style>html,body{scrollbar-width:auto!important;-ms-overflow-style:auto!important;scrollbar-color:#b9ada0 transparent!important}body{font-family:"GT Walsheim Pro",system-ui,-apple-system,"Segoe UI",sans-serif}${clean ? '' : `[data-bid]{cursor:pointer}[data-bid]:hover{outline:2px dashed rgba(194,122,53,.7);outline-offset:-2px}${hl}`}${grid ? GRID_CSS : ''}</style></head><body>\n${body}\n</body></html>`, files, warns };
   }
   const head = HEAD_TPL.replace('{{TITLE}}', esc(st.title)).replace('{{DESC}}', esc(st.desc)).replace('{{KW}}', esc(st.kw));
   return { html: `${head}<style>${css}</style>\n  </head>\n\n  <body>\n${body}\n  </body>\n</html>\n`, files, warns };
@@ -1287,6 +1287,26 @@ frame.addEventListener('load', () => {
   let doc; try { doc = frame.contentDocument; } catch (e) { return; }
   if (!doc) return;
   doc.addEventListener('keydown', onKey); // shortcuts also work while the preview has focus
+  // Drop a new section (from Add a section) or a page-list row straight into the preview.
+  const secs = () => [...doc.querySelectorAll('body > [data-bid]')];
+  const at = y => { const s = secs(); for (let i = 0; i < s.length; i++) { const r = s[i].getBoundingClientRect(); if (y < r.top + r.height / 2) return i; } return s.length; };
+  let pl = null;
+  const clearPl = () => { pl && pl.remove(); pl = null; };
+  doc.addEventListener('dragover', e => {
+    const types = [...e.dataTransfer.types]; if (!types.includes('text/x-new') && !types.includes('text/x-move')) return;
+    e.preventDefault(); const s = secs(), i = at(e.clientY), w = doc.defaultView;
+    const y = !s.length ? 0 : i < s.length ? s[i].getBoundingClientRect().top : s[s.length - 1].getBoundingClientRect().bottom;
+    if (!pl) { pl = doc.createElement('div'); pl.style.cssText = 'position:absolute;left:0;right:0;height:6px;margin-top:-3px;background:#ec206e;border-radius:3px;box-shadow:0 0 0 3px rgba(236,32,110,.25);z-index:2147483647;pointer-events:none'; doc.body.appendChild(pl); }
+    pl.style.top = (y + w.scrollY) + 'px';
+  });
+  doc.addEventListener('dragleave', e => { if (!e.relatedTarget) clearPl(); });
+  doc.addEventListener('drop', e => {
+    const nt = e.dataTransfer.getData('text/x-new'), mv = e.dataTransfer.getData('text/x-move'); if (!nt && !mv) return;
+    e.preventDefault(); const i = at(e.clientY); clearPl(); lastScroll = doc.defaultView.scrollY;
+    if (nt && TYPES[nt]) return addBlock(nt, i);
+    const from = st.blocks.findIndex(b => b.id === mv); if (from < 0) return;
+    const [b] = st.blocks.splice(from, 1); st.blocks.splice(from < i ? i - 1 : i, 0, b); renderAll();
+  });
   // Server images that can't load here (blocked or missing) fall back to a labelled placeholder.
   const base = st.imgBase || DEFAULT_IMG_BASE;
   doc.querySelectorAll('img').forEach(img => {
