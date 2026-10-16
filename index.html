@@ -181,6 +181,9 @@ details.item .body { padding: 10px; display: flex; flex-direction: column; gap: 
 .angles button small { font-size: 9.5px; color: var(--muted) }
 .angles button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft) }
 .angles button:hover { border-color: var(--muted) }
+.slottip { font-size: 11px; line-height: 1.45; color: var(--muted); background: var(--surface); border: 1px dashed var(--line); border-radius: 6px; padding: 6px 8px }
+.slottip code { font-size: 10.5px; overflow-wrap: anywhere; color: var(--fg) }
+.slottip b { color: var(--accent) }
 .gradprev { height: 28px; border-radius: 6px; border: 1px solid var(--line) }
 .splitlbl { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted) }
 .splitlbl b { color: var(--fg) }
@@ -1899,6 +1902,7 @@ function slotEl(f, obj, ref, names, b) {
       </div>
       <label for="${fnId}" style="font-size:11px;color:var(--muted)">${slot.a ? 'Filename (leave blank for automatic)' : 'Or use a file already on the server (name or full link)'}</label>
       <input class="fn" id="${fnId}" type="text" placeholder="${esc(slot.a ? auto : 'e.g. ' + (auto || 'brand_PDP_logo.png'))}">
+      ${slot.a ? '' : `<div class="slottip"><b>Tip:</b> open the live page, right-click the image → <i>Copy image address</i>, then paste it here, e.g. <code>${esc((st.imgBase || DEFAULT_IMG_BASE).replace(/\/?$/, '/'))}longxevity_PDP_logo.png</code>. Only the file name is kept, and the zip won't include it.</div>`}
     </div>`;
   const fn = el.querySelector('.fn'); fn.value = slot.name;
   fn.addEventListener('change', () => {
