@@ -25,6 +25,30 @@
   --stage: #0e0c0a; --ok: #6cc28f; --warn: #e2a64f; --danger: #ec7b70; color-scheme: dark }
 
 * { box-sizing: border-box }
+.ico { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; vertical-align: -3px }
+.ico.sm { width: 13px; height: 13px; vertical-align: -2px }
+.btn, .seg button, .tabs button { display: inline-flex; align-items: center; gap: 6px }
+.btn.icon-only { padding: 6px 8px }
+.brand .mark { width: 26px; height: 26px; border-radius: 7px; background: var(--accent); display: inline-grid; place-items: center; margin-right: 2px; align-self: center; transition: transform .3s }
+.brand:hover .mark { transform: rotate(-8deg) scale(1.05) }
+.brand .mark svg { width: 16px; height: 16px; fill: var(--accent-fg); stroke: none; opacity: .95 }
+.chip { display: flex; align-items: center; gap: 8px }
+.chip .ico { color: var(--accent); transition: transform .2s }
+.chip:hover .ico { transform: scale(1.18) rotate(-6deg) }
+.chip-new { grid-column: 1 / -1; border-style: solid; border-color: var(--accent); background: var(--accent-soft); font-weight: 600; justify-content: center }
+.row .t { display: flex; align-items: center; gap: 6px }
+.row .t .ico { color: var(--accent) }
+.row .acts button .ico { width: 14px; height: 14px }
+.insp .blockhead h3 { display: flex; align-items: center; gap: 8px }
+.hico { width: 30px; height: 30px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); display: inline-grid; place-items: center; animation: pop .3s ease-out }
+.etag { display: inline-flex; align-items: center; gap: 4px }
+.addel .ico { color: var(--accent) }
+.addel:hover { border-color: var(--accent); background: var(--accent-soft) }
+details.item > summary button .ico { width: 14px; height: 14px }
+.toast { display: flex; align-items: center; gap: 8px }
+.toast .ico { color: var(--ok) }
+body.theming, body.theming * { transition: background-color .35s, color .35s, border-color .35s !important }
+@media (max-width: 1100px) { .hide-sm { display: none } }
 [hidden] { display: none !important }
 html, body { height: 100% }
 body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.45 var(--sans) }
@@ -92,12 +116,12 @@ header.bar {
 .tabs { display: flex; gap: 4px; padding: 10px 12px 0; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--surface); z-index: 2 }
 .tabs button { border: 0; background: transparent; padding: 8px 10px; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; font-weight: 600 }
 .tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent) }
-.insp { padding: 14px; display: flex; flex-direction: column; gap: 14px }
+.insp { padding: 16px; display: flex; flex-direction: column; gap: 16px }
 .insp .blockhead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px }
 .insp .blockhead h3 { margin: 0; font-size: 16px }
 .field { display: flex; flex-direction: column; gap: 5px; min-width: 0 }
 .field > label, .field > .flabel { font-size: 12px; font-weight: 600 }
-.field .fhint { font-size: 11.5px; color: var(--muted) }
+.fhint, .field .fhint { font-size: 11.5px; color: var(--muted); line-height: 1.45 }
 .field input[type=text], .field textarea, .field input[type=url] { width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; background: var(--raised) }
 .field textarea { min-height: 96px; resize: vertical; line-height: 1.45 }
 .check { display: flex; gap: 8px; align-items: center; font-size: 13px }
@@ -232,18 +256,19 @@ details.item[open] > .body { animation: rise .2s ease-out }
 <body>
 <div class="app">
   <header class="bar">
-    <div class="brand">PDP Builder <small>Amway PDP template</small></div>
+    <div class="brand"><span class="mark"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg></span>PDP Builder <small>Amway PDP template</small></div>
     <div class="sku"><label for="sku">SKU</label><input id="sku" type="text" inputmode="numeric" autocomplete="off"></div>
     <div class="seg" role="group" aria-label="Preview width">
-      <button data-dev="desktop" aria-pressed="true">Desktop</button>
-      <button data-dev="tablet" aria-pressed="false">Tablet</button>
-      <button data-dev="mobile" aria-pressed="false">Mobile</button>
+      <button data-dev="desktop" aria-pressed="true"><i data-ico="desktop"></i><span class="hide-sm">Desktop</span></button>
+      <button data-dev="tablet" aria-pressed="false"><i data-ico="tablet"></i><span class="hide-sm">Tablet</span></button>
+      <button data-dev="mobile" aria-pressed="false"><i data-ico="mobile"></i><span class="hide-sm">Mobile</span></button>
     </div>
     <div class="spacer"></div>
-    <label class="btn" for="openProject">Open project<input id="openProject" type="file" accept=".json,application/json" hidden></label>
-    <div class="seg" role="group" aria-label="History"><button id="undoBtn" title="Undo (Ctrl+Z)" disabled>↶ Undo</button><button id="redoBtn" title="Redo (Ctrl+Shift+Z)" disabled>Redo ↷</button></div>
-    <button class="btn" id="saveProject">Save project</button>
-    <button class="btn primary" id="exportBtn">Export</button>
+    <label class="btn" for="openProject"><i data-ico="open"></i><span class="hide-sm">Open project</span><input id="openProject" type="file" accept=".json,application/json" hidden></label>
+    <div class="seg" role="group" aria-label="History"><button id="undoBtn" title="Undo (Ctrl+Z)" aria-label="Undo" disabled><i data-ico="undo"></i><span class="hide-sm">Undo</span></button><button id="redoBtn" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" disabled><i data-ico="redo"></i><span class="hide-sm">Redo</span></button></div>
+    <button class="btn icon-only" id="themeBtn" title="Switch light / dark" aria-label="Switch light or dark mode"><i data-ico="moon"></i></button>
+    <button class="btn" id="saveProject"><i data-ico="save"></i><span class="hide-sm">Save project</span></button>
+    <button class="btn primary" id="exportBtn"><i data-ico="export"></i>Export</button>
   </header>
 
   <div class="work">
@@ -262,8 +287,8 @@ details.item[open] > .body { animation: rise .2s ease-out }
 
     <aside class="pane right">
       <div class="tabs" role="tablist">
-        <button role="tab" id="tabBlock" aria-selected="true">Section</button>
-        <button role="tab" id="tabPage" aria-selected="false">Page settings</button>
+        <button role="tab" id="tabBlock" aria-selected="true"><i data-ico="layers"></i>Section</button>
+        <button role="tab" id="tabPage" aria-selected="false"><i data-ico="settings"></i>Page settings</button>
       </div>
       <div class="insp" id="insp"></div>
     </aside>
@@ -923,6 +948,42 @@ function defaultState() {
 </script>
 
 <script>
+/* ---------- Icons (inline SVG, stroke follows text colour) ---------- */
+const ICONS = {
+  hero: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m6 16 4-4 3 3 2-2 3 3"/><circle cx="16" cy="8.5" r="1.5"/>',
+  intro: '<path d="M21 6H3M17 12H3M21 18H3"/>',
+  text: '<path d="M4 7V4h16v3M9 20h6M12 4v16"/>',
+  columns: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/>',
+  blank: '<rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="3 3"/><path d="M12 8v8M8 12h8"/>',
+  video: '<rect x="2" y="5" width="20" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>',
+  features: '<rect x="3" y="4" width="8" height="6" rx="1"/><path d="M14 6h7M14 9h5"/><rect x="13" y="14" width="8" height="6" rx="1"/><path d="M3 16h7M5 19h5"/>',
+  profile: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  brand: '<circle cx="12" cy="9" r="6"/><path d="m8.5 14.5-1.5 7 5-3 5 3-1.5-7"/>',
+  image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
+  moreinfo: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
+  banner: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 15h18"/>',
+  headline: '<path d="M6 4v16M18 4v16M6 12h12"/>',
+  title: '<path d="M4 6v12M12 6v12M4 12h8M17 10l3-2v10"/>',
+  para: '<path d="M13 4v16M17 4v16M19 4H9.5a4.5 4.5 0 0 0 0 9H13"/>',
+  icon: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+  icons: '<circle cx="5" cy="12" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="19" cy="12" r="2.5"/>',
+  logo: '<path d="M12 2 21 7v10l-9 5-9-5V7z"/>',
+  button: '<rect x="2" y="7" width="20" height="10" rx="5"/><path d="M8 12h8"/>',
+  up: '<path d="m18 15-6-6-6 6"/>', down: '<path d="m6 9 6 6 6-6"/>',
+  copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  trash: '<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/>',
+  undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>', redo: '<path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/>',
+  save: '<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>', open: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  export: '<path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/>',
+  desktop: '<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>', tablet: '<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M11 18h2"/>', mobile: '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>',
+  layers: '<path d="m12 2 10 5-10 5L2 7z"/><path d="m2 12 10 5 10-5M2 17l10 5 10-5"/>', settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>', moon: '<path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>', check: '<path d="M20 6 9 17l-5-5"/>',
+};
+const ico = (n, cls) => `<svg class="ico${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
+const TYPE_ICON = { hero: 'hero', intro: 'intro', text: 'text', columns: 'columns', blank: 'blank', video: 'video', features: 'features', profile: 'profile', brand: 'brand', image: 'image', moreinfo: 'moreinfo', banner: 'banner' };
+const EL_ICON = { headline: 'headline', title: 'title', text: 'para', icon: 'icon', icons: 'icons', image: 'image', logo: 'logo', button: 'button' };
+
 /* ---------- App state ---------- */
 let st = defaultState();
 const assets = {};          // key -> {name, type, blob, url}
@@ -932,7 +993,7 @@ const $ = s => document.querySelector(s);
 const DEV = { desktop: 1366, tablet: 834, mobile: 390 };
 
 function toast(msg) {
-  const t = $('#toast'); t.textContent = msg; t.hidden = false; t.classList.remove('out'); void t.offsetWidth; t.classList.add('in');
+  const t = $('#toast'); t.innerHTML = ico('check') + '<span></span>'; t.lastChild.textContent = msg; t.hidden = false; t.classList.remove('out'); void t.offsetWidth; t.classList.add('in');
   clearTimeout(toast.t); toast.t = setTimeout(() => { t.classList.add('out'); setTimeout(() => t.hidden = true, 220); }, 2400);
 }
 const reId = o => JSON.parse(JSON.stringify(o).replace(/"id":"[^"]+"/g, () => '"id":"' + uid('x') + '"'));
@@ -957,7 +1018,9 @@ function stepHist(from, to) {
   commitSnap(); if (!from.length) return;
   to.push(hist.cur); hist.cur = from.pop(); st = JSON.parse(hist.cur);
   skuIn.value = st.sku; if (!findBlock(selId)) selId = st.blocks[0]?.id || null;
-  renderOutline(); renderInspector(); schedulePreview(true); updUndo();
+  renderOutline(); renderInspector();
+  hist.cur = JSON.stringify(st); // editor fills in defaults on open; don't count that as a new change (it would wipe Redo)
+  schedulePreview(true); updUndo();
 }
 const undo = () => stepHist(hist.past, hist.future), redo = () => stepHist(hist.future, hist.past);
 function updUndo() { $('#undoBtn').disabled = !hist.past.length; $('#redoBtn').disabled = !hist.future.length; }
@@ -997,7 +1060,7 @@ document.querySelectorAll('[data-dev]').forEach(b => b.addEventListener('click',
 
 /* ---------- Library & outline ---------- */
 function renderLib() {
-  $('#lib').innerHTML = ORDER.map(t => `<button class="chip" draggable="true" data-new="${t}">${TYPES[t].label}</button>`).join('');
+  $('#lib').innerHTML = ORDER.map(t => `<button class="chip${t === 'blank' ? ' chip-new' : ''}" draggable="true" data-new="${t}">${ico(TYPE_ICON[t])}<span>${TYPES[t].label}</span></button>`).join('');
   $('#lib').querySelectorAll('.chip').forEach(c => {
     c.addEventListener('dragstart', e => { e.dataTransfer.setData('text/x-new', c.dataset.new); e.dataTransfer.effectAllowed = 'copy'; });
     c.addEventListener('click', () => { const i = st.blocks.findIndex(b => b.id === selId); addBlock(c.dataset.new, i < 0 ? st.blocks.length : i + 1); });
@@ -1012,12 +1075,12 @@ function renderOutline() {
   const ol = $('#outline'); setTimeout(() => enterIds.clear(), 0);
   ol.innerHTML = st.blocks.map((b, i) => `<li class="row${b.id === selId ? ' sel' : ''}${enterIds.has(b.id) ? ' enter' : ''}" draggable="true" data-id="${b.id}">
     <span class="grip" aria-hidden="true">⋮⋮</span>
-    <span class="lbl"><div class="t">${esc(TYPES[b.type].label)}</div><div class="s">${Object.values(b.hide || {}).some(Boolean) ? `<b class="hid">${esc(hideSum(b))}</b> · ` : ''}${esc(TYPES[b.type].sum(b.data))}</div></span>
+    <span class="lbl"><div class="t">${ico(TYPE_ICON[b.type], 'sm')}${esc(TYPES[b.type].label)}</div><div class="s">${Object.values(b.hide || {}).some(Boolean) ? `<b class="hid">${esc(hideSum(b))}</b> · ` : ''}${esc(TYPES[b.type].sum(b.data))}</div></span>
     <span class="acts">
-      <button data-act="up" title="Move up" aria-label="Move up" ${i === 0 ? 'disabled' : ''}>↑</button>
-      <button data-act="down" title="Move down" aria-label="Move down" ${i === st.blocks.length - 1 ? 'disabled' : ''}>↓</button>
-      <button data-act="dup" title="Duplicate" aria-label="Duplicate">⧉</button>
-      <button data-act="del" title="Delete" aria-label="Delete">✕</button>
+      <button data-act="up" title="Move up" aria-label="Move up" ${i === 0 ? 'disabled' : ''}>${ico('up')}</button>
+      <button data-act="down" title="Move down" aria-label="Move down" ${i === st.blocks.length - 1 ? 'disabled' : ''}>${ico('down')}</button>
+      <button data-act="dup" title="Duplicate" aria-label="Duplicate">${ico('copy')}</button>
+      <button data-act="del" title="Delete" aria-label="Delete">${ico('trash')}</button>
     </span></li>`).join('') || '<p class="hint">No sections. Drag one here.</p>';
   ol.querySelectorAll('.row').forEach(r => {
     const id = r.dataset.id;
@@ -1075,7 +1138,7 @@ function renderInspector() {
   const b = findBlock(selId);
   if (!b) { box.innerHTML = '<p class="hint" style="padding:0">Select a section in the page list or the preview.</p>'; return; }
   const head = document.createElement('div'); head.className = 'blockhead';
-  head.innerHTML = `<h3>${esc(TYPES[b.type].label)}</h3><span class="mono" style="color:var(--muted)">#${st.blocks.indexOf(b) + 1}</span>`;
+  head.innerHTML = `<h3><span class="hico">${ico(TYPE_ICON[b.type])}</span>${esc(TYPES[b.type].label)}</h3><span class="mono" style="color:var(--muted)">#${st.blocks.indexOf(b) + 1}</span>`;
   box.appendChild(head);
   const names = autoNames(st);
   box.appendChild(showOnRow(b, 'Show this section on'));
@@ -1139,15 +1202,15 @@ function styleEditor(b, g, lbl) {
 function elsEditor(label, els, b, names) {
   const wrapEl = document.createElement('div'); wrapEl.className = 'field';
   wrapEl.innerHTML = `<div class="flabel">${esc(label)}</div><div class="list"></div>
-    <div class="addbar"><span>Add</span>${EL_ORDER.map(t => `<button class="btn sm" data-add="${t}">+ ${EL[t].label}</button>`).join('')}</div>`;
+    <div class="addbar"><span>Add</span>${EL_ORDER.map(t => `<button class="btn sm addel" data-add="${t}">${ico(EL_ICON[t], 'sm')}${EL[t].label}</button>`).join('')}</div>`;
   const list = wrapEl.querySelector('.list');
   if (!els.length) list.innerHTML = '<p class="fhint" style="margin:0">Empty. Add an element below.</p>';
   els.forEach((el, i) => {
     const def = EL[el.t]; if (!def) return;
     const det = document.createElement('details'); det.className = 'item el'; det.open = openItems.has(el.id);
     const snip = el.t === 'icons' ? (el.items || []).length + ' icons' : def.text || el.t === 'button' ? el.v.split('\n')[0] : (resolveSlot(el.img, el.id, names, assets, el.t) || { name: 'No image' }).name;
-    det.innerHTML = `<summary><span class="etag">${esc(def.label)}</span><span class="tt">${esc(snip || 'Empty')}</span>${+el.w > 0 ? `<span class="psum">${+el.w}%</span>` : ''}
-      <button data-a="up" aria-label="Move up" ${i ? '' : 'disabled'}>↑</button><button data-a="down" aria-label="Move down" ${i < els.length - 1 ? '' : 'disabled'}>↓</button><button data-a="dup" aria-label="Duplicate">⧉</button><button data-a="del" aria-label="Delete">✕</button></summary><div class="body"></div>`;
+    det.innerHTML = `<summary><span class="etag">${ico(EL_ICON[el.t], 'sm')}${esc(def.label)}</span><span class="tt">${esc(snip || 'Empty')}</span>${+el.w > 0 ? `<span class="psum">${+el.w}%</span>` : ''}
+      <button data-a="up" aria-label="Move up" ${i ? '' : 'disabled'}>${ico('up')}</button><button data-a="down" aria-label="Move down" ${i < els.length - 1 ? '' : 'disabled'}>${ico('down')}</button><button data-a="dup" aria-label="Duplicate">${ico('copy')}</button><button data-a="del" aria-label="Delete">${ico('trash')}</button></summary><div class="body"></div>`;
     det.addEventListener('toggle', () => det.open ? openItems.add(el.id) : openItems.delete(el.id));
     det.querySelector('summary').addEventListener('click', e => {
       const a = e.target.closest('button')?.dataset.a; if (!a) return; e.preventDefault();
@@ -1356,7 +1419,7 @@ function iconsEditor(el, body, names, b, tt) {
   const list = document.createElement('div'); list.className = 'list';
   items.forEach((it, i) => {
     const box = document.createElement('div'); box.className = 'icoitem';
-    box.innerHTML = `<div class="icohead"><span class="n">${i + 1}</span><span class="spacer"></span><button class="btn sm ghost" data-a="up" aria-label="Move left" ${i ? '' : 'disabled'}>↑</button><button class="btn sm ghost" data-a="down" aria-label="Move right" ${i < items.length - 1 ? '' : 'disabled'}>↓</button><button class="btn sm ghost danger" data-a="del" aria-label="Remove icon">✕</button></div>`;
+    box.innerHTML = `<div class="icohead"><span class="n">${i + 1}</span><span class="spacer"></span><button class="btn sm ghost" data-a="up" aria-label="Move left" ${i ? '' : 'disabled'}>${ico('up')}</button><button class="btn sm ghost" data-a="down" aria-label="Move right" ${i < items.length - 1 ? '' : 'disabled'}>${ico('down')}</button><button class="btn sm ghost danger" data-a="del" aria-label="Remove icon">${ico('trash')}</button></div>`;
     box.appendChild(slotEl({ k: 'img', ext: 'icon', label: 'Icon ' + (i + 1) }, it, it.id, names, b));
     const cId = fid();
     box.insertAdjacentHTML('beforeend', `<div class="prow"><label for="${cId}">Caption</label><input type="text" id="${cId}" placeholder="Optional, shown under the icon"></div>`);
@@ -1439,7 +1502,7 @@ function colsEditor(d, b, names) {
   d.cols.forEach((col, i) => {
     const key = 'col' + col.id, det = document.createElement('details'); det.className = 'item'; det.open = openItems.has(key);
     det.innerHTML = `<summary><span class="n">${i + 1}</span><span class="tt">Column ${i + 1} · ${esc(elSum(col.els))}</span>
-      <button data-a="up" aria-label="Move left" ${i ? '' : 'disabled'}>↑</button><button data-a="down" aria-label="Move right" ${i < d.cols.length - 1 ? '' : 'disabled'}>↓</button><button data-a="dup" aria-label="Duplicate">⧉</button><button data-a="del" aria-label="Delete">✕</button></summary><div class="body"></div>`;
+      <button data-a="up" aria-label="Move left" ${i ? '' : 'disabled'}>${ico('up')}</button><button data-a="down" aria-label="Move right" ${i < d.cols.length - 1 ? '' : 'disabled'}>${ico('down')}</button><button data-a="dup" aria-label="Duplicate">${ico('copy')}</button><button data-a="del" aria-label="Delete">${ico('trash')}</button></summary><div class="body"></div>`;
     det.addEventListener('toggle', () => det.open ? openItems.add(key) : openItems.delete(key));
     det.querySelector('summary').addEventListener('click', e => {
       const a = e.target.closest('button')?.dataset.a; if (!a) return; e.preventDefault();
@@ -1583,7 +1646,7 @@ function fieldEl(f, obj, ref, names, b) {
     arr.forEach((it, i) => {
       const det = document.createElement('details'); det.className = 'item'; det.open = openItems.has(it.id);
       det.innerHTML = `<summary><span class="n">${i + 1}</span><span class="tt">${esc(f.title(it) || 'Untitled')}</span>
-        <button data-a="up" aria-label="Move up" ${i ? '' : 'disabled'}>↑</button><button data-a="down" aria-label="Move down" ${i < arr.length - 1 ? '' : 'disabled'}>↓</button><button data-a="dup" aria-label="Duplicate">⧉</button><button data-a="del" aria-label="Delete">✕</button></summary><div class="body"></div>`;
+        <button data-a="up" aria-label="Move up" ${i ? '' : 'disabled'}>${ico('up')}</button><button data-a="down" aria-label="Move down" ${i < arr.length - 1 ? '' : 'disabled'}>${ico('down')}</button><button data-a="dup" aria-label="Duplicate">${ico('copy')}</button><button data-a="del" aria-label="Delete">${ico('trash')}</button></summary><div class="body"></div>`;
       det.addEventListener('toggle', () => det.open ? openItems.add(it.id) : openItems.delete(it.id));
       det.querySelector('summary').addEventListener('click', e => {
         const a = e.target.closest('button')?.dataset.a; if (!a) return; e.preventDefault();
@@ -1736,6 +1799,13 @@ $('#openProject').addEventListener('change', async e => {
   } catch (err) { toast('That file is not a PDP Builder project.'); }
 });
 
+document.querySelectorAll('i[data-ico]').forEach(i => i.outerHTML = ico(i.dataset.ico));
+// Light / dark switch, remembered on this device; defaults to the system setting.
+const themeBtn = $('#themeBtn');
+const applyTheme = th => { if (th) document.documentElement.dataset.theme = th; else delete document.documentElement.dataset.theme; const dark = th ? th === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; themeBtn.innerHTML = ico(dark ? 'sun' : 'moon'); };
+let theme = null; try { theme = localStorage.getItem('pdpTheme'); } catch (e) {}
+applyTheme(theme);
+themeBtn.onclick = () => { const dark = document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; theme = dark ? 'light' : 'dark'; try { localStorage.setItem('pdpTheme', theme); } catch (e) {} document.body.classList.add('theming'); applyTheme(theme); setTimeout(() => document.body.classList.remove('theming'), 400); };
 $('#undoBtn').onclick = undo; $('#redoBtn').onclick = redo;
 renderLib(); renderAll(); fit(); commitSnap();
 </script>
