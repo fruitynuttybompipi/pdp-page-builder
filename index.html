@@ -238,7 +238,11 @@ details.el > summary .tt { font-weight: 500 }
 .trthumb img { max-width: 100%; max-height: 100%; object-fit: contain }
 .trtable .slot { margin: 0 }
 .trtable .grp td { background: var(--raised); font-weight: 600; font-size: 12px; padding: 6px }
-.keysbtn { position: fixed; left: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font: 600 15px/1 system-ui, sans-serif; cursor: pointer; z-index: 15; box-shadow: 0 2px 8px rgba(0,0,0,.12) }
+.keysbtn { flex: none; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font: 600 15px/1 system-ui, sans-serif; cursor: pointer; z-index: 15; box-shadow: 0 2px 8px rgba(0,0,0,.12) }
+.pane.left { padding-bottom: 60px } /* room for the ? button and credit line */
+.guide-link { align-self: flex-start; text-decoration: none }
+.footbar { position: fixed; left: 0; bottom: 0; width: 260px; display: flex; align-items: center; gap: 10px; padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)); background: var(--surface); border-top: 1px solid var(--line); border-right: 1px solid var(--line); z-index: 15 }
+.credit { font-size: 10.5px; line-height: 1.35; color: var(--muted) }
 .keysbtn:hover { border-color: var(--accent, #c27a35); color: var(--accent, #c27a35) }
 .keys { width: 100%; border-collapse: collapse; font-size: 13px }
 .keys td { padding: 6px 4px; border-bottom: 1px solid var(--line); vertical-align: middle }
@@ -259,6 +263,10 @@ kbd { display: inline-block; min-width: 22px; padding: 2px 6px; border: 1px soli
 .toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: 13px; z-index: 30 }
 
 @media (max-width: 1100px) { .work { grid-template-columns: 230px minmax(0, 1fr) 320px } }
+@media (max-width: 1100px) { .footbar { width: 230px } }
+@media (max-width: 900px) { .footbar { position: static; width: auto; border-right: 0 } .pane.left { padding-bottom: 0 } }
+@media (max-width: 1100px) { .footbar { width: 230px } }
+@media (max-width: 900px) { .footbar { position: static; width: auto; border-right: 0 } .pane.left { padding-bottom: 0 } }
 @media (max-width: 900px) {
   .app { height: auto; display: block }
   .work { display: flex; flex-direction: column }
@@ -375,10 +383,11 @@ details.item[open] > .body { animation: rise .2s ease-out }
       <tr><td><kbd>Esc</kbd></td><td>Close a window</td></tr>
     </tbody></table>
     <div class="fhint">Single keys do nothing while you are typing in a box. An element is selected when you click it in the preview.</div>
+    <a class="btn guide-link" href="PDP-Builder-Guide.pdf" target="_blank" rel="noopener" download="PDP-Builder-Guide.pdf">📘 How to use guide (PDF)</a>
     <div class="acts"><button class="btn" id="keysClose">Close</button></div>
   </div>
 </div>
-<button class="keysbtn" id="keysBtn" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+<div class="footbar"><button class="keysbtn" id="keysBtn" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">?</button><span class="credit">Vibe Coded by Claude &amp; CC. All Rights Reserved ® 2026.</span></div>
 <div class="modal" id="trModal" hidden>
   <div class="dialog" role="dialog" aria-labelledby="trTitle" style="width:min(900px,100%)">
     <h3 id="trTitle">Translate</h3>
@@ -447,7 +456,9 @@ function ytEmbed(u) {
 // Corner radius: one value for all corners, or four (top-left, top-right, bottom-right, bottom-left). Empty corner = the "all" value.
 const setv = v => String(v ?? '') !== '';
 /* ---------- Languages: one layout, text per language. English is the source. ---------- */
-const LANGS = { en: 'English', ms: 'Bahasa Melayu', zh: '中文' };
+// Codes are used in file names ({SKU}_bm.html, _bm images); HTML_LANG is the standard tag for <html lang>.
+const LANGS = { en: 'English', bm: 'Bahasa Melayu', zh: '中文' };
+const HTML_LANG = { en: 'en', bm: 'ms', zh: 'zh' };
 const TR_FIELDS = ['v', 'title', 'body', 'specs', 'alt', 'html'];
 // Calls fn(key, obj, field) for every translatable text. Keys use the nearest id, so they survive edits and moves.
 function trWalk(s, fn) {
@@ -489,7 +500,7 @@ function langState(s, lang) {
     const names = autoNames(s);
     imgWalk(c, (ref, h, k) => {
       const x = ti[ref], nm = String((x && x.name) || '').trim(); if (!x || (!x.a && !nm)) return;
-      h[k] = { a: x.a || null, name: nm || (names[ref] || 'image') + '_' + lang }; // upload: {auto}_ms.ext
+      h[k] = { a: x.a || null, name: nm || (names[ref] || 'image') + '_' + lang }; // upload: {auto}_bm.ext
     });
   }
   return c;
@@ -622,6 +633,9 @@ const iconLike = k => k === 'icon' || k === 'logo';
 
 /* ---------- Upgrade projects saved before elements existed ---------- */
 function migrate(st) {
+  // Bahasa Melayu was 'ms' in early versions; it is 'bm' now.
+  if ((st.langs || []).includes('ms')) st.langs = st.langs.map(l => l === 'ms' ? 'bm' : l);
+  for (const k of ['tr', 'trImg']) if (st[k] && st[k].ms) { st[k].bm = Object.assign({}, st[k].ms, st[k].bm); delete st[k].ms; }
   for (const b of st.blocks) {
     const d = b.data, sty = g => ((b.style || {})[g]) || {};
     if (b.type === 'hero' && !d.els) {
@@ -1199,7 +1213,7 @@ ${items}
     const hl = (sel ? `[data-bid="${sel}"]{outline:3px solid #c27a35!important;outline-offset:-3px}` : '') + (selEl ? `[data-oid="${selEl}"]{outline:2px solid #ec206e!important;outline-offset:2px}` : '');
     return { html: `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${LIB_CSS}</style><style>${PREVIEW_BASE}</style><style>${css}</style><style>html,body{scrollbar-width:auto!important;-ms-overflow-style:auto!important;scrollbar-color:#b9ada0 transparent!important}body{font-family:"GT Walsheim Pro",system-ui,-apple-system,"Segoe UI",sans-serif}${clean ? '' : `[data-bid]{cursor:pointer}[data-bid]:hover{outline:2px dashed rgba(194,122,53,.7);outline-offset:-2px}${hl}`}${grid ? GRID_CSS : ''}</style></head><body>\n${body}\n</body></html>`, files, warns };
   }
-  const head = HEAD_TPL.replace('<html lang="en">', `<html lang="${(opt && opt.lang) || 'en'}">`).replace('{{TITLE}}', esc(st.title)).replace('{{DESC}}', esc(st.desc)).replace('{{KW}}', esc(st.kw));
+  const head = HEAD_TPL.replace('<html lang="en">', `<html lang="${HTML_LANG[(opt && opt.lang) || 'en'] || 'en'}">`).replace('{{TITLE}}', esc(st.title)).replace('{{DESC}}', esc(st.desc)).replace('{{KW}}', esc(st.kw));
   return { html: `${head}<style>${css}</style>\n  </head>\n\n  <body>\n${body}\n  </body>\n</html>\n`, files, warns };
 }
 
