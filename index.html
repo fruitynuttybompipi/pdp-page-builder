@@ -135,6 +135,13 @@ details.item .body { padding: 10px; display: flex; flex-direction: column; gap: 
 .splitlbl { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted) }
 .splitlbl b { color: var(--fg) }
 input[type=range] { width: 100%; accent-color: var(--accent) }
+.rte { min-height: 2.6em; max-height: 320px; overflow: auto; border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; background: var(--raised); line-height: 1.45; outline: none; overflow-wrap: anywhere }
+.rte.tall { min-height: 7em }
+.rte:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft) }
+.rte ul, .rte ol { margin: 4px 0; padding-left: 22px }
+.rte a { color: var(--accent) }
+.linkbar { display: flex; gap: 6px; flex-wrap: wrap }
+.linkbar input { flex: 1; min-width: 140px; border: 1px solid var(--line); border-radius: 6px; padding: 4px 8px; background: var(--raised) }
 .tbar { display: flex; gap: 4px; flex-wrap: wrap }
 .tbar button { border: 1px solid var(--line); background: var(--surface); border-radius: 5px; padding: 2px 8px; font-size: 12px; min-width: 28px }
 .tbar button:hover { border-color: var(--muted) }
@@ -297,6 +304,7 @@ const S = name => ({ a: null, name: name || '' });   // image slot: a = uploaded
 
 function inl(s) {
   return esc(s)
+    .replace(/\*\*\*(.+?)\*\*\*/g, '<b><i>$1</i></b>')
     .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
     .replace(/(^|[^*])\*([^*\n]+?)\*/g, '$1<i>$2</i>')
     .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, t, u) => /^(https?:|#|mailto:)/i.test(u) ? `<a href="${u}">${t}</a>` : t);
@@ -581,6 +589,7 @@ function buildHTML(st, assets, opt) {
     if (o.part !== 'align') {
       if (s.size) { c = c.filter(x => !SIZE_RE.test(x)); c.push('font-' + s.size); }
       if (s.weight) css.push('font-weight:' + (s.weight === 'bold' ? 700 : 400));
+      if (s.italic) css.push('font-style:italic');
       if (okColor(s.color)) css.push('color:' + s.color);
     }
     if (o.css) css.push(...o.css);
@@ -645,7 +654,7 @@ function buildHTML(st, assets, opt) {
       const lines = el.v.split('\n').map(inl).join('<br>');
       if (ctx.name === 'hero' && el.t === 'title')
         return `<div${txs(s, 'livara-banner-description-slogan text-center' + mb, { part: 'align', css: sz })}>
-          <div${txs(s, 'bold-title font-lg', { part: 'font' })}>${el.v.split('\n').map(esc).join('<br>')}</div>
+          <div${txs(s, 'bold-title font-lg', { part: 'font' })}>${lines}</div>
         </div>`;
       const base = el.t === 'title' && ctx.name === 'feature' ? 'livara-details-title bold font-lg' : def.cls;
       const body = el.t === 'text' ? (el.v.split('\n').some(l => isLi(l) || isOl(l)) ? rich(el.v, 'block') : rich(el.v, 'inline')) : lines;
@@ -947,7 +956,7 @@ const undo = () => stepHist(hist.past, hist.future), redo = () => stepHist(hist.
 function updUndo() { $('#undoBtn').disabled = !hist.past.length; $('#redoBtn').disabled = !hist.future.length; }
 document.addEventListener('keydown', e => {
   if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
-  if (e.target.closest('input, textarea, select')) return; // let text fields use their own undo
+  if (e.target.closest('input, textarea, select, [contenteditable]')) return; // let text fields use their own undo
   const k = e.key.toLowerCase();
   if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
   else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); redo(); }
@@ -1089,19 +1098,20 @@ function sizeEditor(b) {
   body.querySelector('button').onclick = () => { wi.value = hi.value = ''; upd(); };
   return det;
 }
-const styleSum = s => [s.align && s.align[0].toUpperCase() + s.align.slice(1), s.weight && s.weight[0].toUpperCase() + s.weight.slice(1), s.size && s.size.toUpperCase(), s.color].filter(Boolean).join(' · ') || 'Default style';
+const styleSum = s => [s.align && s.align[0].toUpperCase() + s.align.slice(1), s.weight && s.weight[0].toUpperCase() + s.weight.slice(1), s.italic && 'Italic', s.size && s.size.toUpperCase(), s.color].filter(Boolean).join(' · ') || 'Default style';
 const alignSeg = (cur, label) => `<div class="prow"><span>${label || 'Align'}</span><div class="seg" role="group" aria-label="${label || 'Align'}">${[['', 'Default'], ['left', 'Left'], ['center', 'Center'], ['right', 'Right']].map(([v, t]) => `<button data-v="${v}" aria-pressed="${(cur || '') === v}">${t}</button>`).join('')}</div></div>`;
 // Align / weight / size / colour controls for one style object. Text only when withFont.
 function styleRows(s, onChange, withFont) {
   const box = document.createElement('div'); box.className = 'list';
   const wId = fid(), zId = fid(), cId = fid();
   box.innerHTML = alignSeg(s.align) + (withFont ? `
-    <div class="prow"><label for="${wId}">Weight</label><select id="${wId}"><option value="">Default</option><option value="bold">Bold</option><option value="regular">Regular</option></select></div>
+    <div class="prow"><label for="${wId}">Weight</label><div class="pin"><select id="${wId}"><option value="">Default</option><option value="bold">Bold</option><option value="regular">Regular</option></select><label class="check"><input type="checkbox" data-ital> <i>Italic</i></label></div></div>
     <div class="prow"><label for="${zId}">Size</label><select id="${zId}"><option value="">Default</option><option value="xs">XS</option><option value="sm">S</option><option value="md">M</option><option value="lg">L</option><option value="xlg">XL</option></select></div>
     <div class="prow"><label for="${cId}">Colour</label><div class="pin"><input type="color" id="${cId}"><button class="btn sm ghost" data-c>Default</button></div></div>` : '');
   box.querySelectorAll('.seg button').forEach(btn => btn.onclick = () => { s.align = btn.dataset.v; box.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', x === btn)); onChange(); });
   if (withFont) {
     const [we, ze] = box.querySelectorAll('select'), ce = box.querySelector('input[type=color]'), cb = box.querySelector('[data-c]');
+    const it = box.querySelector('[data-ital]'); it.checked = !!s.italic; it.onchange = () => { s.italic = it.checked; onChange(); };
     we.value = s.weight || ''; ze.value = s.size || ''; ce.value = s.color || '#000000'; cb.hidden = !s.color;
     we.onchange = () => { s.weight = we.value; onChange(); };
     ze.onchange = () => { s.size = ze.value; onChange(); };
@@ -1145,10 +1155,11 @@ function elsEditor(label, els, b, names) {
     else if (el.t === 'button') buttonEditor(el, body, names, b, tt);
     else if (def.text) {
       const id = fid();
-      body.insertAdjacentHTML('beforeend', `<div class="field"><label for="${id}">Text</label>${def.area ? TOOLBAR : ''}<textarea id="${id}" rows="${def.area ? 5 : 2}"></textarea><div class="fhint">${def.area ? 'Select text, then use the buttons. Each list item goes on its own line.' : 'Press Enter for a line break.'}</div></div>`);
-      const ta = body.querySelector('textarea'); ta.value = el.v;
-      if (def.area) bindToolbar(body.querySelector('.tbar'), ta);
-      ta.addEventListener('input', () => { el.v = ta.value; tt.textContent = ta.value.split('\n')[0] || 'Empty'; onEdit(b); });
+      body.insertAdjacentHTML('beforeend', `<div class="field"><label id="${id}l">Text</label>${def.area ? TOOLBAR : TOOLBAR_SHORT}<div class="rte${def.area ? ' tall' : ''}" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="${id}l" id="${id}"></div><div class="linkbar" hidden><input type="text" placeholder="https://www.amway.my/…" aria-label="Link address"><button class="btn sm">Add link</button><button class="btn sm ghost">Cancel</button></div><div class="fhint">Select words, then use the buttons (or Ctrl+B / Ctrl+I). Click again to undo the style.</div></div>`);
+      const rte = body.querySelector('.rte');
+      rte.innerHTML = mdToRte(el.v);
+      bindRte(body.querySelector('.tbar'), rte, body.querySelector('.linkbar'));
+      rte.addEventListener('input', () => { el.v = rteToMd(rte); tt.textContent = el.v.split('\n')[0].replace(/[*]/g, '') || 'Empty'; onEdit(b); });
       body.appendChild(sizeRows(el, true));
       body.appendChild(styleRows(s, () => schedulePreview(), true));
     } else {
@@ -1184,6 +1195,70 @@ function sizeRows(el, isText, opt) {
 }
 const TOOLBAR = `<div class="tbar" role="toolbar" aria-label="Text formatting"><button data-f="b" title="Bold"><b>B</b></button><button data-f="i" title="Italic"><i>I</i></button><button data-f="ul" title="Bullet list">• List</button><button data-f="ol" title="Numbered list">1. List</button><button data-f="a" title="Link">Link</button></div>`;
 // Toolbar edits the plain text the page is built from (**bold**, *italic*, - bullets, 1. numbers, [text](url)).
+const TOOLBAR_SHORT = `<div class="tbar" role="toolbar" aria-label="Text formatting"><button data-f="b" title="Bold"><b>B</b></button><button data-f="i" title="Italic"><i>I</i></button></div>`;
+// Rich-text box: shows real bold/italic/lists, stores the simple markup the page builder uses.
+function mdToRte(v) {
+  const lines = String(v || '').replace(/\r/g, '').split('\n');
+  let html = '', list = '', items = [];
+  const flush = () => { if (list) { html += `<${list}>${items.map(x => `<li>${inl(x)}</li>`).join('')}</${list}>`; list = ''; items = []; } };
+  for (const l of lines) {
+    const k = isLi(l) ? 'ul' : isOl(l) ? 'ol' : '';
+    if (k) { if (k !== list) flush(); list = k; items.push(l.replace(k === 'ul' ? /^\s*[-•]\s+/ : /^\s*\d+[.)]\s+/, '')); }
+    else { flush(); html += `<div>${inl(l) || '<br>'}</div>`; }
+  }
+  flush(); return html;
+}
+function rteToMd(root) {
+  const wrapM = (m, s) => { const x = s.match(/^(\s*)([\s\S]*?)(\s*)$/); return x[2] ? x[1] + m + x[2] + m + x[3] : s; };
+  const walk = node => {
+    let out = '';
+    for (const n of node.childNodes) {
+      if (n.nodeType === 3) { out += n.nodeValue.replace(/\u00a0/g, ' '); continue; }
+      if (n.nodeType !== 1) continue;
+      const tag = n.tagName, st = n.style || {};
+      if (tag === 'BR') out += '\n';
+      else if (tag === 'UL' || tag === 'OL') {
+        if (out && !out.endsWith('\n')) out += '\n';
+        [...n.children].forEach((li, k) => out += (tag === 'UL' ? '- ' : (k + 1) + '. ') + walk(li).replace(/\n+/g, ' ').trim() + '\n');
+      } else if (tag === 'DIV' || tag === 'P' || tag === 'LI') {
+        if (out && !out.endsWith('\n')) out += '\n';
+        const inner = walk(n); out += inner === '\n' ? '' : inner; if (!out.endsWith('\n')) out += '\n';
+      } else {
+        let inner = walk(n);
+        if (tag === 'B' || tag === 'STRONG' || /bold|[6-9]00/.test(st.fontWeight || '')) inner = wrapM('**', inner);
+        if (tag === 'I' || tag === 'EM' || st.fontStyle === 'italic') inner = wrapM('*', inner);
+        if (tag === 'A' && n.getAttribute('href')) inner = `[${inner}](${n.getAttribute('href')})`;
+        out += inner;
+      }
+    }
+    return out;
+  };
+  return walk(root).replace(/\n{3,}/g, '\n\n').replace(/^\n+|\n+$/g, '');
+}
+function bindRte(bar, rte, linkbar) {
+  let saved = null;
+  const save = () => { const s = getSelection(); if (s.rangeCount && rte.contains(s.anchorNode)) saved = s.getRangeAt(0).cloneRange(); };
+  const restore = () => { rte.focus(); if (saved) { const s = getSelection(); s.removeAllRanges(); s.addRange(saved); } };
+  const changed = () => rte.dispatchEvent(new Event('input'));
+  bar.querySelectorAll('button').forEach(btn => btn.onmousedown = e => e.preventDefault());
+  bar.querySelectorAll('button').forEach(btn => btn.onclick = () => {
+    const f = btn.dataset.f; rte.focus();
+    if (f === 'b') document.execCommand('bold');
+    else if (f === 'i') document.execCommand('italic');
+    else if (f === 'ul') document.execCommand('insertUnorderedList');
+    else if (f === 'ol') document.execCommand('insertOrderedList');
+    else if (f === 'a') { save(); linkbar.hidden = false; linkbar.querySelector('input').focus(); return; }
+    changed();
+  });
+  if (linkbar) {
+    const [inp, ok, cancel] = [linkbar.querySelector('input'), ...linkbar.querySelectorAll('button')];
+    const done = () => { linkbar.hidden = true; inp.value = ''; };
+    ok.onclick = () => { const u = inp.value.trim(); if (/^(https?:|#|mailto:|tel:)/i.test(u)) { restore(); document.execCommand('createLink', false, u); changed(); done(); } else toast('Start the link with https://'); };
+    inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); ok.click(); } if (e.key === 'Escape') done(); };
+    cancel.onclick = done;
+  }
+  rte.addEventListener('paste', e => { e.preventDefault(); document.execCommand('insertText', false, (e.clipboardData || window.clipboardData).getData('text/plain')); });
+}
 function bindToolbar(bar, ta) {
   bar.querySelectorAll('button').forEach(btn => btn.onmousedown = e => e.preventDefault());
   bar.querySelectorAll('button').forEach(btn => btn.onclick = () => {
