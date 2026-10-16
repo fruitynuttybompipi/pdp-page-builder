@@ -228,6 +228,13 @@ details.el > summary .tt { font-weight: 500 }
 .cheat { font-size: 12px; color: var(--muted); background: var(--raised); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; line-height: 1.6 }
 .cheat code { color: var(--fg) }
 
+.pvlang { font: inherit; font-size: 12px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--fg); margin-right: 6px }
+.trtable { width: 100%; border-collapse: collapse; font-size: 13px }
+.trtable td { border-bottom: 1px solid var(--line); padding: 8px 6px; vertical-align: top; width: 50% }
+.trtable .src { white-space: pre-wrap; color: var(--muted); overflow-wrap: anywhere; max-height: 160px; overflow: auto }
+.trtable textarea { width: 100%; min-height: 2.4em; resize: vertical; font: inherit; border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; background: var(--raised); color: var(--fg) }
+.trtable tr.miss textarea { border-color: #d9a54a }
+.trtable .grp td { background: var(--raised); font-weight: 600; font-size: 12px; padding: 6px }
 .keysbtn { position: fixed; left: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font: 600 15px/1 system-ui, sans-serif; cursor: pointer; z-index: 15; box-shadow: 0 2px 8px rgba(0,0,0,.12) }
 .keysbtn:hover { border-color: var(--accent, #c27a35); color: var(--accent, #c27a35) }
 .keys { width: 100%; border-collapse: collapse; font-size: 13px }
@@ -320,7 +327,7 @@ details.item[open] > .body { animation: rise .2s ease-out }
     </aside>
 
     <main class="center">
-      <div class="stagebar"><span class="live" id="liveDot" title="Preview updates as you edit"></span><span id="stageInfo"></span><span class="spacer"></span><span class="hide-sm">Click a section in the preview to edit it</span><button class="btn sm" id="gridBtn" aria-pressed="false" title="Show alignment guides (G)"><i data-ico="grid"></i>Grid</button></div>
+      <div class="stagebar"><span class="live" id="liveDot" title="Preview updates as you edit"></span><span id="stageInfo"></span><span class="spacer"></span><span class="hide-sm">Click a section in the preview to edit it</span><select id="pvLang" class="pvlang" aria-label="Preview language" hidden></select><button class="btn sm" id="gridBtn" aria-pressed="false" title="Show alignment guides (G)"><i data-ico="grid"></i>Grid</button></div>
       <div class="restore" id="restoreBar" hidden><span id="restoreMsg"></span><button class="btn sm primary" id="restoreYes">Restore</button><button class="btn sm" id="restoreNo">Start fresh</button></div>
       <div class="stage" id="stage"><div class="frame-wrap" id="frameWrap"><iframe id="frame" title="Page preview"></iframe></div></div>
     </main>
@@ -369,6 +376,13 @@ details.item[open] > .body { animation: rise .2s ease-out }
   </div>
 </div>
 <button class="keysbtn" id="keysBtn" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
+<div class="modal" id="trModal" hidden>
+  <div class="dialog" role="dialog" aria-labelledby="trTitle" style="width:min(900px,100%)">
+    <h3 id="trTitle">Translate</h3>
+    <div id="trBody"></div>
+    <div class="acts"><button class="btn primary" id="trClose">Done</button></div>
+  </div>
+</div>
 <div class="toast" id="toast" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -429,6 +443,36 @@ function ytEmbed(u) {
 }
 // Corner radius: one value for all corners, or four (top-left, top-right, bottom-right, bottom-left). Empty corner = the "all" value.
 const setv = v => String(v ?? '') !== '';
+/* ---------- Languages: one layout, text per language. English is the source. ---------- */
+const LANGS = { en: 'English', ms: 'Bahasa Melayu', zh: '中文' };
+const TR_FIELDS = ['v', 'title', 'body', 'specs', 'alt', 'html'];
+// Calls fn(key, obj, field) for every translatable text. Keys use the nearest id, so they survive edits and moves.
+function trWalk(s, fn) {
+  ['title', 'desc', 'kw'].forEach(f => { if (String(s[f] || '').trim()) fn('page.' + f, s, f); });
+  const walk = (o, owner) => {
+    if (Array.isArray(o)) return o.forEach(x => walk(x, owner));
+    if (!o || typeof o !== 'object') return;
+    const id = o.id || owner;
+    for (const [k, v] of Object.entries(o)) {
+      if (typeof v === 'string') {
+        // 'v' is text only on elements (pos.v is a position); raw HTML only when it has visible text.
+        const skip = (k === 'v' && (!o.t || o.t === 'divider')) || (k === 'html' && !v.replace(/<[^>]*>|&nbsp;/g, '').trim());
+        if (TR_FIELDS.includes(k) && v.trim() && !skip) fn(id + '.' + k, o, k);
+      }
+      else if (v && typeof v === 'object' && k !== 'img' && k !== 'style' && k !== 'hide') walk(v, id);
+    }
+  };
+  s.blocks.forEach(b => walk(b.data, b.id));
+}
+// The page as it reads in one language. Untranslated texts stay in English.
+function langState(s, lang) {
+  if (!lang || lang === 'en') return s;
+  const c = JSON.parse(JSON.stringify(s)), tr = (s.tr || {})[lang] || {};
+  trWalk(c, (k, o, f) => { if (String(tr[k] || '').trim()) o[f] = tr[k]; });
+  return c;
+}
+const trMissing = (s, lang) => { let n = 0; const tr = (s.tr || {})[lang] || {}; trWalk(s, k => { if (!String(tr[k] || '').trim()) n++; }); return n; };
+const pageLangs = s => ['en', ...(s.langs || []).filter(l => LANGS[l] && l !== 'en')];
 function radiusVal(x, key) {
   x = x || {}; const all = Math.max(0, +x[key] || 0), four = x[key + '4'] || [];
   if (four.some(setv)) return [0, 1, 2, 3].map(i => (setv(four[i]) ? Math.max(0, +four[i] || 0) : all) + 'px').join(' ');
@@ -798,6 +842,16 @@ function buildHTML(st, assets, opt) {
     if (setv(s.mt)) c.push(`margin-top:${n(s.mt)}px!important`); if (setv(s.mb)) c.push(`margin-bottom:${n(s.mb)}px!important`);
     if (p.some(Boolean)) c.push('padding:' + p.map(v => v + 'px').join(' ') + '!important'); return c.join(';'); };
   const addSty = (html, css) => !css || !html ? html : /^\s*<[a-z]+[^>]*?\sstyle="/i.test(html) ? html.replace(/style="/, `style="${css};`) : html.replace(/^(\s*<[a-z]+)/i, `$1 style="${css}"`);
+  // Tablet / mobile overrides (spT / spM): a class per element plus media-query rules. Tablet also applies on mobile unless mobile sets its own.
+  const devT = [], devM = [];
+  const devDecl = s => { s = s || {}; const c = [], n = v => Math.max(0, +v || 0), p = (s.pad || []).map(v => setv(v) ? n(v) + 'px' : null);
+    if (setv(s.mt)) c.push(`margin-top:${n(s.mt)}px!important`); if (setv(s.mb)) c.push(`margin-bottom:${n(s.mb)}px!important`);
+    ['top', 'right', 'bottom', 'left'].forEach((k, i) => { if (p[i]) c.push(`padding-${k}:${p[i]}!important`); });
+    if (+s.w > 0) c.push(`width:${Math.min(100, +s.w)}%!important`, 'max-width:100%');
+    return c.join(';'); };
+  const devCls = el => { const a = devDecl(el.spT), b = devDecl(el.spM); if (!a && !b) return '';
+    if (a) devT.push(`.pdp-x-${el.id}{${a}}`); if (b) devM.push(`.pdp-x-${el.id}{${b}}`); return 'pdp-x-' + el.id; };
+  const elCls = el => [hideCls(el), devCls(el)].filter(Boolean).join(' ');
   // Preview only: tag each element/column/card/row so a click opens its own panel.
   const oid = (html, k) => P && html ? html.replace(/^(\s*<[a-z]+)/i, `$1 data-oid="${k}"`) : html;
   const addCls = (html, c) => !c || !html ? html : /^<[a-z]+[^>]*?\sclass="/i.test(html) ? html.replace(/class="/, `class="${c} `) : html.replace(/^<([a-z]+)/i, `<$1 class="${c}"`);
@@ -922,11 +976,11 @@ function buildHTML(st, assets, opt) {
       if (a[i].t === 'icon' && a[i + 1] && a[i + 1].t === 'icon') {
         let j = i; while (a[j + 1] && a[j + 1].t === 'icon') j++;
         const run = a.slice(i, j + 1), al = (run[0].style || {}).align;
-        const inner = run.map(el => oid(addSty(addCls(renderEl(Object.assign({}, el, { style: Object.assign({}, el.style, { align: '' }) }), {}, true), hideCls(el)), spCss(el)), el.id)).filter(Boolean);
+        const inner = run.map(el => oid(addSty(addCls(renderEl(Object.assign({}, el, { style: Object.assign({}, el.style, { align: '' }) }), {}, true), elCls(el)), spCss(el)), el.id)).filter(Boolean);
         if (inner.length) out.push(`<div class="pdp-icons${ctx.stack && j < a.length - 1 ? ' mb-3' : ''}"${al ? ` style="justify-content:${{ left: 'flex-start', center: 'center', right: 'flex-end' }[al]}"` : ''}>${inner.join('')}</div>`);
         i = j; continue;
       }
-      out.push(oid(addSty(addCls(renderEl(a[i], ctx, i === a.length - 1), hideCls(a[i])), spCss(a[i])), a[i].id));
+      out.push(oid(addSty(addCls(renderEl(a[i], ctx, i === a.length - 1), elCls(a[i])), spCss(a[i])), a[i].id));
     }
     return out.filter(Boolean).join('\n' + ind);
   };
@@ -1114,13 +1168,15 @@ ${items}
 
   if (!st.blocks.length) warns.push('The page has no sections yet.');
   const body = out.length || !P ? out.join('\n\n') : '<div style="display:grid;place-items:center;min-height:70vh;color:#8a7d70;font:16px/1.5 system-ui,sans-serif;text-align:center;padding:40px"><div><div style="font-size:42px">+</div>Blank page<br><span style="font-size:13px">Add a section from the left to start.</span></div></div>';
+  if (devT.length) css += `\n      @media only screen and (max-width: 1200px) { ${devT.join(' ')} }`;
+  if (devM.length) css += `\n      @media only screen and (max-width: 768px) { ${devM.join(' ')} }`;
   if (st.pageCss) css = (/class="[^"]*\b(livara-|more-info)/.test(body) ? ORIG_CSS + '\n' : '') + st.pageCss + css;
   if (body.includes('pdp-') || body.includes('--tw:')) css += PDP_CSS;
   if (P) {
     const hl = (sel ? `[data-bid="${sel}"]{outline:3px solid #c27a35!important;outline-offset:-3px}` : '') + (selEl ? `[data-oid="${selEl}"]{outline:2px solid #ec206e!important;outline-offset:2px}` : '');
     return { html: `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${LIB_CSS}</style><style>${PREVIEW_BASE}</style><style>${css}</style><style>html,body{scrollbar-width:auto!important;-ms-overflow-style:auto!important;scrollbar-color:#b9ada0 transparent!important}body{font-family:"GT Walsheim Pro",system-ui,-apple-system,"Segoe UI",sans-serif}${clean ? '' : `[data-bid]{cursor:pointer}[data-bid]:hover{outline:2px dashed rgba(194,122,53,.7);outline-offset:-2px}${hl}`}${grid ? GRID_CSS : ''}</style></head><body>\n${body}\n</body></html>`, files, warns };
   }
-  const head = HEAD_TPL.replace('{{TITLE}}', esc(st.title)).replace('{{DESC}}', esc(st.desc)).replace('{{KW}}', esc(st.kw));
+  const head = HEAD_TPL.replace('<html lang="en">', `<html lang="${(opt && opt.lang) || 'en'}">`).replace('{{TITLE}}', esc(st.title)).replace('{{DESC}}', esc(st.desc)).replace('{{KW}}', esc(st.kw));
   return { html: `${head}<style>${css}</style>\n  </head>\n\n  <body>\n${body}\n  </body>\n</html>\n`, files, warns };
 }
 
@@ -1226,6 +1282,12 @@ const findBlock = id => st.blocks.find(b => b.id === id);
 
 /* ---------- Preview ---------- */
 const frame = $('#frame'), wrap = $('#frameWrap'), stage = $('#stage');
+let pvLang = 'en';
+const pvLangOn = () => pageLangs(st).includes(pvLang) ? pvLang : 'en';
+function renderPvLang() {
+  const sel = $('#pvLang'), ls = pageLangs(st); sel.hidden = ls.length < 2;
+  sel.innerHTML = ls.map(l => `<option value="${l}" ${l === pvLangOn() ? 'selected' : ''}>${l.toUpperCase()} · ${LANGS[l]}</option>`).join('');
+}
 let pvTimer, scrollToSel = false, lastScroll = 0, gridOn = false;
 try { gridOn = localStorage.getItem('pdpGrid') === '1'; } catch (e) {}
 function schedulePreview(now) { clearTimeout(pvTimer); pvTimer = setTimeout(renderPreview, now ? 0 : 220); snap(); }
@@ -1285,7 +1347,7 @@ function updUndo() { $('#undoBtn').disabled = !hist.past.length; $('#redoBtn').d
 
 function renderPreview() {
   try { lastScroll = frame.contentWindow ? frame.contentWindow.scrollY : 0; } catch (e) { lastScroll = 0; }
-  frame.srcdoc = buildHTML(st, assets, { preview: true, sel: selId, selEl, grid: gridOn, live: st.liveImg !== false, liveBase: st.imgBase || DEFAULT_IMG_BASE }).html;
+  frame.srcdoc = buildHTML(langState(st, pvLangOn()), assets, { preview: true, sel: selId, selEl, grid: gridOn, live: st.liveImg !== false, liveBase: st.imgBase || DEFAULT_IMG_BASE }).html;
   const dot = $('#liveDot'); dot.classList.remove('pulse'); void dot.offsetWidth; dot.classList.add('pulse');
 }
 frame.addEventListener('load', () => {
@@ -1438,6 +1500,12 @@ function renderInspector() {
   for (const f of TYPES[b.type].fields) box.appendChild(fieldEl(f, b.data, b.id, names, b));
   for (const [g, lbl] of STYLES[b.type] || []) box.appendChild(styleEditor(b, g, lbl));
   if (TYPES[b.type].fields.some(f => f.fmt || (f.fields || []).some(x => x.fmt))) box.appendChild(cheat());
+  if (b.type === 'raw') {
+    const cv = document.createElement('div'); cv.className = 'field';
+    cv.innerHTML = `<div><button class="btn sm" data-conv>${ico('columns', 'sm')} Convert to editable section</button></div><div class="fhint">Turns this HTML into a Columns section with editable titles, text and images. Colours and spacing from the old CSS may change. Undo (⌘/Ctrl Z) brings the HTML back.</div>`;
+    cv.querySelector('[data-conv]').onclick = () => convertRaw(b);
+    box.appendChild(cv);
+  }
 }
 function panel(key, title, sumText) {
   const det = document.createElement('details'); det.className = 'item'; det.open = openItems.has(key);
@@ -1702,16 +1770,25 @@ function padRow(x) {
   box.querySelectorAll('input').forEach(inp => inp.oninput = () => { x.pad[+inp.dataset.i] = inp.value; schedulePreview(); });
   return box;
 }
-// Space above / below and padding of one element, in px. Empty = template default.
+// Space above / below, padding (and width on tablet/mobile) of one element, in px. Empty = template default.
+let spDev = 'd';
 function spacingEditor(el) {
-  const s = el.sp || (el.sp = {}); s.pad = s.pad || ['', '', '', ''];
-  const sum = () => [setv(s.mt) && '↑' + s.mt, setv(s.mb) && '↓' + s.mb, s.pad.some(v => +v > 0) && 'padding'].filter(Boolean).join(' · ') || 'Default';
+  const objOf = d => { const k = { d: 'sp', t: 'spT', m: 'spM' }[d], s = el[k] || (el[k] = {}); s.pad = s.pad || ['', '', '', '']; return s; };
+  const used = d => { const s = el[{ d: 'sp', t: 'spT', m: 'spM' }[d]] || {}; return setv(s.mt) || setv(s.mb) || (s.pad || []).some(setv) || +s.w > 0; };
+  const sum = () => { const s = objOf('d'); return [setv(s.mt) && '↑' + s.mt, setv(s.mb) && '↓' + s.mb, s.pad.some(v => +v > 0) && 'padding', used('t') && 'tablet', used('m') && 'mobile'].filter(Boolean).join(' · ') || 'Default'; };
   const det = panel('sp' + el.id, 'Spacing', sum()), body = det.querySelector('.body');
-  body.innerHTML = `<div class="pads">${[['mt', 'Space above'], ['mb', 'Space below']].map(([k, l]) => `<label>${l}<span class="pin"><input type="number" min="0" data-k="${k}" placeholder="Auto" value="${esc(s[k] || '')}">px</span></label>`).join('')}</div>
-    <div class="flabel" style="font-size:12px;margin-top:6px">Padding</div>
-    <div class="pads">${['Top', 'Right', 'Bottom', 'Left'].map((l, i) => `<label>${l}<span class="pin"><input type="number" min="0" data-i="${i}" placeholder="Auto" value="${esc(s.pad[i])}">px</span></label>`).join('')}</div>
-    <div class="fhint">Space above/below adds to the gap between elements. Empty means the template default.</div>`;
-  body.querySelectorAll('input').forEach(inp => inp.oninput = () => { if (inp.dataset.k) s[inp.dataset.k] = inp.value; else s.pad[+inp.dataset.i] = inp.value; det.querySelector('.psum').textContent = sum(); schedulePreview(); });
+  const draw = () => {
+    const s = objOf(spDev);
+    body.innerHTML = `<div class="seg seg-full" role="group" aria-label="Device">${[['d', 'Desktop', 'desktop'], ['t', 'Tablet', 'tablet'], ['m', 'Mobile', 'mobile']].map(([k, l, i]) => `<button data-dev2="${k}" aria-pressed="${spDev === k}">${ico(i, 'sm')}<span>${l}${k !== 'd' && used(k) ? ' •' : ''}</span></button>`).join('')}</div>
+      <div class="pads" style="margin-top:8px">${[['mt', 'Space above'], ['mb', 'Space below']].map(([k, l]) => `<label>${l}<span class="pin"><input type="number" min="0" data-k="${k}" placeholder="${spDev === 'd' ? 'Auto' : 'Same'}" value="${esc(s[k] || '')}">px</span></label>`).join('')}
+      ${spDev !== 'd' ? `<label>Width<span class="pin"><input type="number" min="0" max="100" data-k="w" placeholder="Same" value="${esc(s.w || '')}">%</span></label>` : ''}</div>
+      <div class="flabel" style="font-size:12px;margin-top:6px">Padding</div>
+      <div class="pads">${['Top', 'Right', 'Bottom', 'Left'].map((l, i) => `<label>${l}<span class="pin"><input type="number" min="0" data-i="${i}" placeholder="${spDev === 'd' ? 'Auto' : 'Same'}" value="${esc(s.pad[i])}">px</span></label>`).join('')}</div>
+      <div class="fhint">${spDev === 'd' ? 'Desktop values apply everywhere unless Tablet or Mobile sets its own. Space above/below adds to the gap between elements.' : spDev === 't' ? 'Tablet values also apply on mobile, unless Mobile sets its own. Empty = same as desktop.' : 'Mobile only. Empty = same as tablet (or desktop).'}</div>`;
+    body.querySelectorAll('[data-dev2]').forEach(x => x.onclick = () => { spDev = x.dataset.dev2; draw(); });
+    body.querySelectorAll('input').forEach(inp => inp.oninput = () => { if (inp.dataset.k) s[inp.dataset.k] = inp.value; else s.pad[+inp.dataset.i] = inp.value; det.querySelector('.psum').textContent = sum(); schedulePreview(); });
+  };
+  draw();
   return det;
 }
 function boxEditor(label, x, key) {
@@ -2130,6 +2207,16 @@ function renderPage(box) {
   mk('Page title', 'title', false, 'Shown in the browser tab.');
   mk('Meta description', 'desc', true, 'Shown by search engines and link previews. About 150 characters.');
   mk('Meta keywords', 'kw', false, 'Comma separated.');
+  const lf = document.createElement('div'); lf.className = 'field';
+  const extra = Object.keys(LANGS).filter(l => l !== 'en');
+  lf.innerHTML = `<div class="flabel">Languages</div>
+    <label class="check"><input type="checkbox" checked disabled> English <span class="fhint">(main · ${esc((st.sku || 'SKU').trim())}_en.html)</span></label>
+    ${extra.map(l => `<label class="check"><input type="checkbox" data-lang="${l}" ${(st.langs || []).includes(l) ? 'checked' : ''}> ${LANGS[l]} <span class="fhint">(${esc((st.sku || 'SKU').trim())}_${l}.html${(st.langs || []).includes(l) ? ` · ${trMissing(st, l)} not translated` : ''})</span></label>`).join('')}
+    <div><button class="btn sm" data-tr ${(st.langs || []).length ? '' : 'disabled'}>Translate texts…</button></div>
+    <div class="fhint">Every language uses the same layout and images. Texts you leave empty stay in English. Pick the preview language above the preview.</div>`;
+  lf.querySelectorAll('[data-lang]').forEach(c => c.onchange = () => { const s = new Set(st.langs || []); c.checked ? s.add(c.dataset.lang) : s.delete(c.dataset.lang); st.langs = [...s]; renderAll(); });
+  lf.querySelector('[data-tr]').onclick = () => openTranslate((st.langs || [])[0]);
+  box.appendChild(lf);
   if (st.pageCss != null) {
     mk('Page CSS (from the imported page)', 'pageCss', true, 'This page was imported from a different template, so it keeps its own styles. They are exported as written. LIVARA styles are added only if you add LIVARA sections.');
     const ta = box.lastElementChild.querySelector('textarea'); ta.rows = 8; ta.classList.add('mono'); ta.addEventListener('input', () => schedulePreview());
@@ -2160,7 +2247,8 @@ function renderPage(box) {
   box.appendChild(wf);
 }
 
-function renderAll() { renderOutline(); renderInspector(); schedulePreview(); }
+function renderAll() { renderOutline(); renderInspector(); renderPvLang(); schedulePreview(); }
+$('#pvLang').onchange = e => { pvLang = e.target.value; renderPreview(); };
 
 /* ---------- SKU ---------- */
 const skuIn = $('#sku'); skuIn.value = st.sku;
@@ -2228,6 +2316,7 @@ function runChecks() {
   for (const f of buildHTML(st, assets, {}).files.values()) if (f.same) add('info', `${f.name} matches a file already on the server, so the page uses that one and the zip skips it.`);
   for (const f of buildHTML(st, assets, {}).files.values())
     if (f.kind === 'new' && f.asset.blob.size > 800 * 1024) add('info', `${f.name} is ${(f.asset.blob.size / 1048576).toFixed(1)} MB. Turn on “Optimise images” to shrink it.`);
+  for (const l of pageLangs(st).slice(1)) { const m = trMissing(st, l); if (m) add('warn', `${LANGS[l]}: ${m} text${m === 1 ? '' : 's'} not translated, so ${m === 1 ? 'it stays' : 'they stay'} in English. Page settings → Translate texts.`); }
   const seen = new Map();
   for (const c of out) { const k = c.lvl + c.where + c.msg; if (seen.has(k)) seen.get(k).n++; else seen.set(k, Object.assign(c, { n: 1 })); }
   return [...seen.values()].map(c => c.n > 1 ? Object.assign(c, { msg: `${c.msg} (×${c.n})` }) : c);
@@ -2247,7 +2336,10 @@ async function optimise(blob, name, o) {
 const mb = n => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
 
 function openExport() {
-  const { files } = buildHTML(st, assets, {});
+  const { files, html: enHtml } = buildHTML(st, assets, {});
+  // Images referenced in Custom HTML / page CSS that the builder doesn't track as slots.
+  const known = new Set([...files.values()].map(f => f.name));
+  const extraRefs = [...new Set([...enHtml.matchAll(/assets\/img\/([^"'()\s>]+)/g)].map(m => decodeURIComponent(m[1])))].filter(n => !known.has(n)).sort();
   const list = [...files.values()].sort((a, b) => a.name.localeCompare(b.name));
   const sku = (st.sku || 'page').trim(), checks = runChecks();
   const O = st.optimise || (st.optimise = { on: false, maxW: '1920', q: '82' });
@@ -2264,10 +2356,12 @@ function openExport() {
         <span class="fhint">Mobile images (_mb_) are capped at 1080px. PNGs are only resized. Names stay the same.</span>
       </div>
     </div>
-    <p style="margin:0" class="fhint">The .zip holds <code>${esc(sku)}_en.html</code> and <code>assets/img/</code> with your new uploads. <b>On server</b> files are referenced, not included. Your existing <code>assets/css</code> and <code>assets/js</code> are referenced, not included.</p>
+    <p style="margin:0" class="fhint">The .zip holds <code>${pageLangs(st).map(l => esc(sku) + '_' + l + '.html').join(', ')}</code> and <code>assets/img/</code> with your new uploads. <b>On server</b> files are referenced, not included. Your existing <code>assets/css</code> and <code>assets/js</code> are referenced, not included.</p>
+    <div class="fhint" id="srvSum">Checking which images exist on the server…</div>
     <div class="ftable-wrap"><table class="ftable"><thead><tr><th>File</th><th>Status</th><th>Size</th></tr></thead><tbody>
-      <tr><td><code>${esc(sku)}_en.html</code></td><td>Included</td><td></td></tr>
-      ${list.map(f => `<tr><td><code>assets/img/${esc(f.name)}</code></td><td>${f.kind === 'new' ? 'Included' : f.same ? 'Same as server file, skipped' : 'On server'}</td><td class="mono">${f.kind === 'new' ? mb(f.asset.blob.size) : ''}</td></tr>`).join('')}
+      ${pageLangs(st).map(l => `<tr><td><code>${esc(sku)}_${l}.html</code></td><td>Included</td><td></td></tr>`).join('')}
+      ${list.map(f => `<tr><td><code>assets/img/${esc(f.name)}</code></td><td ${f.kind === 'new' ? '' : `data-srv="${esc(f.name)}"`}>${f.kind === 'new' ? 'New · in the zip' : f.same ? 'Same name as a server file · skipped' : 'Uses server file'}</td><td class="mono">${f.kind === 'new' ? mb(f.asset.blob.size) : ''}</td></tr>`).join('')}
+      ${extraRefs.map(n => `<tr><td><code>assets/img/${esc(n)}</code></td><td data-srv="${esc(n)}">Uses server file</td><td></td></tr>`).join('')}
     </tbody></table></div>`;
   $('#exBody').querySelectorAll('[data-go]').forEach(btn => btn.onclick = () => { $('#modal').hidden = true; select(checks[+btn.dataset.go].bid, true); });
   const on = $('#optOn'), row = $('#exBody .optrow');
@@ -2276,22 +2370,41 @@ function openExport() {
   $('#optQ').oninput = e => { O.q = e.target.value; $('#optQv').textContent = e.target.value; };
   $('#exStatus').textContent = '';
   $('#modal').hidden = false; $('#exZip').focus();
+  checkServer();
+}
+// Final check: does each image the page uses from the server really exist there? (Image load works cross-origin.)
+function checkServer() {
+  const cells = [...$('#exBody').querySelectorAll('[data-srv]')], base = (st.imgBase || DEFAULT_IMG_BASE).replace(/\/?$/, '/');
+  const sumEl = $('#srvSum'); if (!cells.length) { sumEl.textContent = 'All images are new uploads in the zip.'; return; }
+  let ok = 0, bad = 0, left = cells.length;
+  const done = () => {
+    if (--left) return;
+    if (!ok) { cells.forEach(c => c.textContent = 'Uses server file · could not check'); sumEl.innerHTML = `Couldn't reach <code>${esc(base)}</code> from here (it is blocked inside claude.ai, or you are offline). Open the builder from GitHub to check server images.`; return; }
+    sumEl.innerHTML = bad ? `<b style="color:#c0392b">⛔ ${bad} image${bad === 1 ? ' is' : 's are'} not on the server.</b> Upload ${bad === 1 ? 'it' : 'them'} in the builder or fix the name, or the page will show broken images. ${ok} found.` : `✅ All ${ok} server image${ok === 1 ? '' : 's'} found on the server.`;
+  };
+  cells.forEach(c => {
+    const img = new Image(), t = setTimeout(() => { img.onload = img.onerror = null; c.textContent = 'Uses server file · no answer'; done(); }, 8000);
+    img.onload = () => { clearTimeout(t); ok++; c.innerHTML = '✅ Found on server'; done(); };
+    img.onerror = () => { clearTimeout(t); bad++; c.innerHTML = '<b style="color:#c0392b">⛔ Not on server</b>'; done(); };
+    img.src = base + encodeURI(c.dataset.srv);
+  });
 }
 $('#exportBtn').onclick = openExport;
 $('#exClose').onclick = () => $('#modal').hidden = true;
 $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') $('#modal').hidden = true; });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { $('#modal').hidden = true; $('#keysModal').hidden = true; } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { $('#modal').hidden = true; $('#keysModal').hidden = true; if (!$('#trModal').hidden) $('#trClose').click(); } });
 
 $('#exHtml').onclick = async () => {
-  const sku = (st.sku || 'page').trim();
-  try { await saveFile(sku + '_en.html', buildHTML(st, assets, {}).html); $('#exStatus').textContent = 'Saved ' + sku + '_en.html'; }
-  catch (e) { $('#exStatus').textContent = saveMsg(e); }
+  const sku = (st.sku || 'page').trim(), done = [];
+  try { for (const l of pageLangs(st)) { await saveFile(`${sku}_${l}.html`, buildHTML(langState(st, l), assets, { lang: l }).html); done.push(`${sku}_${l}.html`); } $('#exStatus').textContent = 'Saved ' + done.join(', '); }
+  catch (e) { $('#exStatus').textContent = (done.length ? 'Saved ' + done.join(', ') + '. ' : '') + saveMsg(e); }
 };
 $('#exZip').onclick = async () => {
   const sku = (st.sku || 'page').trim(), { html, files } = buildHTML(st, assets, {}), O = st.optimise || {};
   if (!window.JSZip) { $('#exStatus').textContent = 'The zip tool did not load. Reload the page and try again.'; return; }
   $('#exStatus').textContent = O.on ? 'Optimising images…' : 'Building zip…';
   const zip = new JSZip(); zip.file(sku + '_en.html', html);
+  for (const l of pageLangs(st).slice(1)) zip.file(`${sku}_${l}.html`, buildHTML(langState(st, l), assets, { lang: l }).html);
   let before = 0, after = 0;
   for (const f of files.values()) if (f.kind === 'new') {
     let blob = f.asset.blob; before += blob.size;
@@ -2441,6 +2554,96 @@ gridBtn.setAttribute('aria-pressed', gridOn); gridBtn.onclick = () => setGrid(!g
 document.addEventListener('keydown', e => { if (e.key.toLowerCase() === 'g' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.target.closest('input, textarea, select, [contenteditable]')) setGrid(!gridOn); });
 $('#undoBtn').onclick = undo; $('#redoBtn').onclick = redo;
 
+/* ---------- Custom HTML -> Columns section ---------- */
+// Bootstrap visibility (d-none, d-sm-block, d-lg-none…) at our three breakpoints: desktop ~lg, tablet ~md, mobile ~xs.
+const BP = ['xs', 'sm', 'md', 'lg', 'xl'], DEV_BP = { d: 'lg', t: 'md', m: 'xs' };
+function bsVisible(node, root, dev) {
+  for (let n = node; n && n !== root.parentNode; n = n.parentElement) {
+    let vis = true; const c = n.classList || [];
+    for (const bp of BP.slice(0, BP.indexOf(DEV_BP[dev]) + 1)) {
+      const p = bp === 'xs' ? 'd-' : `d-${bp}-`;
+      if (c.contains(p + 'none')) vis = false; else if ([...c].some(x => x.startsWith(p) && !x.slice(p.length).includes('-') && x !== p + 'none' && /^(block|flex|inline|inline-block|grid|table|table-cell)$/.test(x.slice(p.length)))) vis = true;
+    }
+    if (!vis) return false;
+  }
+  return true;
+}
+const rgbHex = v => { const m = String(v || '').match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/); return m ? '#' + [m[1], m[2], m[3]].map(x => (+x).toString(16).padStart(2, '0')).join('').toUpperCase() : (/^#[0-9a-f]{3,8}$/i.test(v || '') ? v.toUpperCase() : ''); };
+function htmlToEls(root, top) {
+  const els = [], file = img => decodeURIComponent((img.getAttribute('src') || '').split(/[?#]/)[0].split('/').pop());
+  const hideOf = n => { const h = { d: !bsVisible(n, top, 'd'), t: !bsVisible(n, top, 't'), m: !bsVisible(n, top, 'm') }; return h; };
+  const md = n => rteToMd(n).split('\n').map(l => l.trim()).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  const add = (n, el) => { const h = hideOf(n); if (h.d && h.t && h.m) return; if (h.d || h.t || h.m) el.hide = h; if (/text-center/.test(n.className || '') && EL[el.t] && EL[el.t].text) el.style = Object.assign(el.style || {}, { align: 'center' }); els.push(el); };
+  const blockKid = n => [...n.children].some(c => /^(P|H[1-6]|UL|OL|TABLE|DIV|SECTION|IMG|HR|BR)$/.test(c.tagName) && !(c.tagName === 'BR'));
+  const walk = n => {
+    if (n.nodeType !== 1 || n.matches('script, style, br')) return;
+    if (n.tagName === 'IMG') return add(n, newEl('image', n.getAttribute('alt') || '', { img: S(file(n)) }));
+    if (n.tagName === 'HR') return add(n, newEl('divider'));
+    if (n.tagName === 'TABLE') { const v = [...n.querySelectorAll('tr')].map(tr => [...tr.children].map(td => td.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean).join(' – ')).filter(Boolean).join('\n'); if (v) add(n, newEl('text', v)); return; }
+    if (blockKid(n)) return [...n.children].forEach(walk);
+    const v = md(n); if (!v) return;
+    const head = /^H[1-6]$/.test(n.tagName) || (/\b(xxl|xl|lg|font-lg|font-xlg)\b/.test(n.className || '') && v.length < 120 && !v.includes('\n'));
+    add(n, newEl(head ? 'title' : 'text', head ? v.replace(/^\*\*([\s\S]*)\*\*$/, '$1') : v));
+  };
+  walk(root);
+  return els;
+}
+function convertRaw(b) {
+  const doc = new DOMParser().parseFromString(`<body>${b.data.html}</body>`, 'text/html');
+  const tw = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT); while (tw.nextNode()) tw.currentNode.nodeValue = tw.currentNode.nodeValue.replace(/\s+/g, ' ');
+  const top = doc.body.firstElementChild || doc.body;
+  const fileOf = img => S(decodeURIComponent((img.getAttribute('src') || '').split(/[?#]/)[0].split('/').pop()));
+  // Banner pattern: full-width images straight inside the section (one per device) + overlay content -> Hero banner.
+  const direct = [...top.children].filter(n => n.tagName === 'IMG');
+  if (direct.length) {
+    const pick = dev => direct.find(i => bsVisible(i, top, dev));
+    const d = pick('d') || direct[0], tb = pick('t'), mb = pick('m');
+    const rest = top.cloneNode(true); [...rest.children].filter(n => n.tagName === 'IMG').forEach(n => n.remove());
+    const els = htmlToEls(rest, rest).map(e => e.t === 'image' ? Object.assign(e, { t: 'logo' }) : e);
+    const hd = TYPES.hero.make();
+    Object.assign(hd, { desk: fileOf(d), tab: tb && tb !== d ? fileOf(tb) : S(), mob: mb && mb !== (tb || d) ? fileOf(mb) : S(), els });
+    commitSnap(); b.type = 'hero'; b.data = hd; renderAll(); toast('Converted to Hero banner · ⌘/Ctrl Z to undo'); return;
+  }
+  // Top-level Bootstrap rows become columns; nested rows stay inside their column.
+  const rows = [...top.querySelectorAll('.row')].filter(rw => ![...top.querySelectorAll('.row')].some(o => o !== rw && o.contains(rw)));
+  const colsOf = rw => [...rw.children].filter(c => /\bcol(-|$|\s)/.test(c.className) || /\bcol-/.test(c.className));
+  let groups = rows.map(colsOf).filter(g => g.length);
+  // Content outside the rows would be lost: then keep everything in one column instead.
+  if (groups.length) { const rest = top.cloneNode(true); rest.querySelectorAll('.row').forEach(rw => rw.remove()); if (htmlToEls(rest, rest).length) groups = []; }
+  const cols = [];
+  if (groups.length) groups.flat().forEach(c => { const els = htmlToEls(c, top); if (!els.length) return; const col = newCol(els); if (/text-center/.test(c.className) || c.closest('.text-center')) col.h = 'center'; const h = { d: !bsVisible(c, top, 'd'), t: !bsVisible(c, top, 't'), m: !bsVisible(c, top, 'm') }; if (h.d || h.t || h.m) col.hide = h; cols.push(col); });
+  if (!cols.length) { const col = newCol(htmlToEls(top, top)); if (top.closest && (top.matches('.text-center') || top.querySelector(':scope > .text-center, :scope > .container.text-center, :scope > div > .text-center'))) col.h = 'center'; cols.push(col); }
+  if (!cols.some(c => c.els.length)) { toast('Nothing to convert in this HTML'); return; }
+  const per = Math.max(1, ...groups.map(g => g.length).concat([1]));
+  const data = { bg: '', valign: groups.length ? 'center' : 'flex-start', cols, gaps: per > 1 ? { per: String(Math.min(6, per)) } : {}, halign: per > 2 && groups.some(g => g.length < per) ? 'center' : '' };
+  const bgc = rgbHex(top.style && (top.style.backgroundColor || top.style.background));
+  if (bgc) data.sbg = { type: 'color', c1: bgc };
+  const h = { d: !bsVisible(top, top, 'd'), t: !bsVisible(top, top, 't'), m: !bsVisible(top, top, 'm') };
+  commitSnap();
+  b.type = 'columns'; b.data = data; if (h.d || h.t || h.m) b.hide = h;
+  cols.forEach(c => openItems.add('col' + c.id));
+  renderAll(); toast('Converted to Columns · ⌘/Ctrl Z to undo');
+}
+
+/* ---------- Translate dialog ---------- */
+function openTranslate(lang) {
+  if (!lang) return;
+  const tr = (st.tr || (st.tr = {}))[lang] || (st.tr[lang] = {}), rows = [], label = {};
+  st.blocks.forEach((b, i) => label[b.id] = `${TYPES[b.type].label} #${i + 1}`);
+  const owner = {}; st.blocks.forEach(b => JSON.stringify(b.data).replace(/"id":"([^"]+)"/g, (m, id) => owner[id] = b.id));
+  trWalk(st, (k, o, f) => rows.push({ k, src: o[f], grp: k.startsWith('page.') ? 'Page settings' : label[owner[k.split('.')[0]] || k.split('.')[0]] || 'Other' }));
+  let lastG = '';
+  $('#trBody').innerHTML = `<div class="seg" role="group" aria-label="Language" style="margin-bottom:10px">${(st.langs || []).map(l => `<button data-tl="${l}" aria-pressed="${l === lang}">${LANGS[l]}</button>`).join('')}</div>
+    <div class="fhint" style="margin-bottom:8px"><span data-miss>${trMissing(st, lang)}</span> of ${rows.length} texts not translated yet. Empty boxes stay in English. Keep **bold**, *italic* and - list marks as they are.</div>
+    <table class="trtable"><tbody>${rows.map((x, i) => { const g = x.grp !== lastG ? `<tr class="grp"><td colspan="2">${esc(x.grp)}</td></tr>` : ''; lastG = x.grp;
+      return `${g}<tr class="${String(tr[x.k] || '').trim() ? '' : 'miss'}"><td><div class="src">${esc(x.src)}</div></td><td><textarea data-i="${i}" rows="${Math.min(8, Math.max(1, String(x.src).split('\n').length))}" placeholder="${esc(LANGS[lang])}…"></textarea></td></tr>`; }).join('')}</tbody></table>`;
+  $('#trBody').querySelectorAll('textarea').forEach(ta => { const x = rows[+ta.dataset.i]; ta.value = tr[x.k] || '';
+    ta.oninput = () => { tr[x.k] = ta.value; ta.closest('tr').classList.toggle('miss', !ta.value.trim()); $('#trBody [data-miss]').textContent = trMissing(st, lang); pvLang = lang; renderPvLang(); schedulePreview(); }; });
+  $('#trBody').querySelectorAll('[data-tl]').forEach(x => x.onclick = () => openTranslate(x.dataset.tl));
+  $('#trModal').hidden = false;
+}
+$('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
+
 /* ---------- Keyboard shortcuts ---------- */
 const showKeys = () => { $('#keysModal').hidden = false; $('#keysClose').focus(); };
 $('#keysBtn').onclick = showKeys; $('#keysClose').onclick = () => $('#keysModal').hidden = true;
@@ -2457,7 +2660,7 @@ function findHolder(o, key) {
 function onKey(e) {
   const mod = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
   const typing = e.target.closest && e.target.closest('input, textarea, select, [contenteditable]');
-  const modalOpen = !$('#modal').hidden || !$('#keysModal').hidden;
+  const modalOpen = !$('#modal').hidden || !$('#keysModal').hidden || !$('#trModal').hidden;
   if (mod && !e.altKey && k === 's') { e.preventDefault(); $('#saveProject').click(); return; }
   if (mod && !e.altKey && k === 'o') { e.preventDefault(); $('#openProject').click(); return; }
   if (mod && !e.altKey && k === 'e') { e.preventDefault(); $('#exportBtn').click(); return; }
