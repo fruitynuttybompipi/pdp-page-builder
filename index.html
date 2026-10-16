@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PDP Page Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: three-pane workbench. Outline left, live preview centre, inspector right; stacks on phones. */
+:root {
+  --bg: #f4f1ec; --surface: #ffffff; --raised: #faf8f5; --line: #e2dbd2; --fg: #221c16;
+  --muted: #6e6359; --accent: #9a5d22; --accent-soft: #f3e6d8; --accent-fg: #ffffff;
+  --stage: #e7e2db; --ok: #2f7a4a; --warn: #a3620b; --danger: #b3362b;
+  --sans: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #16130f; --surface: #201c17; --raised: #26211b; --line: #3a322a; --fg: #efe8df;
+  --muted: #a79a8c; --accent: #d79a5c; --accent-soft: #3a2b1d; --accent-fg: #1b130b;
+  --stage: #0e0c0a; --ok: #6cc28f; --warn: #e2a64f; --danger: #ec7b70; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #16130f; --surface: #201c17; --raised: #26211b; --line: #3a322a; --fg: #efe8df;
+  --muted: #a79a8c; --accent: #d79a5c; --accent-soft: #3a2b1d; --accent-fg: #1b130b;
+  --stage: #0e0c0a; --ok: #6cc28f; --warn: #e2a64f; --danger: #ec7b70; color-scheme: dark }
+
+* { box-sizing: border-box }
+html, body { height: 100% }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.45 var(--sans) }
+button, input, textarea, select { font: inherit; color: inherit }
+button { cursor: pointer }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+code, .mono { font-family: var(--mono); font-size: 12px }
+
+.app { height: 100%; display: grid; grid-template-rows: auto 1fr }
+header.bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;
+  padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  border-bottom: 1px solid var(--line); background: var(--surface);
+}
+.brand { font-weight: 700; letter-spacing: .01em; display: flex; align-items: baseline; gap: 8px }
+.brand small { color: var(--muted); font-weight: 500 }
+.sku { display: flex; align-items: center; gap: 8px }
+.sku label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600 }
+.sku input { width: 110px; font-family: var(--mono); font-size: 14px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--raised) }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden }
+.seg button { border: 0; background: transparent; padding: 6px 10px; color: var(--muted) }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--fg); font-weight: 600 }
+.spacer { flex: 1 }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 7px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap }
+.btn:hover { border-color: var(--muted) }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); font-weight: 600 }
+.btn.sm { padding: 3px 8px; font-size: 12px }
+.btn.ghost { border-color: transparent; background: transparent }
+.btn.danger { color: var(--danger) }
+
+.work { min-height: 0; display: grid; grid-template-columns: 260px minmax(0, 1fr) 360px }
+.pane { min-height: 0; overflow: auto; background: var(--surface) }
+.left { border-right: 1px solid var(--line) }
+.right { border-left: 1px solid var(--line) }
+.pane h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); margin: 0; padding: 14px 14px 8px; font-weight: 700 }
+
+.lib { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0 12px 12px }
+.chip { border: 1px dashed var(--line); background: var(--raised); border-radius: 7px; padding: 7px 8px; text-align: left; font-size: 12.5px; line-height: 1.25; cursor: grab }
+.chip:hover { border-color: var(--accent); border-style: solid }
+.hint { color: var(--muted); font-size: 12px; padding: 0 14px 10px; margin: 0 }
+
+.outline { list-style: none; margin: 0; padding: 0 8px 16px; position: relative; min-height: 60px }
+.row { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; align-items: center; gap: 6px; padding: 7px 6px; border-radius: 7px; border: 1px solid transparent; cursor: pointer; margin-bottom: 2px }
+.row:hover { background: var(--raised) }
+.row.sel { background: var(--accent-soft); border-color: var(--accent) }
+.row .grip { color: var(--muted); cursor: grab; font-size: 13px; text-align: center; user-select: none }
+.row .lbl { min-width: 0 }
+.row .t { font-weight: 600; font-size: 13px }
+.row .s { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.row .acts { display: flex; gap: 0; opacity: .55 }
+.row:hover .acts, .row.sel .acts { opacity: 1 }
+.row .acts button { border: 0; background: transparent; padding: 2px 4px; color: var(--muted); font-size: 13px; border-radius: 4px }
+.row .acts button:hover { color: var(--fg); background: var(--surface) }
+.drop-line { height: 3px; background: var(--accent); border-radius: 2px; margin: -1px 4px 1px }
+.row.dragging { opacity: .4 }
+
+.center { min-height: 0; display: grid; grid-template-rows: auto 1fr; background: var(--stage) }
+.stagebar { display: flex; align-items: center; gap: 10px; padding: 8px 14px; color: var(--muted); font-size: 12px; border-bottom: 1px solid var(--line); background: var(--surface) }
+.stage { min-height: 0; overflow: hidden; position: relative; padding: 16px }
+.frame-wrap { margin: 0 auto; transform-origin: top left; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 8px 30px rgba(0,0,0,.08) }
+.frame-wrap iframe { display: block; border: 0; background: #fff }
+
+.tabs { display: flex; gap: 4px; padding: 10px 12px 0; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--surface); z-index: 2 }
+.tabs button { border: 0; background: transparent; padding: 8px 10px; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; font-weight: 600 }
+.tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent) }
+.insp { padding: 14px; display: flex; flex-direction: column; gap: 14px }
+.insp .blockhead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px }
+.insp .blockhead h3 { margin: 0; font-size: 16px }
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0 }
+.field > label, .field > .flabel { font-size: 12px; font-weight: 600 }
+.field .fhint { font-size: 11.5px; color: var(--muted) }
+.field input[type=text], .field textarea, .field input[type=url] { width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; background: var(--raised) }
+.field textarea { min-height: 96px; resize: vertical; line-height: 1.45 }
+.check { display: flex; gap: 8px; align-items: center; font-size: 13px }
+
+.slot { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 10px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised) }
+.slot.over { border-color: var(--accent); background: var(--accent-soft) }
+.thumb { width: 76px; height: 64px; border-radius: 5px; overflow: hidden; background: var(--stage); display: grid; place-items: center; color: var(--muted); font-size: 11px; text-align: center }
+.thumb img { width: 100%; height: 100%; object-fit: contain }
+.slot .meta { min-width: 0; display: flex; flex-direction: column; gap: 4px }
+.slot .top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap }
+.slot .fl { font-size: 12px; font-weight: 600 }
+.badge { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 1px 6px; border-radius: 99px; border: 1px solid currentColor }
+.badge.new { color: var(--ok) } .badge.existing { color: var(--muted) } .badge.empty { color: var(--warn) }
+.slot code { overflow-wrap: anywhere; color: var(--fg) }
+.slot .acts { display: flex; gap: 6px; flex-wrap: wrap }
+.slot .fn { width: 100%; border: 1px solid var(--line); border-radius: 5px; padding: 4px 7px; background: var(--surface); font-family: var(--mono); font-size: 11.5px }
+
+details.item { border: 1px solid var(--line); border-radius: 8px; background: var(--surface) }
+details.item > summary { display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: pointer; list-style: none }
+details.item > summary::-webkit-details-marker { display: none }
+details.item > summary .n { font-family: var(--mono); font-size: 11px; color: var(--muted) }
+details.item > summary .tt { flex: 1; min-width: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+details.item > summary button { border: 0; background: transparent; color: var(--muted); padding: 2px 5px; border-radius: 4px }
+details.item > summary button:hover { color: var(--fg); background: var(--raised) }
+details.item[open] > summary { border-bottom: 1px solid var(--line) }
+details.item .body { padding: 10px; display: flex; flex-direction: column; gap: 12px }
+.list { display: flex; flex-direction: column; gap: 8px }
+
+.colors { display: grid; grid-template-columns: 1fr; gap: 8px }
+.colorrow { display: grid; grid-template-columns: 36px minmax(0, 1fr) 88px; align-items: center; gap: 8px; font-size: 12.5px }
+.colorrow input[type=color] { width: 36px; height: 28px; border: 1px solid var(--line); border-radius: 5px; padding: 0; background: none }
+.colorrow input[type=text] { font-family: var(--mono); font-size: 12px; border: 1px solid var(--line); border-radius: 5px; padding: 4px 6px; background: var(--raised); width: 100% }
+.cheat { font-size: 12px; color: var(--muted); background: var(--raised); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; line-height: 1.6 }
+.cheat code { color: var(--fg) }
+
+.modal { position: fixed; inset: 0; background: rgba(20,14,8,.45); display: grid; place-items: center; z-index: 20; padding: 16px }
+.dialog { width: min(720px, 100%); max-height: 88vh; overflow: auto; background: var(--surface); border-radius: 12px; border: 1px solid var(--line); padding: 20px; display: flex; flex-direction: column; gap: 14px }
+.dialog h3 { margin: 0; font-size: 18px }
+.ftable-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px }
+.ftable { width: 100%; border-collapse: collapse; font-size: 12.5px }
+.ftable th, .ftable td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); vertical-align: top }
+.ftable th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted) }
+.ftable tr:last-child td { border-bottom: 0 }
+.warns { margin: 0; padding: 10px 12px 10px 28px; border-radius: 8px; background: var(--accent-soft); color: var(--fg); font-size: 13px }
+.dialog .acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end }
+.status { font-size: 12.5px; color: var(--muted); min-height: 1.2em }
+
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: 13px; z-index: 30 }
+
+@media (max-width: 1100px) { .work { grid-template-columns: 230px minmax(0, 1fr) 320px } }
+@media (max-width: 900px) {
+  .app { height: auto; display: block }
+  .work { display: flex; flex-direction: column }
+  .pane { overflow: visible }
+  .left, .right { border: 0; border-bottom: 1px solid var(--line) }
+  .center { height: 72vh; order: 0 }
+  .left { order: 1 } .right { order: 2 }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important } }
+</style>
+
+</head>
+<body>
+<div class="app">
+  <header class="bar">
+    <div class="brand">PDP Builder <small>Amway PDP template</small></div>
+    <div class="sku"><label for="sku">SKU</label><input id="sku" type="text" inputmode="numeric" autocomplete="off"></div>
+    <div class="seg" role="group" aria-label="Preview width">
+      <button data-dev="desktop" aria-pressed="true">Desktop</button>
+      <button data-dev="tablet" aria-pressed="false">Tablet</button>
+      <button data-dev="mobile" aria-pressed="false">Mobile</button>
+    </div>
+    <div class="spacer"></div>
+    <label class="btn" for="openProject">Open project<input id="openProject" type="file" accept=".json,application/json" hidden></label>
+    <button class="btn" id="saveProject">Save project</button>
+    <button class="btn primary" id="exportBtn">Export</button>
+  </header>
+
+  <div class="work">
+    <aside class="pane left">
+      <h2>Add a section</h2>
+      <p class="hint">Drag into the page list, or click to add below the selected section.</p>
+      <div class="lib" id="lib"></div>
+      <h2>Page</h2>
+      <ol class="outline" id="outline"></ol>
+    </aside>
+
+    <main class="center">
+      <div class="stagebar"><span id="stageInfo"></span><span class="spacer"></span><span>Click a section in the preview to edit it</span></div>
+      <div class="stage" id="stage"><div class="frame-wrap" id="frameWrap"><iframe id="frame" title="Page preview"></iframe></div></div>
+    </main>
+
+    <aside class="pane right">
+      <div class="tabs" role="tablist">
+        <button role="tab" id="tabBlock" aria-selected="true">Section</button>
+        <button role="tab" id="tabPage" aria-selected="false">Page settings</button>
+      </div>
+      <div class="insp" id="insp"></div>
+    </aside>
+  </div>
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="dialog" role="dialog" aria-labelledby="exTitle">
+    <h3 id="exTitle">Export</h3>
+    <div id="exBody"></div>
+    <div class="status" id="exStatus"></div>
+    <div class="acts">
+      <button class="btn" id="exClose">Close</button>
+      <button class="btn" id="exHtml">Save HTML only</button>
+      <button class="btn primary" id="exZip">Save .zip</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script id="core">
+/* ---------- Template data (from 343136_en.html) ---------- */
+const ORIG_CSS = "\n      @font-face {\n      font-family: \"GT Walsheim Pro\";\n      src: url(\"https://www.amway.my/_ui/responsive/theme-amwaymsb/fonts/GT-Walsheim-Pro-Regular.otf\")\n        format(\"opentype\");\n      font-weight: 400;\n      font-style: normal;\n    }\n\n    @font-face {\n      font-family: \"GT Walsheim Pro\";\n      src: url(\"https://www.amway.my/_ui/responsive/theme-amwaymsb/fonts/GT-Walsheim-Pro-Medium.otf\")\n        format(\"opentype\");\n      font-weight: 500;\n      font-style: normal;\n    }\n\n    @font-face {\n      font-family: \"GT Walsheim Pro\";\n      src: url(\"https://www.amway.my/_ui/responsive/theme-amwaymsb/fonts/GT-Walsheim-Pro-Bold.otf\")\n        format(\"opentype\");\n      font-weight: 700;\n      font-style: normal;\n    }\n\n      html,\n      body {\n        width: 100%;\n        margin: 0px;\n        padding: 0px;\n        overflow-x: hidden;\n      }\n\n      body {\n        font-size: 16px;\n        line-height: 1.3;\n        -ms-overflow-style: none;\n        scrollbar-width: none;\n        font-family: \"GT Walsheim Pro\";\n        color: #000000;\n      }\n\n      body::-webkit-scrollbar {\n        display: none;\n      }\n\n      a{\n        text-decoration: underline;\n      }\n\n      a:hover{\n        text-decoration: none;\n      }\n\n      .font-bold{\n        font-weight: 700;\n      }\n\n      .desktop {\n        display: block !important;\n      }\n      .tablet {\n        display: none !important;\n      }\n      .mobile {\n        display: none !important;\n      }\n\n      .font-xlg {\n        font-size: 28px;\n      }\n\n      .font-lg {\n        font-size: 20px;\n      }\n\n      .font-md {\n        font-size: 16px;\n      }\n\n      .font-sm {\n        font-size: 15px;\n      }\n\n      .font-xs {\n        font-size: 14px;\n      }\n\n      ul {\n        padding-inline-start: 1.6vw;\n      }\n\n      .livara-banner {\n        position: relative;\n      }\n\n      .livara-banner-description {\n        position: absolute;\n        width: 45vw;\n        top: 50%;\n        left: 0;\n        transform: translateY(-50%);\n        font-weight: bold;\n        padding-left: 10vw;\n        display: flex;\n        align-items: center;\n        flex-direction: column;\n      }\n\n      .livara-banner-description-logo {\n        width: 22vw;\n        margin-bottom: 1vw;\n      }\n\n      .livara-banner-description-slogan {\n        font-size: 32px;\n        font-weight: normal;\n      }\n      .bold-title{\n        font-weight: 700;\n      }\n      .desc{\n        width: 50%;\n        padding: 5vw;\n      }\n      .livara-info {\n        position: relative;\n      }\n      .info-title{\n        width: 40%;\n      }\n      .info-body {\n        position: absolute;\n        top: 0;\n        left: 0;\n        display: flex;\n        padding: 5vw 12vw 0 12vw;\n        column-gap: 5vw;\n      }\n      .info-content {\n        display: flex;\n        flex-direction: column;\n        row-gap: 2.8vw;\n        width: 60%;\n      }\n      .info-content-item {\n        display: flex;\n        flex-direction: column;\n        row-gap: 0.2vw;\n      }\n      .more-info{\n        background-color: #FDFBF8;\n        min-height: auto;\n        padding: 3vw;\n        position: relative;\n      }\n\n      ul{\n        padding-left:20px\n      }\n      .desc-wrap ul{\n        width: 50%;\n        padding-left: 0;\n      }\n      .livara-desc{\n        padding: 5vw 12vw 3vw 12vw;\n        text-align: center;\n      }\n      .livara-pads .icon img{\n        width: 5vw;\n      }\n      .video-section{\n        padding: 1vw 18vw 0vw 18vw;\n        display: flex;\n        flex-direction: column;\n        justify-content: center;\n        align-items: center;\n      }\n      iframe {\n        aspect-ratio: 16 / 9;\n        width: 100% !important;\n      }\n      .livara-product-details{\n        width: 100%;\n        padding: 5vw 12vw 5vw 12vw;\n      }\n      .livara-details-column{\n        display: flex;\n        width: 100%;\n      }\n      .livara-details-column-reverse{\n        display: flex;\n        flex-direction: row-reverse;\n      }\n      .livara-details{\n        background-color: #F3F3F3;\n        padding: 3vw;\n        width: 50%;\n        display: flex;\n        flex-direction: column;\n        row-gap: 1vw;\n        justify-content: center;\n      }\n      .livara-icon{\n        width: 5.5vw;\n      }\n      .livara-icon img{\n        width: 100%;\n      }\n      .livara-details-title{\n        color: #9F672E;\n      }\n      .livara-product-img{\n        width: 50%;\n      }\n      .livara-product-img img{\n        width: 100%;\n      }\n      table{\n        margin-top: 10px;\n      }\n      table > tr,td{\n        border: 1px solid #9F672E;\n        padding: 8px;\n        min-width: 15vw;\n        text-align: center;\n      }\n      .livara-profile{\n        background-color: #FBF6F0;\n        color: #000000;\n        padding: 5vw 12vw;\n        display: flex;\n        flex-direction: column;\n        align-items: center;\n        text-align: center;\n        justify-content: center;\n      }\n      .livara-brand{\n        background-color: #4E2312;\n        color: #ffffff;\n        padding: 4vw 12vw;\n        display: flex;\n        flex-direction: column;\n        align-items: center;\n        justify-content: center;\n        text-align: center;\n      }\n      .livara-brand-logo img{\n        width: 18vw;\n      }\n\n\n      \n     \n    \n\n\n\n      @media only screen and (max-width: 1200px) {\n        .desktop {\n          display: none !important;\n        }\n        .tablet {\n          display: block !important;\n        }\n        .mobile {\n          display: none !important;\n        }\n\n        .font-xlg {\n          font-size: 32px;\n        }\n\n        .font-lg {\n          font-size: 24px;\n        }\n\n        .font-md {\n          font-size: 18px;\n        }\n\n        .font-sm {\n          font-size: 16px;\n        }\n\n        .font-xs {\n          font-size: 14px;\n        }\n\n        ul {\n          padding-inline-start: 2.6vw;\n        }\n\n        .livara-banner-description {\n          top: 85vw;\n          transform: unset;\n          padding: 7vw 10vw;\n          text-align: center;\n          align-items: center;\n          width: 100%;\n        }\n\n        .livara-banner-description-logo {\n          width: 35vw;\n        }\n       \n        .info-body {\n          padding: 40px 6%;\n          flex-direction: column;\n          row-gap: 4vw;\n        }\n\n        .info-content {\n          row-gap: 3vw;\n        }\n        .desc {\n          width: 100%;\n          padding: 5vw;\n        }\n        .info-title {\n          width: 100%;\n        }\n        .info-content{\n          width: 100%;\n        }\n        .livara-banner-description-slogan {\n          margin-top: 3vw;\n          color: #000000;\n        }\n         .bold-title{\n          font-weight: 700;\n        }\n        .livara-info-img{\n          width: 100%;\n        }\n        .livara-details-column{\n          display: flex;\n          flex-direction: column-reverse;\n          width: 100%;\n        }\n        .livara-details-column-reverse{\n          display: flex;\n          flex-direction: column-reverse;\n        }\n        .livara-details{\n          width: 100%;\n          padding: 8vw 5vw;\n        }\n        .livara-product-img{\n          width: 100%;\n        }\n        .livara-icon {\n          width: 10vw;\n        }\n        table,tr,td{\n          min-width: 20vw;\n        }\n        .livara-brand-logo img{\n          width: 20vw;\n        }\n      }\n\n\n      @media (max-width: 992px) {\n        .livara-brand-logo img{\n          width: 25vw;\n        }\n        .livara-profile{\n          padding: 10vw 8vw;\n        }\n      }\n\n\n\n\n\n      @media only screen and (max-width: 768px) {\n        .desktop {\n          display: none !important;\n        }\n        .tablet {\n          display: none !important;\n        }\n        .mobile {\n          display: block !important;\n        }\n\n        .font-xlg {\n          font-size: 18px;\n        }\n\n        .font-lg {\n          font-size: 16px;\n        }\n\n        .font-md {\n          font-size: 14px;\n        }\n\n        .font-sm {\n          font-size: 12px;\n        }\n\n        .font-xs {\n          font-size: 12px;\n        }\n\n        ul {\n          padding-inline-start: 3.2vw;\n        }\n\n        .livara-banner-description {\n          padding: 6vw 5vw;\n          top: 90vw;\n        }\n\n        .livara-banner-description-logo {\n          width: 40vw;\n        }\n\n        .livara-banner-description-slogan {\n          margin-top: 3vw;\n          color: #000000;\n        }\n\n        .livara-banner-description-title {\n          margin-top: 2vw;\n        }\n\n        .info-body {\n          padding: 8vw;\n          row-gap: 5vw;\n        }\n\n        .info-content {\n          row-gap: 6vw;\n        }\n        .livara-icon {\n          width: 13vw;\n        }\n        .livara-desc{\n          padding: 5vw 8vw 5vw 8vw;\n        }\n        .video-section{\n          padding: 1vw 8vw 5vw 8vw;\n        }\n        .livara-product-details{\n          padding: 5vw 8vw 8vw 8vw;\n        }\n        table,tr,td{\n          min-width: 25vw;\n        }\n        .livara-brand-logo img{\n          width: 30vw;\n        }\n        .livara-brand{\n          padding: 8vw 12vw;\n        }\n      }\n\n\n\n      @media only screen and (max-width: 600px) {\n        .livara-banner-description-logo{\n          width: 50vw;\n        }\n        .livara-brand-logo img{\n          width: 40vw;\n        }\n      }\n\n      @media only screen and (max-width: 350px) {\n        .font-xlg {\n          font-size: 18px;\n        }\n\n        .font-lg {\n          font-size: 16px;\n        }\n\n        .font-md {\n          font-size: 14px;\n        }\n\n        .font-sm {\n          font-size: 12px;\n        }\n\n        .font-xs {\n          font-size: 12px;\n        }\n        .livara-banner-description-logo{\n          width: 60vw;\n        }\n        .livara-banner-description {\n          top: 85vw;\n          transform: unset;\n          padding: 7vw 5vw;\n          text-align: center;\n          align-items: center;\n          width: 100%;\n        }\n        .livara-icon {\n          width: 15vw;\n        }\n        .livara-details{\n          row-gap: 3vw;\n          padding: 8vw 5vw;\n        }\n        .livara-brand-logo img{\n          width: 50vw;\n        }\n       \n      }\n    ";
+const HEAD_TPL = "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <title>{{TITLE}}<\/title>\n    <link\n      rel=\"stylesheet\"\n      href=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css\"\n      integrity=\"sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u\"\n      crossorigin=\"anonymous\"\n    />\n    <link\n      href=\"https://fonts.googleapis.com/css2?family=Raleway:ital,wght@1,200&display=swap\"\n      rel=\"stylesheet\"\n    />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <meta\n      name=\"description\"\n      content=\"{{DESC}}\"\n    />\n    <meta\n      name=\"keywords\"\n      content=\"{{KW}}\"\n    />\n    <link rel=\"stylesheet\" href=\"assets/css/artistry.css\" />\n    <script\n      defer\n      type=\"text/javascript\"\n      src=\"assets/js/jquery-3.4.1.min.js\"\n    ><\/script>\n    <script\n      defer\n      src=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js\"\n      integrity=\"sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa\"\n      crossorigin=\"anonymous\"\n    ><\/script>\n    <script\n      defer\n      type=\"text/javascript\"\n      src=\"assets/js/frameHeight.js\"\n    ><\/script>\n    ";
+const COLOR_KEYS = [
+  ['accent', '#9F672E', 'Accent: feature titles, table lines'],
+  ['panel', '#F3F3F3', 'Feature text panel'],
+  ['profile', '#FBF6F0', 'Brand profile background'],
+  ['brand', '#4E2312', 'Brand strip background'],
+  ['info', '#FDFBF8', 'More Information background'],
+];
+
+/* ---------- Helpers ---------- */
+const esc = s => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+let _uid = 0;
+const uid = p => (p || 'b') + Date.now().toString(36) + (++_uid).toString(36);
+const S = name => ({ a: null, name: name || '' });   // image slot: a = uploaded asset key, name = filename override / existing file
+
+function inl(s) {
+  return esc(s)
+    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+    .replace(/(^|[^*])\*([^*\n]+?)\*/g, '$1<i>$2</i>')
+    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, t, u) => /^(https?:|#|mailto:)/i.test(u) ? `<a href="${u}">${t}</a>` : t);
+}
+const isLi = l => /^\s*[-•]\s+/.test(l);
+// Text formatting: **bold**, *italic*, [link](url), "- " bullets, blank line = new paragraph.
+function rich(src, mode) {
+  const groups = String(src || '').replace(/\r/g, '').trim().split(/\n\s*\n/).filter(g => g.trim());
+  if (mode === 'inline') return groups.map(g => g.split('\n').map(inl).join('<br>')).join('<br><br>');
+  if (mode === 'profile') return groups.map((g, i) => {
+    if (/^##\s+/.test(g)) return `<div class="bold font-md mb-1">${inl(g.replace(/^##\s+/, ''))}</div>`;
+    const last = i === groups.length - 1;
+    return `<div${last ? '' : ' class="mb-3"'}>${g.split('\n').map(inl).join('<br>')}</div>`;
+  }).join('\n        ');
+  return groups.map(g => {
+    let out = '', ul = [];
+    const flush = () => { if (ul.length) { out += '<ul>' + ul.map(x => `<li>${inl(x)}</li>`).join('') + '</ul>'; ul = []; } };
+    for (const l of g.split('\n')) { if (isLi(l)) ul.push(l.replace(/^\s*[-•]\s+/, '')); else { flush(); out += `<div>${inl(l)}</div>`; } }
+    flush(); return out;
+  }).join('<br>');
+}
+function ytEmbed(u) {
+  u = String(u || '').trim();
+  let m = u.match(/youtu\.be\/([\w-]{6,})/) || u.match(/[?&]v=([\w-]{6,})/) || u.match(/\/shorts\/([\w-]{6,})/);
+  return m ? 'https://www.youtube.com/embed/' + m[1] : u;
+}
+const extOf = n => { const m = String(n || '').toLowerCase().match(/\.([a-z0-9]{2,5})$/); return m ? '.' + (m[1] === 'jpeg' ? 'jpg' : m[1]) : ''; };
+
+/* ---------- Block types ---------- */
+const IMG_HINT_T = 'Optional. Uses the desktop image if empty.';
+const IMG_HINT_M = 'Optional. Uses the tablet image (or desktop) if empty.';
+const TYPES = {
+  hero: { label: 'Hero banner', fields: [
+    { k: 'desk', t: 'img', label: 'Banner · desktop', ph: [1920, 800] },
+    { k: 'tab', t: 'img', label: 'Banner · tablet', ph: [1200, 1500], hint: IMG_HINT_T },
+    { k: 'mob', t: 'img', label: 'Banner · mobile', ph: [750, 1100], hint: IMG_HINT_M },
+    { k: 'logo', t: 'img', label: 'Logo', ph: [600, 200] },
+    { k: 'title', t: 'area', label: 'Product name', hint: 'Press Enter for a line break.', rows: 3 } ],
+    make: () => ({ desk: S(), tab: S(), mob: S(), logo: S(), title: 'PRODUCT NAME' }),
+    sum: d => d.title.split('\n')[0] },
+  intro: { label: 'Intro text', fields: [
+    { k: 'headline', t: 'text', label: 'Headline' },
+    { k: 'body', t: 'area', label: 'Paragraph', fmt: true } ],
+    make: () => ({ headline: 'Headline', body: 'Describe the product here.' }), sum: d => d.headline },
+  video: { label: 'YouTube video', fields: [
+    { k: 'url', t: 'text', label: 'YouTube link', hint: 'Paste any YouTube link. It is converted to an embed link.' } ],
+    make: () => ({ url: '' }), sum: d => ytEmbed(d.url).replace('https://www.youtube.com/embed/', '') || 'No link yet' },
+  features: { label: 'Feature rows', fields: [
+    { k: 'startRev', t: 'check', label: 'First row has the image on the left' },
+    { k: 'items', t: 'list', label: 'Rows', add: 'Add row', title: it => it.title,
+      make: () => ({ id: uid('i'), icon: S(), img: S(), title: 'Feature title', body: 'Feature description.' }),
+      fields: [
+        { k: 'icon', t: 'img', label: 'Icon', ph: [160, 160] },
+        { k: 'img', t: 'img', label: 'Photo', ph: [900, 700] },
+        { k: 'title', t: 'text', label: 'Title' },
+        { k: 'body', t: 'area', label: 'Text', fmt: true } ] } ],
+    make: () => ({ startRev: false, items: [TYPES.features.fields[1].make()] }), sum: d => d.items.length + ' rows' },
+  profile: { label: 'Brand profile', fields: [
+    { k: 'title', t: 'text', label: 'Heading' },
+    { k: 'body', t: 'area', label: 'Text', fmt: true, rows: 9, hint: 'Start a paragraph with ## to make it a sub-heading.' } ],
+    make: () => ({ title: 'BRAND: Who We Are', body: 'About the brand.' }), sum: d => d.title },
+  brand: { label: 'Brand strip', fields: [
+    { k: 'logo', t: 'img', label: 'White logo', ph: [600, 200] },
+    { k: 'tagline', t: 'text', label: 'Tagline' },
+    { k: 'note', t: 'text', label: 'Small italic note' } ],
+    make: () => ({ logo: S(), tagline: 'Tagline', note: 'Exclusively available through Amway Malaysia.' }), sum: d => d.tagline },
+  image: { label: 'Full-width image', fields: [
+    { k: 'desk', t: 'img', label: 'Image · desktop', ph: [1920, 1000] },
+    { k: 'tab', t: 'img', label: 'Image · tablet', ph: [1200, 900], hint: 'Optional. Leave both empty to use one image for all screens.' },
+    { k: 'mob', t: 'img', label: 'Image · mobile', ph: [750, 900], hint: IMG_HINT_M },
+    { k: 'alt', t: 'text', label: 'Image description (alt text)' } ],
+    make: () => ({ desk: S(), tab: S(), mob: S(), alt: '' }), sum: d => d.alt || 'Image' },
+  moreinfo: { label: 'More Information', fields: [
+    { k: 'title', t: 'text', label: 'Heading' },
+    { k: 'items', t: 'list', label: 'Items', add: 'Add item', title: it => it.title,
+      make: () => ({ id: uid('i'), title: 'NEW ITEM', body: '', specs: '' }),
+      fields: [
+        { k: 'title', t: 'text', label: 'Item heading' },
+        { k: 'body', t: 'area', label: 'Text', fmt: true },
+        { k: 'specs', t: 'area', label: 'Spec table', hint: 'One row per line: Label | Value. Leave empty for no table.', rows: 4 } ] } ],
+    make: () => ({ title: 'MORE INFORMATION', items: [] }), sum: d => d.items.length + ' items' },
+  banner: { label: 'Bottom banner', fields: [
+    { k: 'desk', t: 'img', label: 'Banner · desktop', ph: [1920, 700] },
+    { k: 'tab', t: 'img', label: 'Banner · tablet', ph: [1200, 700], hint: IMG_HINT_T },
+    { k: 'mob', t: 'img', label: 'Banner · mobile', ph: [750, 1000], hint: IMG_HINT_M },
+    { k: 'alt', t: 'text', label: 'Image description (alt text)' } ],
+    make: () => ({ desk: S(), tab: S(), mob: S(), alt: '' }), sum: d => d.alt || 'Banner' },
+};
+const ORDER = ['hero', 'intro', 'video', 'features', 'profile', 'brand', 'image', 'moreinfo', 'banner'];
+const iconLike = k => k === 'icon' || k === 'logo';
+
+/* ---------- File naming: {SKU}_PDP_{part}{n}.{ext}, numbered in page order like the original ---------- */
+function autoNames(st) {
+  const m = {}, c = { banner: 0, img: 0, icon: 0, logo: 0, wl: 0 };
+  const P = (st.sku || '').trim() + '_PDP_';
+  for (const b of st.blocks) {
+    const d = b.data, id = b.id;
+    if (b.type === 'hero' || b.type === 'banner') {
+      const n = ++c.banner;
+      m[id + '.desk'] = P + 'banner' + n; m[id + '.tab'] = P + 'tb_banner' + n; m[id + '.mob'] = P + 'mb_banner' + n;
+      if (b.type === 'hero') { const l = ++c.logo; m[id + '.logo'] = P + 'logo' + (l > 1 ? l : ''); }
+    } else if (b.type === 'features') {
+      d.items.forEach(it => { m[id + '.' + it.id + '.icon'] = P + 'icon' + (++c.icon); m[id + '.' + it.id + '.img'] = P + 'img' + (++c.img); });
+    } else if (b.type === 'image') {
+      const n = ++c.img; m[id + '.desk'] = P + 'img' + n; m[id + '.tab'] = P + 'tb_img' + n; m[id + '.mob'] = P + 'mb_img' + n;
+    } else if (b.type === 'brand') { const n = ++c.wl; m[id + '.logo'] = P + 'whitelogo' + (n > 1 ? n : ''); }
+  }
+  return m;
+}
+// slot -> {name, kind:'new'|'existing', asset?} or null when empty
+function resolveSlot(slot, ref, names, assets, key) {
+  if (!slot) return null;
+  const custom = (slot.name || '').trim().replace(/[\\/]/g, '');
+  const a = slot.a && assets[slot.a];
+  if (a) {
+    let n = custom || names[ref] || 'image';
+    if (!extOf(n)) n += extOf(a.name) || (iconLike(key) ? '.png' : '.jpg');
+    return { name: n, kind: 'new', asset: a };
+  }
+  return custom ? { name: custom, kind: 'existing' } : null;
+}
+function phSVG(text, wh, empty) {
+  const [w, h] = wh || [1200, 600], fs = Math.max(11, Math.round(Math.min(w, h * 3) / 32));
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}' viewBox='0 0 ${w} ${h}'><rect width='100%' height='100%' fill='${empty ? '#f1ebe4' : '#d8d0c6'}'/><rect x='1' y='1' width='${w - 2}' height='${h - 2}' fill='none' stroke='#b9ada0' stroke-dasharray='8 6'/><text x='50%' y='50%' font-family='monospace' font-size='${fs}' fill='#6e6359' text-anchor='middle' dominant-baseline='middle'>${esc(text)}</text></svg>`;
+  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+}
+
+/* ---------- HTML builder (shared by preview and export) ---------- */
+const PREVIEW_BASE = `*,*:before,*:after{box-sizing:border-box}html{-webkit-text-size-adjust:100%}body{margin:0}b,strong{font-weight:700}img{vertical-align:middle;border:0}table{border-collapse:collapse;border-spacing:0}ul{margin-top:0;margin-bottom:10px}a{color:#337ab7}.text-center{text-align:center}.w-100{width:100%!important}.h-auto{height:auto!important}.bold{font-weight:bold}.mb-1{margin-bottom:.25rem!important}.mb-3{margin-bottom:1rem!important}.mb-4{margin-bottom:1.5rem!important}`;
+
+function buildHTML(st, assets, opt) {
+  const P = !!(opt && opt.preview), sel = opt && opt.sel;
+  const names = autoNames(st), files = new Map(), warns = [];
+  const R = (slot, ref, key) => {
+    const f = resolveSlot(slot, ref, names, assets, key);
+    if (f) {
+      const prev = files.get(f.name);
+      if (prev && prev.kind === 'new' && f.kind === 'new' && prev.asset !== f.asset) warns.push(`Two different uploads are both named ${f.name}. Rename one of them.`);
+      if (!prev || f.kind === 'new') files.set(f.name, f);
+    }
+    return f;
+  };
+  const src = (f, ph) => P ? (f ? (f.asset ? f.asset.url : phSVG(f.name, ph)) : phSVG('No image yet', ph, true)) : 'assets/img/' + f.name;
+  const bid = b => P ? ` data-bid="${b.id}"` : '';
+  const lbl = b => TYPES[b.type].label;
+
+  function resp(b, d, alt, phs, need) {
+    const D = R(d.desk, b.id + '.desk', 'desk'), T = R(d.tab, b.id + '.tab', 'tab'), M = R(d.mob, b.id + '.mob', 'mob');
+    if (!D && !P) { if (need) warns.push(`${lbl(b)}: the desktop image is missing, so this image is left out.`); return ''; }
+    const t = T || D, m = M || T || D;
+    return [['desktop', D, phs[0]], ['tablet', t, phs[1]], ['mobile', m, phs[2]]]
+      .map(([c, f, ph]) => `<img\n          src="${src(f, ph)}"\n          class="${c} w-100 h-auto"\n          alt="${esc(alt)}"\n        />`).join('\n        ');
+  }
+  const ph = (type, k) => TYPES[type].fields.find(f => f.k === k).ph;
+
+  const out = [];
+  for (const b of st.blocks) {
+    const d = b.data;
+    if (b.type === 'hero') {
+      const logo = R(d.logo, b.id + '.logo', 'logo');
+      const alt = d.title.replace(/\s+/g, ' ').trim();
+      out.push(`    <section class="livara-banner"${bid(b)}>
+      <div class="w-100">
+        ${resp(b, d, alt, [ph('hero', 'desk'), ph('hero', 'tab'), ph('hero', 'mob')], true)}
+      </div>
+      <div class="livara-banner-description">${logo || P ? `
+        <div class="livara-banner-description-logo">
+          <img src="${src(logo, ph('hero', 'logo'))}" class="w-100 h-auto" alt="${esc(alt)} logo" />
+        </div>` : ''}
+        <div class="livara-banner-description-slogan text-center">
+          <div class="bold-title font-lg">${d.title.split('\n').map(esc).join('<br>')}</div>
+        </div>
+      </div>
+    </section>`);
+    } else if (b.type === 'intro') {
+      out.push(`    <section${bid(b)}>
+      <div class="livara-desc">
+        <span class="font-lg"><b>${inl(d.headline)}</b></span>
+        <br><br>
+        <span class="font-md">
+          ${rich(d.body, 'inline')}
+        </span>
+      </div>
+    </section>`);
+    } else if (b.type === 'video') {
+      const u = ytEmbed(d.url);
+      if (!u && !P) { warns.push('YouTube video: no link, so the video is left out.'); continue; }
+      out.push(P
+        ? `    <section class="video-section"${bid(b)}><div style="aspect-ratio:16/9;width:100%;background:#151210;color:#e9e1d7;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;font:14px/1.4 system-ui,sans-serif;text-align:center;padding:12px"><div style="font-size:40px;line-height:1">&#9654;</div><div>YouTube video</div><div style="opacity:.65;font:12px monospace;word-break:break-all">${esc(u || 'No link yet')}</div></div></section>`
+        : `    <section class="video-section">
+      <iframe src="${esc(u)}"
+        title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media;
+        gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
+      </iframe>
+    </section>`);
+    } else if (b.type === 'features') {
+      const rows = d.items.map((it, i) => {
+        const ic = R(it.icon, b.id + '.' + it.id + '.icon', 'icon'), im = R(it.img, b.id + '.' + it.id + '.img', 'img');
+        if (!im && !P) warns.push(`Feature row "${it.title}": no photo.`);
+        const cls = ((i % 2 === 1) !== !!d.startRev) ? 'livara-details-column-reverse' : 'livara-details-column';
+        return `      <div class="${cls}">
+        <div class="livara-details">${ic || P ? `
+          <div class="livara-icon"><img src="${src(ic, [160, 160])}" alt=""></div>` : ''}
+          <div class="livara-details-title bold font-lg">${inl(it.title)}</div>
+          <div class="font-md">${rich(it.body, 'inline')}
+          </div>
+        </div>
+        <div class="livara-product-img">${im || P ? `
+          <img src="${src(im, [900, 700])}" alt="${esc(it.title)}">` : ''}
+        </div>
+      </div>`;
+      }).join('\n');
+      out.push(`    <section class="livara-product-details"${bid(b)}>\n${rows}\n    </section>`);
+    } else if (b.type === 'profile') {
+      out.push(`    <section${bid(b)}>
+      <div class="livara-profile">
+        <div class="bold font-lg">${inl(d.title)}</div>
+        ${rich(d.body, 'profile')}
+      </div>
+    </section>`);
+    } else if (b.type === 'brand') {
+      const lg = R(d.logo, b.id + '.logo', 'logo');
+      out.push(`    <section${bid(b)}>
+      <div class="livara-brand">${lg || P ? `
+        <div class="livara-brand-logo mb-3"><img src="${src(lg, [600, 200])}" alt="Brand logo"></div>` : ''}
+        <div class="font-lg mb-4">${inl(d.tagline)}</div>${d.note.trim() ? `
+        <div class="bold font-xs"><i>${inl(d.note)}</i></div>` : ''}
+      </div>
+    </section>`);
+    } else if (b.type === 'image') {
+      const single = !d.tab.a && !d.tab.name.trim() && !d.mob.a && !d.mob.name.trim();
+      if (single) {
+        const D = R(d.desk, b.id + '.desk', 'desk');
+        if (!D && !P) { warns.push('Full-width image: no image, so it is left out.'); continue; }
+        out.push(`    <section${bid(b)}>
+      <div>
+        <img src="${src(D, ph('image', 'desk'))}" width="100%" alt="${esc(d.alt)}">
+      </div>
+    </section>`);
+      } else {
+        const imgs = resp(b, d, d.alt, [ph('image', 'desk'), ph('image', 'tab'), ph('image', 'mob')], true);
+        if (!imgs) continue;
+        out.push(`    <section${bid(b)}>\n      <div class="w-100">\n        ${imgs}\n      </div>\n    </section>`);
+      }
+    } else if (b.type === 'moreinfo') {
+      const items = d.items.map(it => {
+        const rows = String(it.specs || '').split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+          const k = l.indexOf('|'); const a = k < 0 ? l : l.slice(0, k), v = k < 0 ? '' : l.slice(k + 1);
+          return `                <tr>\n                  <td class="bold">${inl(a.trim())}</td>\n                  <td>${inl(v.trim())}</td>\n                </tr>`;
+        });
+        return `            <div class="info-content-item">
+              <div class="title font-lg font-bold">${inl(it.title)}</div>
+              ${rich(it.body, 'block')}${rows.length ? `\n              <table>\n${rows.join('\n')}\n              </table>` : ''}
+            </div>`;
+      }).join('\n');
+      out.push(`    <section${bid(b)}>
+      <div class="more-info">
+        <div class="info-body" style="position: relative; z-index: 9;">
+          <div class="info-title font-xlg font-bold">${inl(d.title)}</div>
+          <div class="info-content font-sm">
+${items}
+          </div>
+        </div>
+      </div>
+    </section>`);
+    } else if (b.type === 'banner') {
+      const imgs = resp(b, d, d.alt, [ph('banner', 'desk'), ph('banner', 'tab'), ph('banner', 'mob')], true);
+      if (!imgs) continue;
+      out.push(`    <section${bid(b)}>\n      <div class="w-100">\n        ${imgs}\n      </div>\n    </section>`);
+    }
+  }
+
+  let css = ORIG_CSS;
+  for (const [k, def] of COLOR_KEYS) { const v = (st.colors && st.colors[k]) || def; if (v.toUpperCase() !== def) css = css.split(def).join(v); }
+  if (!st.sku || !/^[\w-]+$/.test(st.sku.trim())) warns.unshift('Set a SKU (letters, numbers, - or _) before exporting.');
+  if (!(st.desc || '').trim()) warns.push('Page settings: the meta description is empty.');
+
+  const body = out.join('\n\n');
+  if (P) {
+    const hl = sel ? `[data-bid="${sel}"]{outline:3px solid #c27a35!important;outline-offset:-3px}` : '';
+    return { html: `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${PREVIEW_BASE}</style><style>${css}</style><style>body{font-family:"GT Walsheim Pro",system-ui,-apple-system,"Segoe UI",sans-serif}[data-bid]{cursor:pointer}[data-bid]:hover{outline:2px dashed rgba(194,122,53,.7);outline-offset:-2px}${hl}</style></head><body>\n${body}\n</body></html>`, files, warns };
+  }
+  const head = HEAD_TPL.replace('{{TITLE}}', esc(st.title)).replace('{{DESC}}', esc(st.desc)).replace('{{KW}}', esc(st.kw));
+  return { html: `${head}<style>${css}</style>\n  </head>\n\n  <body>\n${body}\n  </body>\n</html>\n`, files, warns };
+}
+
+/* ---------- Starting content: the 343136 page ---------- */
+function defaultState() {
+  const sku = '343136', f = n => S(sku + '_PDP_' + n);
+  const feat = (n, title, body) => ({ id: uid('i'), icon: f('icon' + n + '.png'), img: f('img' + n + '.jpg'), title, body });
+  return {
+    sku, title: 'LIVARA TRI-BREW CAPSULES & ESPRESSO MACHINE',
+    desc: 'LIVARA Tri-Brew Capsules & Espresso Machine brews Dolce Gusto® and Nespresso® compatible capsules or ground coffee, with a 20-bar pump, precision temperature control and manual milk frothing.',
+    kw: 'LIVARA, Tri-Brew, espresso machine, capsule coffee machine, coffee maker',
+    colors: Object.fromEntries(COLOR_KEYS.map(([k, v]) => [k, v])),
+    blocks: [
+      { id: uid(), type: 'hero', data: { desk: f('banner1.jpg'), tab: f('tb_banner1.jpg'), mob: f('mb_banner1.jpg'), logo: f('logo.png'), title: 'TRI-BREW CAPSULES &\nESPRESSO MACHINE' } },
+      { id: uid(), type: 'intro', data: { headline: 'One Machine. Endless Possibilities.', body: 'Discover more ways to enjoy coffee with the Livara Tri-Brew Capsules & Espresso Machine. Enjoy the convenience of coffee brewed from capsules or ground coffee at leisure, all from one machine. Featuring a powerful 20-bar pressure system, precision temp control and manual milk frothing, Livara Tri-Brew Capsules & Espresso Machine enhances your coffee beverages from the comfort of your home.' } },
+      { id: uid(), type: 'video', data: { url: 'https://www.youtube.com/embed/VQhK3ANJY40?si=GAmU6siMZHuaMaaT' } },
+      { id: uid(), type: 'features', data: { startRev: false, items: [
+        feat(1, '3-in-1 Brewing Flexibility', 'Suitable for **Dolce Gusto® compatible capsules**, **Nespresso® compatible capsules** or **ground coffee powder** to suit every mood, taste and occasion. Enjoy the flexibility to brew your favourite coffee the way you like it.'),
+        feat(2, 'Built for Daily Convenience', 'Designed for effortless everyday use, the **1.2L removable water tank**, detachable drip tray and convenient cup warmer make brewing, serving and cleaning simple, so you can spend more time enjoying your coffee.'),
+        feat(3, 'Precision Temperature Control', 'A **digital display** paired with an **aluminium die-cast boiler** maintains the ideal brewing temperature for consistently rich flavour, balanced aroma and exceptional extraction in every cup.'),
+        feat(4, 'Barista-Style Milk Frothing', 'Create silky, velvety microfoam with the manual steam wand for barista-style lattes, cappuccinos and other milk-based favourites just the way you like them.'),
+        feat(5, 'Hot & Cold Brewing Versatility', 'Powered by a professional **20-bar pressure pump**, the machine delivers rich crema and full-bodied espresso while giving you the flexibility to enjoy both hot and cold coffee creations at home.') ] } },
+      { id: uid(), type: 'profile', data: { title: 'LIVARA: Who We Are', body: 'At LIVARA, we believe everyday living can be made better through thoughtful design and purposeful innovation. Our products are developed around real consumer needs, combining practical functionality, considered design and dependable performance to bring greater ease, comfort and enjoyment into modern homes.\n\n## The Expertise Behind LIVARA\n\nLIVARA products are supplied by **Black Dots Marketing Sdn Bhd, a subsidiary of Russell Taylors**, an established home appliance brand with extensive industry experience.\n\nBacked by expertise across **product development, quality assurance, certification, distribution and after-sales support**, LIVARA creates well-designed, dependable and safe products that consumers can purchase with confidence.' } },
+      { id: uid(), type: 'brand', data: { logo: f('whitelogo.png'), tagline: 'Thoughtfully made for better everyday living.', note: 'Exclusively available through Amway Malaysia.' } },
+      { id: uid(), type: 'image', data: { desk: f('img6.jpg'), tab: S(), mob: S(), alt: 'LIVARA Tri-Brew Capsules & Espresso Machine' } },
+      { id: uid(), type: 'moreinfo', data: { title: 'MORE INFORMATION', items: [
+        { id: uid('i'), title: 'HOW TO USE', body: 'Please read the operation manual before use.', specs: '' },
+        { id: uid('i'), title: 'TARGETED CONSUMER', body: '- Coffee lovers who enjoy capsule coffee or café-style beverages and appreciate the flexibility of brewing different coffee formats with one machine.\n- Busy individuals who value both convenience and quality, and want one compact machine that brews Dolce Gusto® compatible capsules, Nespresso® compatible capsules and ground coffee powder.\n- Consumers looking for a versatile, space-saving and cost-effective way to enjoy coffee at home.', specs: '' },
+        { id: uid('i'), title: 'ADVISORIES AND PRECAUTIONS', body: 'Please read the operation manual and watch the product video before use.\n- Do not use instant or 3-in-1 coffee powders.\n- This product is strictly for household use only. It is not designed for commercial use.', specs: '' },
+        { id: uid('i'), title: 'STORAGE', body: 'Place the product on a dry, stable, flat surface.', specs: '' },
+        { id: uid('i'), title: 'PRODUCT WARRANTY', body: 'This product is NOT covered under the Amway 100% Satisfaction Guarantee or money-back guarantee.\n\n**WARRANTY INFORMATION** - Click [here](#) to read the Warranty Terms & Conditions', specs: '' },
+        { id: uid('i'), title: 'FREQUENTLY ASKED QUESTIONS (FAQs)', body: 'Click [here](#) to read the FAQs.', specs: '' },
+        { id: uid('i'), title: 'Packaging Per Capacity, Quantity, Weight, Dimension', body: 'Product weight: 4.63kg\nProduct dimensions (excluding packaging): 32x29x33.8cm', specs: 'Voltage/Power | 220-240V, 50/60Hz, 950W\nBrewing System | 3-in-1 Multi-Adapter System\nPressure System | 20-Bar High Pressure Pump\nTemperature Control | Digital Temperature Display\nHeating System | Aluminium Die-Casting Boiler\nBrewing Functions | Espresso, Steam, Hot Brew, Cold Boiler\nMilk Frothing | Manual Steam Wand\nUser Interface | Easy-to-use Digital Display with Buttons\nWater Tank Capacity | 1.2L Removable Water Tank\nDrip Tray | Detachable for Easy Cleaning\nCup Warming Area | Yes (Top Warming Plate)\nDesign | Compact Countertop Design with Chrome Finishing\nHousing Material | Durable PP Plastic with Chrome Plating\nAccessories | Ground Coffee Adapter, Capsule Adapters (Dolce Gusto® & Nespresso®), Single & Double Shot Portafilters, Plastic Spoon & Tamper.' },
+        { id: uid('i'), title: 'ELECTRICITY CONSUMPTION', body: '950W', specs: '' } ] } },
+      { id: uid(), type: 'banner', data: { desk: f('banner2.jpg'), tab: S(), mob: f('mb_banner2.jpg'), alt: 'LIVARA' } },
+    ],
+  };
+}
+</script>
+
+<script>
+/* ---------- App state ---------- */
+let st = defaultState();
+const assets = {};          // key -> {name, type, blob, url}
+let selId = st.blocks[0].id, tab = 'block', device = 'desktop';
+const openItems = new Set();
+const $ = s => document.querySelector(s);
+const DEV = { desktop: 1366, tablet: 834, mobile: 390 };
+
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 2600); }
+const findBlock = id => st.blocks.find(b => b.id === id);
+
+/* ---------- Preview ---------- */
+const frame = $('#frame'), wrap = $('#frameWrap'), stage = $('#stage');
+let pvTimer, scrollToSel = false, lastScroll = 0;
+function schedulePreview(now) { clearTimeout(pvTimer); pvTimer = setTimeout(renderPreview, now ? 0 : 220); }
+function renderPreview() {
+  try { lastScroll = frame.contentWindow ? frame.contentWindow.scrollY : 0; } catch (e) { lastScroll = 0; }
+  frame.srcdoc = buildHTML(st, assets, { preview: true, sel: selId }).html;
+}
+frame.addEventListener('load', () => {
+  let doc; try { doc = frame.contentDocument; } catch (e) { return; }
+  if (!doc) return;
+  if (scrollToSel && selId) { const el = doc.querySelector(`[data-bid="${selId}"]`); if (el) el.scrollIntoView({ block: 'start' }); scrollToSel = false; }
+  else frame.contentWindow.scrollTo(0, lastScroll);
+  doc.addEventListener('click', e => {
+    if (e.target.closest('a')) e.preventDefault();
+    const el = e.target.closest('[data-bid]'); if (el) select(el.dataset.bid, false);
+  });
+});
+function fit() {
+  const w = DEV[device], avail = stage.clientWidth - 32, s = Math.min(1, avail / w);
+  wrap.style.width = w + 'px'; wrap.style.transform = `scale(${s})`;
+  frame.style.width = w + 'px'; frame.style.height = Math.max(300, (stage.clientHeight - 32) / s) + 'px';
+  wrap.style.marginLeft = Math.max(0, (avail - w * s) / 2) + 'px';
+  $('#stageInfo').textContent = `${device[0].toUpperCase() + device.slice(1)} · ${w}px${s < 1 ? ' · shown at ' + Math.round(s * 100) + '%' : ''}`;
+}
+new ResizeObserver(fit).observe(stage);
+document.querySelectorAll('[data-dev]').forEach(b => b.addEventListener('click', () => {
+  device = b.dataset.dev; document.querySelectorAll('[data-dev]').forEach(x => x.setAttribute('aria-pressed', x === b)); fit();
+}));
+
+/* ---------- Library & outline ---------- */
+function renderLib() {
+  $('#lib').innerHTML = ORDER.map(t => `<button class="chip" draggable="true" data-new="${t}">${TYPES[t].label}</button>`).join('');
+  $('#lib').querySelectorAll('.chip').forEach(c => {
+    c.addEventListener('dragstart', e => { e.dataTransfer.setData('text/x-new', c.dataset.new); e.dataTransfer.effectAllowed = 'copy'; });
+    c.addEventListener('click', () => { const i = st.blocks.findIndex(b => b.id === selId); addBlock(c.dataset.new, i < 0 ? st.blocks.length : i + 1); });
+  });
+}
+function addBlock(type, at) {
+  const b = { id: uid(), type, data: TYPES[type].make() };
+  st.blocks.splice(at, 0, b); scrollToSel = true; select(b.id, true); toast(TYPES[type].label + ' added');
+}
+function renderOutline() {
+  const ol = $('#outline');
+  ol.innerHTML = st.blocks.map((b, i) => `<li class="row${b.id === selId ? ' sel' : ''}" draggable="true" data-id="${b.id}">
+    <span class="grip" aria-hidden="true">⋮⋮</span>
+    <span class="lbl"><div class="t">${esc(TYPES[b.type].label)}</div><div class="s">${esc(TYPES[b.type].sum(b.data))}</div></span>
+    <span class="acts">
+      <button data-act="up" title="Move up" aria-label="Move up" ${i === 0 ? 'disabled' : ''}>↑</button>
+      <button data-act="down" title="Move down" aria-label="Move down" ${i === st.blocks.length - 1 ? 'disabled' : ''}>↓</button>
+      <button data-act="dup" title="Duplicate" aria-label="Duplicate">⧉</button>
+      <button data-act="del" title="Delete" aria-label="Delete">✕</button>
+    </span></li>`).join('') || '<p class="hint">No sections. Drag one here.</p>';
+  ol.querySelectorAll('.row').forEach(r => {
+    const id = r.dataset.id;
+    r.addEventListener('click', e => {
+      const act = e.target.closest('button')?.dataset.act; const i = st.blocks.findIndex(b => b.id === id);
+      if (!act) return select(id, true);
+      e.stopPropagation();
+      if (act === 'up' && i > 0) [st.blocks[i - 1], st.blocks[i]] = [st.blocks[i], st.blocks[i - 1]];
+      if (act === 'down' && i < st.blocks.length - 1) [st.blocks[i + 1], st.blocks[i]] = [st.blocks[i], st.blocks[i + 1]];
+      if (act === 'dup') { const c = JSON.parse(JSON.stringify(st.blocks[i])); c.id = uid(); (c.data.items || []).forEach(it => it.id = uid('i')); st.blocks.splice(i + 1, 0, c); selId = c.id; }
+      if (act === 'del') { st.blocks.splice(i, 1); if (selId === id) selId = (st.blocks[i] || st.blocks[i - 1] || {}).id || null; toast('Section deleted'); }
+      renderAll();
+    });
+    r.addEventListener('dragstart', e => { e.dataTransfer.setData('text/x-move', id); e.dataTransfer.effectAllowed = 'move'; r.classList.add('dragging'); });
+    r.addEventListener('dragend', () => { r.classList.remove('dragging'); clearLine(); });
+  });
+}
+let line;
+function clearLine() { line && line.remove(); line = null; }
+function dropIndex(y) {
+  const rows = [...$('#outline').querySelectorAll('.row')];
+  for (let i = 0; i < rows.length; i++) { const r = rows[i].getBoundingClientRect(); if (y < r.top + r.height / 2) return i; }
+  return rows.length;
+}
+const outlineEl = $('#outline');
+outlineEl.addEventListener('dragover', e => {
+  const types = [...e.dataTransfer.types]; if (!types.includes('text/x-new') && !types.includes('text/x-move')) return;
+  e.preventDefault(); const i = dropIndex(e.clientY), rows = outlineEl.querySelectorAll('.row');
+  if (!line) { line = document.createElement('div'); line.className = 'drop-line'; }
+  if (rows[i]) outlineEl.insertBefore(line, rows[i]); else outlineEl.appendChild(line);
+});
+outlineEl.addEventListener('dragleave', e => { if (!outlineEl.contains(e.relatedTarget)) clearLine(); });
+outlineEl.addEventListener('drop', e => {
+  e.preventDefault(); const i = dropIndex(e.clientY); clearLine();
+  const nt = e.dataTransfer.getData('text/x-new'), mv = e.dataTransfer.getData('text/x-move');
+  if (nt && TYPES[nt]) return addBlock(nt, i);
+  if (mv) { const from = st.blocks.findIndex(b => b.id === mv); if (from < 0) return; const [b] = st.blocks.splice(from, 1); st.blocks.splice(from < i ? i - 1 : i, 0, b); renderAll(); }
+});
+
+function select(id, scroll) {
+  selId = id; tab = 'block'; scrollToSel = !!scroll; renderOutline(); renderInspector(); schedulePreview(true);
+}
+
+/* ---------- Inspector ---------- */
+const fid = () => 'f' + (++_uid);
+function setTab(t) { tab = t; $('#tabBlock').setAttribute('aria-selected', t === 'block'); $('#tabPage').setAttribute('aria-selected', t === 'page'); renderInspector(); }
+$('#tabBlock').onclick = () => setTab('block'); $('#tabPage').onclick = () => setTab('page');
+
+function renderInspector() {
+  $('#tabBlock').setAttribute('aria-selected', tab === 'block'); $('#tabPage').setAttribute('aria-selected', tab === 'page');
+  const box = $('#insp'); box.innerHTML = '';
+  if (tab === 'page') return renderPage(box);
+  const b = findBlock(selId);
+  if (!b) { box.innerHTML = '<p class="hint" style="padding:0">Select a section in the page list or the preview.</p>'; return; }
+  const head = document.createElement('div'); head.className = 'blockhead';
+  head.innerHTML = `<h3>${esc(TYPES[b.type].label)}</h3><span class="mono" style="color:var(--muted)">#${st.blocks.indexOf(b) + 1}</span>`;
+  box.appendChild(head);
+  const names = autoNames(st);
+  for (const f of TYPES[b.type].fields) box.appendChild(fieldEl(f, b.data, b.id, names, b));
+  if (TYPES[b.type].fields.some(f => f.fmt || (f.fields || []).some(x => x.fmt))) box.appendChild(cheat());
+}
+function cheat() {
+  const d = document.createElement('div'); d.className = 'cheat';
+  d.innerHTML = '<b>Text formatting</b><br><code>**bold**</code> · <code>*italic*</code> · <code>[link text](https://…)</code><br><code>- </code> at the start of a line makes a bullet. A blank line starts a new paragraph.';
+  return d;
+}
+function onEdit(b) { schedulePreview(); const r = $(`#outline .row[data-id="${b.id}"] .s`); if (r) r.textContent = TYPES[b.type].sum(b.data); }
+
+function fieldEl(f, obj, ref, names, b) {
+  const wrapEl = document.createElement('div'); wrapEl.className = 'field';
+  const id = fid();
+  if (f.t === 'text' || f.t === 'area') {
+    wrapEl.innerHTML = `<label for="${id}">${esc(f.label)}</label>` + (f.t === 'text'
+      ? `<input type="text" id="${id}">` : `<textarea id="${id}" rows="${f.rows || 5}"></textarea>`) + (f.hint ? `<div class="fhint">${esc(f.hint)}</div>` : '');
+    const inp = wrapEl.querySelector('input,textarea'); inp.value = obj[f.k] ?? '';
+    inp.addEventListener('input', () => { obj[f.k] = inp.value; onEdit(b); const s = inp.closest('details')?.querySelector('.tt'); if (s && f.k === 'title') s.textContent = inp.value || 'Untitled'; });
+  } else if (f.t === 'check') {
+    wrapEl.innerHTML = `<label class="check" for="${id}"><input type="checkbox" id="${id}"> ${esc(f.label)}</label>`;
+    const inp = wrapEl.querySelector('input'); inp.checked = !!obj[f.k];
+    inp.addEventListener('change', () => { obj[f.k] = inp.checked; onEdit(b); });
+  } else if (f.t === 'img') {
+    return slotEl(f, obj, ref + '.' + f.k, names, b);
+  } else if (f.t === 'list') {
+    wrapEl.innerHTML = `<div class="flabel">${esc(f.label)}</div><div class="list"></div><div><button class="btn sm">+ ${esc(f.add)}</button></div>`;
+    const list = wrapEl.querySelector('.list'), arr = obj[f.k];
+    arr.forEach((it, i) => {
+      const det = document.createElement('details'); det.className = 'item'; det.open = openItems.has(it.id);
+      det.innerHTML = `<summary><span class="n">${i + 1}</span><span class="tt">${esc(f.title(it) || 'Untitled')}</span>
+        <button data-a="up" aria-label="Move up" ${i ? '' : 'disabled'}>↑</button><button data-a="down" aria-label="Move down" ${i < arr.length - 1 ? '' : 'disabled'}>↓</button><button data-a="dup" aria-label="Duplicate">⧉</button><button data-a="del" aria-label="Delete">✕</button></summary><div class="body"></div>`;
+      det.addEventListener('toggle', () => det.open ? openItems.add(it.id) : openItems.delete(it.id));
+      det.querySelector('summary').addEventListener('click', e => {
+        const a = e.target.closest('button')?.dataset.a; if (!a) return; e.preventDefault();
+        if (a === 'up') [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
+        if (a === 'down') [arr[i + 1], arr[i]] = [arr[i], arr[i + 1]];
+        if (a === 'dup') { const c = JSON.parse(JSON.stringify(it)); c.id = uid('i'); arr.splice(i + 1, 0, c); openItems.add(c.id); }
+        if (a === 'del') arr.splice(i, 1);
+        renderAll();
+      });
+      const body = det.querySelector('.body');
+      for (const sf of f.fields) body.appendChild(fieldEl(sf, it, ref + '.' + it.id, names, b));
+      list.appendChild(det);
+    });
+    wrapEl.querySelector('.btn').addEventListener('click', () => { const it = f.make(); arr.push(it); openItems.add(it.id); renderAll(); });
+  }
+  return wrapEl;
+}
+
+function slotEl(f, obj, ref, names, b) {
+  const slot = obj[f.k], el = document.createElement('div'); el.className = 'slot';
+  const r = resolveSlot(slot, ref, names, assets, f.k);
+  const auto = names[ref] ? names[ref] + (slot.a && assets[slot.a] ? (extOf(assets[slot.a].name) || (iconLike(f.k) ? '.png' : '.jpg')) : (iconLike(f.k) ? '.png' : '.jpg')) : '';
+  const kind = r ? r.kind : 'empty';
+  const badge = { new: 'New upload', existing: 'Existing file', empty: 'Empty' }[kind];
+  const id = fid(), fnId = fid();
+  el.innerHTML = `<div class="thumb">${r && r.asset ? `<img src="${r.asset.url}" alt="">` : (r ? 'On server' : 'Drop<br>image')}</div>
+    <div class="meta">
+      <div class="top"><span class="fl">${esc(f.label)}</span><span class="badge ${kind}">${badge}</span></div>
+      <code>${esc(r ? r.name : (f.hint ? 'Not set' : auto || '—'))}</code>
+      ${f.hint ? `<div class="fhint" style="font-size:11.5px;color:var(--muted)">${esc(f.hint)}</div>` : ''}
+      <div class="acts">
+        <label class="btn sm" for="${id}">${slot.a ? 'Replace' : 'Upload'}</label><input type="file" id="${id}" accept="image/*" hidden>
+        ${slot.a || slot.name ? '<button class="btn sm ghost danger" data-clear>Clear</button>' : ''}
+      </div>
+      <label for="${fnId}" style="font-size:11px;color:var(--muted)">${slot.a ? 'Filename (leave blank for automatic)' : 'Or use a file already on the server'}</label>
+      <input class="fn" id="${fnId}" type="text" placeholder="${esc(slot.a ? auto : 'e.g. ' + (auto || 'brand_PDP_logo.png'))}">
+    </div>`;
+  const fn = el.querySelector('.fn'); fn.value = slot.name;
+  fn.addEventListener('change', () => { slot.name = fn.value.trim(); renderInspector(); schedulePreview(); });
+  const take = file => {
+    if (!file || !/^image\//.test(file.type)) return toast('That file is not an image.');
+    const key = uid('a'); assets[key] = { name: file.name, type: file.type, blob: file, url: URL.createObjectURL(file) };
+    slot.a = key; slot.name = ''; renderAll();
+  };
+  el.querySelector('input[type=file]').addEventListener('change', e => take(e.target.files[0]));
+  el.querySelector('[data-clear]')?.addEventListener('click', () => { slot.a = null; slot.name = ''; renderAll(); });
+  el.addEventListener('dragover', e => { if ([...e.dataTransfer.types].includes('Files')) { e.preventDefault(); el.classList.add('over'); } });
+  el.addEventListener('dragleave', () => el.classList.remove('over'));
+  el.addEventListener('drop', e => { e.preventDefault(); el.classList.remove('over'); take(e.dataTransfer.files[0]); });
+  return el;
+}
+
+function renderPage(box) {
+  const mk = (lbl, key, area, hint) => {
+    const d = document.createElement('div'); d.className = 'field'; const id = fid();
+    d.innerHTML = `<label for="${id}">${lbl}</label>${area ? `<textarea id="${id}" rows="4"></textarea>` : `<input type="text" id="${id}">`}${hint ? `<div class="fhint">${hint}</div>` : ''}`;
+    const i = d.querySelector('input,textarea'); i.value = st[key]; i.addEventListener('input', () => { st[key] = i.value; }); box.appendChild(d);
+  };
+  mk('Page title', 'title', false, 'Shown in the browser tab.');
+  mk('Meta description', 'desc', true, 'Shown by search engines and link previews. About 150 characters.');
+  mk('Meta keywords', 'kw', false, 'Comma separated.');
+  const c = document.createElement('div'); c.className = 'field';
+  c.innerHTML = '<div class="flabel">Brand colours</div><div class="colors"></div><div><button class="btn sm ghost">Reset to LIVARA colours</button></div>';
+  const g = c.querySelector('.colors');
+  COLOR_KEYS.forEach(([k, def, lbl]) => {
+    const row = document.createElement('div'); row.className = 'colorrow'; const id = fid();
+    row.innerHTML = `<input type="color" id="${id}" aria-label="${esc(lbl)}"><label for="${id}">${esc(lbl)}</label><input type="text" aria-label="${esc(lbl)} hex">`;
+    const [pick, , hex] = row.children; pick.value = hex.value = st.colors[k];
+    const set = v => { if (!/^#[0-9a-f]{6}$/i.test(v)) return; st.colors[k] = v.toUpperCase(); pick.value = v; hex.value = v.toUpperCase(); schedulePreview(); };
+    pick.addEventListener('input', () => set(pick.value)); hex.addEventListener('change', () => set(hex.value.trim()));
+    g.appendChild(row);
+  });
+  c.querySelector('button').onclick = () => { st.colors = Object.fromEntries(COLOR_KEYS.map(([k, v]) => [k, v])); renderInspector(); schedulePreview(); };
+  box.appendChild(c);
+}
+
+function renderAll() { renderOutline(); renderInspector(); schedulePreview(); }
+
+/* ---------- SKU ---------- */
+const skuIn = $('#sku'); skuIn.value = st.sku;
+skuIn.addEventListener('input', () => { st.sku = skuIn.value.trim(); renderInspector(); schedulePreview(); });
+
+/* ---------- Saving files ---------- */
+let dl;
+async function saveFile(filename, data) {
+  if (dl === undefined) dl = window.claude ? await window.claude.use('downloads').catch(() => null) : null;
+  if (dl) return dl.save({ filename, data });
+  // Outside claude.ai (e.g. GitHub Pages): plain browser download.
+  const url = URL.createObjectURL(data instanceof Blob ? data : new Blob([data]));
+  const a = document.createElement('a'); a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  return { status: 'saved' };
+}
+const saveMsg = e => ({ declined: 'Save cancelled.', rate_limited: 'Another save is waiting. Try again in a moment.', too_large: 'The file is too large to save here.' }[e && e.code] || 'Saving files is not available in this view. Open the page in claude.ai.');
+
+function openExport() {
+  const { files, warns } = buildHTML(st, assets, {});
+  const list = [...files.values()].sort((a, b) => a.name.localeCompare(b.name));
+  const sku = (st.sku || 'page').trim();
+  $('#exBody').innerHTML = `
+    ${warns.length ? `<ul class="warns">${warns.map(w => `<li>${esc(w)}</li>`).join('')}</ul>` : ''}
+    <p style="margin:0">The .zip holds <code>${esc(sku)}_en.html</code> and <code>assets/img/</code> with your new uploads. Files marked <b>On server</b> are referenced but not included, because they already exist there. Your existing <code>assets/css/artistry.css</code> and <code>assets/js/</code> files are referenced, not included.</p>
+    <div class="ftable-wrap"><table class="ftable"><thead><tr><th>File</th><th>Status</th></tr></thead><tbody>
+      <tr><td><code>${esc(sku)}_en.html</code></td><td>Included</td></tr>
+      ${list.map(f => `<tr><td><code>assets/img/${esc(f.name)}</code></td><td>${f.kind === 'new' ? 'Included' : 'On server'}</td></tr>`).join('')}
+    </tbody></table></div>`;
+  $('#exStatus').textContent = '';
+  $('#modal').hidden = false; $('#exZip').focus();
+}
+$('#exportBtn').onclick = openExport;
+$('#exClose').onclick = () => $('#modal').hidden = true;
+$('#modal').addEventListener('click', e => { if (e.target.id === 'modal') $('#modal').hidden = true; });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('#modal').hidden = true; });
+
+$('#exHtml').onclick = async () => {
+  const sku = (st.sku || 'page').trim();
+  try { await saveFile(sku + '_en.html', buildHTML(st, assets, {}).html); $('#exStatus').textContent = 'Saved ' + sku + '_en.html'; }
+  catch (e) { $('#exStatus').textContent = saveMsg(e); }
+};
+$('#exZip').onclick = async () => {
+  const sku = (st.sku || 'page').trim(), { html, files } = buildHTML(st, assets, {});
+  if (!window.JSZip) { $('#exStatus').textContent = 'The zip tool did not load. Reload the page and try again.'; return; }
+  $('#exStatus').textContent = 'Building zip…';
+  const zip = new JSZip(); zip.file(sku + '_en.html', html);
+  for (const f of files.values()) if (f.kind === 'new') zip.file('assets/img/' + f.name, f.asset.blob);
+  const blob = await zip.generateAsync({ type: 'blob' });
+  try { await saveFile(sku + '_en.zip', blob); $('#exStatus').textContent = 'Saved ' + sku + '_en.zip'; }
+  catch (e) { $('#exStatus').textContent = saveMsg(e); }
+};
+
+/* ---------- Project save / open (keeps uploads inside the .json) ---------- */
+const toDataURL = blob => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(blob); });
+function fromDataURL(u) { const [h, b64] = u.split(','); const bin = atob(b64), a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new Blob([a], { type: h.slice(5).split(';')[0] }); }
+$('#saveProject').onclick = async () => {
+  const used = {};
+  for (const [k, a] of Object.entries(assets)) if (JSON.stringify(st).includes('"' + k + '"')) used[k] = { name: a.name, type: a.type, data: await toDataURL(a.blob) };
+  try { await saveFile((st.sku || 'page') + '_builder.json', JSON.stringify({ app: 'pdp-builder', v: 1, state: st, assets: used })); toast('Project saved'); }
+  catch (e) { toast(saveMsg(e)); }
+};
+$('#openProject').addEventListener('change', async e => {
+  const file = e.target.files[0]; e.target.value = ''; if (!file) return;
+  try {
+    const p = JSON.parse(await file.text());
+    if (p.app !== 'pdp-builder' || !p.state || !Array.isArray(p.state.blocks)) throw 0;
+    for (const k of Object.keys(assets)) { URL.revokeObjectURL(assets[k].url); delete assets[k]; }
+    for (const [k, a] of Object.entries(p.assets || {})) { const blob = fromDataURL(a.data); assets[k] = { name: a.name, type: a.type, blob, url: URL.createObjectURL(blob) }; }
+    st = p.state; st.colors = Object.assign(Object.fromEntries(COLOR_KEYS.map(([k, v]) => [k, v])), st.colors || {});
+    skuIn.value = st.sku; selId = st.blocks[0]?.id || null; tab = 'block'; renderAll(); toast('Project opened');
+  } catch (err) { toast('That file is not a PDP Builder project.'); }
+});
+
+renderLib(); renderAll(); fit();
+</script>
+
+</body>
+</html>
