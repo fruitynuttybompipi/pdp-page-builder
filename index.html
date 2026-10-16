@@ -107,7 +107,7 @@ header.bar {
 .drop-line { height: 3px; background: var(--accent); border-radius: 2px; margin: -1px 4px 1px }
 .row.dragging { opacity: .4 }
 
-.center { min-height: 0; display: grid; grid-template-rows: auto 1fr; background: var(--stage) }
+.center { min-height: 0; display: grid; grid-template-rows: auto auto 1fr; background: var(--stage) }
 .stagebar { display: flex; align-items: center; gap: 10px; padding: 8px 14px; color: var(--muted); font-size: 12px; border-bottom: 1px solid var(--line); background: var(--surface) }
 .stage { min-height: 0; overflow: hidden; position: relative; padding: 16px }
 .frame-wrap { margin: 0 auto; transform-origin: top left; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 8px 30px rgba(0,0,0,.08) }
@@ -156,6 +156,31 @@ details.item .body { padding: 10px; display: flex; flex-direction: column; gap: 
 .icoitem { border: 1px solid var(--line); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 8px; background: var(--surface) }
 .icohead { display: flex; align-items: center; gap: 4px }
 .icohead .n { font-family: var(--mono); font-size: 11px; color: var(--muted) }
+.poscard { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; background: var(--raised) }
+.poshead { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12.5px; color: var(--accent) }
+.divprev { height: 34px; display: flex; align-items: center; justify-content: center; border: 1px dashed var(--line); border-radius: 8px; background: var(--surface); padding: 0 12px }
+.divprev i { display: block; max-width: 100% }
+.seg-full { display: flex; width: 100% }
+.seg-full > button { flex: 1 1 0; justify-content: center; min-width: 0 }
+.showon > button { gap: 5px; padding: 6px 4px }
+.showon > button[aria-pressed="false"] { color: var(--muted); text-decoration: line-through; opacity: .7 }
+.showon > button[aria-pressed="true"] .ico { color: var(--accent) }
+.chk-head { font-weight: 700; padding: 8px 12px; border-radius: 8px; font-size: 14px }
+.chk-head.good { background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok) }
+.chk-head.meh { background: color-mix(in srgb, var(--warn) 15%, transparent); color: var(--warn) }
+.chk-head.bad { background: color-mix(in srgb, var(--danger) 15%, transparent); color: var(--danger) }
+.checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; max-height: 240px; overflow: auto }
+.checks li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; background: var(--raised) }
+.checks li.error { border-color: var(--danger) }
+.checks li b { margin-right: 4px }
+.optbox { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px }
+.optrow { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; font-size: 13px }
+.optrow select { border: 1px solid var(--line); border-radius: 6px; padding: 3px 6px; background: var(--raised) }
+.angles { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px }
+.angles button { border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 3px 0 2px; display: flex; flex-direction: column; align-items: center; font-size: 14px; line-height: 1.1; color: var(--fg) }
+.angles button small { font-size: 9.5px; color: var(--muted) }
+.angles button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft) }
+.angles button:hover { border-color: var(--muted) }
 .gradprev { height: 28px; border-radius: 6px; border: 1px solid var(--line) }
 .splitlbl { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted) }
 .splitlbl b { color: var(--fg) }
@@ -247,6 +272,9 @@ details.item[open] > .body { animation: rise .2s ease-out }
 .toast.in { animation: slideUp .22s ease-out } .toast.out { animation: slideDown .22s ease-in forwards }
 .frame-wrap { transition: width .35s cubic-bezier(.2,.8,.2,1), transform .35s cubic-bezier(.2,.8,.2,1), margin-left .35s cubic-bezier(.2,.8,.2,1) }
 .frame-wrap iframe { transition: width .35s cubic-bezier(.2,.8,.2,1) }
+#gridBtn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--fg) }
+.restore { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 14px; background: var(--accent-soft); border-bottom: 1px solid var(--accent); font-size: 13px; animation: rise .3s ease-out }
+.restore span { flex: 1; min-width: 180px }
 .live { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); flex: none }
 .live.pulse::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--ok); animation: ping .7s ease-out }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important } }
@@ -257,14 +285,14 @@ details.item[open] > .body { animation: rise .2s ease-out }
 <div class="app">
   <header class="bar">
     <div class="brand"><span class="mark"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg></span>PDP Builder <small>Amway PDP template</small></div>
-    <div class="sku"><label for="sku">SKU</label><input id="sku" type="text" inputmode="numeric" autocomplete="off"></div>
+    <div class="sku"><label for="sku">SKU</label><input id="sku" type="text" inputmode="numeric" autocomplete="off" placeholder="e.g. 343136"></div>
     <div class="seg" role="group" aria-label="Preview width">
       <button data-dev="desktop" aria-pressed="true"><i data-ico="desktop"></i><span class="hide-sm">Desktop</span></button>
       <button data-dev="tablet" aria-pressed="false"><i data-ico="tablet"></i><span class="hide-sm">Tablet</span></button>
       <button data-dev="mobile" aria-pressed="false"><i data-ico="mobile"></i><span class="hide-sm">Mobile</span></button>
     </div>
     <div class="spacer"></div>
-    <label class="btn" for="openProject"><i data-ico="open"></i><span class="hide-sm">Open project</span><input id="openProject" type="file" accept=".json,application/json" hidden></label>
+    <label class="btn" for="openProject"><i data-ico="open"></i><span class="hide-sm">Open / Import</span><input id="openProject" type="file" accept=".html,.htm,.json,text/html,application/json" title="Open a saved project, or import a live PDP .html page" hidden></label>
     <div class="seg" role="group" aria-label="History"><button id="undoBtn" title="Undo (Ctrl+Z)" aria-label="Undo" disabled><i data-ico="undo"></i><span class="hide-sm">Undo</span></button><button id="redoBtn" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" disabled><i data-ico="redo"></i><span class="hide-sm">Redo</span></button></div>
     <button class="btn icon-only" id="themeBtn" title="Switch light / dark" aria-label="Switch light or dark mode"><i data-ico="moon"></i></button>
     <button class="btn" id="saveProject"><i data-ico="save"></i><span class="hide-sm">Save project</span></button>
@@ -281,7 +309,8 @@ details.item[open] > .body { animation: rise .2s ease-out }
     </aside>
 
     <main class="center">
-      <div class="stagebar"><span class="live" id="liveDot" title="Preview updates as you edit"></span><span id="stageInfo"></span><span class="spacer"></span><span>Click a section in the preview to edit it</span></div>
+      <div class="stagebar"><span class="live" id="liveDot" title="Preview updates as you edit"></span><span id="stageInfo"></span><span class="spacer"></span><span class="hide-sm">Click a section in the preview to edit it</span><button class="btn sm" id="gridBtn" aria-pressed="false" title="Show alignment guides (G)"><i data-ico="grid"></i>Grid</button></div>
+      <div class="restore" id="restoreBar" hidden><span id="restoreMsg"></span><button class="btn sm primary" id="restoreYes">Restore</button><button class="btn sm" id="restoreNo">Start fresh</button></div>
       <div class="stage" id="stage"><div class="frame-wrap" id="frameWrap"><iframe id="frame" title="Page preview"></iframe></div></div>
     </main>
 
@@ -382,9 +411,10 @@ const EL = {
   image: { label: 'Image', img: true, ph: [900, 700] },
   logo: { label: 'Logo', img: true, ph: [600, 200] },
   icons: { label: 'Icon row', init: () => ({ items: [newIco(), newIco(), newIco()], isz: '', isu: 'vw', gap: '' }) },
+  divider: { label: 'Divider', init: () => ({ dv: { w: '100', th: '2', cap: 'round', fill: 'solid', c1: '#9F672E', c2: '#4E2312', sp: '' }, style: { align: 'center' } }) },
   button: { label: 'Button', def: 'Shop now', init: () => ({ href: '', iconPos: 'left', btn: { fill: 'solid', c1: '#9F672E', c2: '#4E2312', tc: '#FFFFFF', angle: '135', r: '6', size: 'md' } }) },
 };
-const EL_ORDER = ['headline', 'title', 'text', 'icon', 'icons', 'image', 'logo', 'button'];
+const EL_ORDER = ['headline', 'title', 'text', 'icon', 'icons', 'image', 'logo', 'button', 'divider'];
 function newIco() { return { id: uid('k'), img: S(), cap: '' }; }
 const newEl = (t, v, extra) => Object.assign({ id: uid('e'), t, v: v ?? (EL[t].def || ''), img: S(), style: {}, w: '' }, EL[t].init ? EL[t].init() : {}, extra || {});
 const elSum = els => { const e = (els || []).find(x => EL[x.t] && EL[x.t].text && x.v.trim()); return e ? e.v.split('\n')[0] : (els || []).length + ' elements'; };
@@ -399,7 +429,7 @@ const TYPES = {
     { k: 'mob', t: 'img', label: 'Banner · mobile', ph: [750, 1100], hint: IMG_HINT_M },
     { k: 'pos', t: 'heropos', label: 'Text position' },
     { k: 'els', t: 'els', label: 'Text on the banner' } ],
-    make: () => ({ desk: S(), tab: S(), mob: S(), pos: { mode: 'custom', layout: 'logo-left', logoW: '30', h: 'left', v: 'middle', pad: ['4', '8', '4', '8'] }, els: [newEl('logo'), newEl('title', 'PRODUCT NAME', { style: { align: 'left' } }), newEl('text', 'Short line about the product.', { style: { align: 'left' } })] }),
+    make: () => ({ desk: S(), tab: S(), mob: S(), pos: { mode: 'custom', layout: 'logo-left', logoW: '30', h: 'left', v: 'middle', pad: ['4', '8', '4', '8'], tm: { h: 'center', v: 'middle', pad: ['', '', '', ''] } }, els: [newEl('logo'), newEl('title', 'PRODUCT NAME'), newEl('text', 'Short line about the product.')] }),
     sum: d => elSum(d.els) },
   intro: { label: 'Intro text', fields: [{ k: 'els', t: 'els', label: 'Elements' }],
     make: () => ({ els: [newEl('title', 'Headline'), newEl('text', 'Describe the product here.')] }), sum: d => elSum(d.els) },
@@ -448,7 +478,14 @@ const TYPES = {
         { k: 'title', t: 'text', label: 'Item heading' },
         { k: 'body', t: 'area', label: 'Text', fmt: true },
         { k: 'specs', t: 'area', label: 'Spec table', hint: 'One row per line: Label | Value. Leave empty for no table.', rows: 4 } ] } ],
-    make: () => ({ title: 'MORE INFORMATION', items: [] }), sum: d => d.items.length + ' items' },
+    // Starts with the usual PDP items, filled with sample text to replace.
+    make: () => ({ title: 'MORE INFORMATION', items: [
+      { id: uid('i'), title: 'HOW TO USE', body: '- Shake well before use.\n- Apply an appropriate amount to clean, dry skin and massage gently until absorbed.\n- Use morning and evening for best results.', specs: '' },
+      { id: uid('i'), title: 'TARGETED CONSUMER', body: '- Adults looking for a simple, effective daily routine.\n- Suitable for all skin types, including sensitive skin.', specs: '' },
+      { id: uid('i'), title: 'ADVISORIES AND PRECAUTIONS', body: 'For external use only.\n- Avoid contact with eyes. If contact occurs, rinse thoroughly with water.\n- Discontinue use if irritation occurs.\n- Keep out of reach of children.', specs: '' },
+      { id: uid('i'), title: 'STORAGE', body: 'Store in a cool, dry place below 30°C, away from direct sunlight. Close the cap tightly after use.', specs: '' },
+      { id: uid('i'), title: 'PRODUCT VOLUME & INGREDIENTS', body: 'Volume: 50ml\n\n**Ingredients:** Water, Glycerin, Butylene Glycol, Niacinamide, Sodium Hyaluronate, Panthenol, Allantoin, Tocopheryl Acetate, Phenoxyethanol, Fragrance.', specs: '' },
+    ] }), sum: d => d.items.length + ' items' },
   banner: { label: 'Bottom banner', fields: [
     { k: 'desk', t: 'img', label: 'Banner · desktop', ph: [1920, 700] },
     { k: 'tab', t: 'img', label: 'Banner · tablet', ph: [1200, 700], hint: IMG_HINT_T },
@@ -461,7 +498,11 @@ function newCol(els) { return { id: uid('c'), els: els || [], bg: '' }; }
 const STYLES = { moreinfo: [['title', 'Item headings'], ['text', 'Item text']] };
 // "Empty column" is a Columns section that starts with one blank column.
 TYPES.blank = { label: 'Empty column', as: 'columns', make: () => ({ valign: 'flex-start', cols: [newCol([])] }) };
-const ORDER = ['blank', 'hero', 'intro', 'text', 'columns', 'video', 'features', 'profile', 'brand', 'image', 'moreinfo', 'banner'];
+// "Divider" card: a slim Columns section holding one divider line.
+TYPES.divline = { label: 'Divider', as: 'columns', make: () => ({ valign: 'flex-start', sbox: { pad: ['2', '12', '2', '12'] }, cols: [newCol([newEl('divider')])] }) };
+TYPES.raw = { label: 'Custom HTML', fields: [{ k: 'html', t: 'area', label: 'HTML', rows: 14, hint: 'Exported exactly as written. Imported sections the builder does not recognise land here unchanged.' }],
+  make: () => ({ html: '<section>\n  <div class="livara-desc">Your HTML here</div>\n</section>' }), sum: d => ((d.html || '').match(/class="([^"]+)"/) || [, 'HTML'])[1].slice(0, 40) };
+const ORDER = ['blank', 'hero', 'intro', 'text', 'columns', 'video', 'features', 'profile', 'brand', 'image', 'divline', 'moreinfo', 'banner', 'raw'];
 const iconLike = k => k === 'icon' || k === 'logo';
 
 /* ---------- Upgrade projects saved before elements existed ---------- */
@@ -523,6 +564,27 @@ function autoNames(st) {
     } else if (b.type === 'brand') walk(d.els, whiteLogo);
     else if (d.els) walk(d.els, heroLogo);
   }
+  // Uploads must never take the name of a file that already exists on the server, or the zip would overwrite it.
+  const taken = new Set(), walkS = o => { if (!o || typeof o !== 'object') return; if ('a' in o && 'name' in o && !o.a && String(o.name || '').trim()) taken.add(String(o.name).trim().replace(/\.[a-z0-9]+$/i, '').toLowerCase()); Object.values(o).forEach(walkS); };
+  walkS(st.blocks);
+  // Which keys are uploads: only those get renamed; existing-file slots keep their own names anyway.
+  const up = new Set(), slotAt = k => { for (const b of st.blocks) { const d = b.data;
+      for (const f of ['desk', 'tab', 'mob']) if (k === b.id + '.' + f) return d[f];
+      if (k === b.id + '.bg') return (d.bg || {}).img; if (k === b.id + '.sbg.bg') return (d.sbg || {}).img; }
+    return null; };
+  const scan = o => { if (!o || typeof o !== 'object') return; if (o.id && o.img && o.img.a) up.add(o.id); Object.values(o).forEach(scan); };
+  scan(st.blocks);
+  for (const b of st.blocks) { const d = b.data;
+    (d.items || []).forEach(it => { if ((it.bg || {}).img && it.bg.img.a) up.add(b.id + '.' + it.id + '.bg'); });
+    (d.cols || []).forEach(c => { if ((c.bgx || {}).img && c.bgx.img.a) up.add(b.id + '.' + c.id + '.bg'); }); }
+  for (const k of Object.keys(m)) { const s = slotAt(k); if (s && s.a) up.add(k); }
+  const used = new Set();
+  for (const k of Object.keys(m)) {
+    if (!up.has(k)) continue;
+    let n = m[k];
+    while (taken.has(n.toLowerCase()) || used.has(n.toLowerCase())) n = n.replace(/(\d*)$/, d => String((+d || 1) + 1));
+    used.add(n.toLowerCase()); m[k] = n;
+  }
   return m;
 }
 // slot -> {name, kind:'new'|'existing', asset?} or null when empty
@@ -554,6 +616,9 @@ const PDP_CSS = `
       .pdp-image img { max-width: 100%; }
       .pdp-logo { width: 20vw; max-width: 100%; }
       .pdp-btn-wrap { align-self: stretch; }
+      .pdp-divider { display: block; flex: none; max-width: 100%; }
+      .pdp-btn.pdp-btn-line { padding: .25em 0 .45em; border: 0; border-radius: 0; background-repeat: no-repeat; background-position: 0 100%; }
+      .pdp-btn.pdp-btn-line:hover { box-shadow: none; transform: none; filter: none; background-size: 100% calc(var(--lt, 2px) + 1px) !important; }
       @media only screen and (min-width: 1201px) { .pdp-hide-d { display: none !important; } }
       @media only screen and (min-width: 769px) and (max-width: 1200px) { .pdp-hide-t { display: none !important; } }
       @media only screen and (max-width: 768px) { .pdp-hide-m { display: none !important; } }
@@ -564,11 +629,25 @@ const PDP_CSS = `
       .pdp-btn:hover { filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 6px 16px -8px rgba(0,0,0,.45); }
       .pdp-btn-icon { width: 1.25em; height: 1.25em; object-fit: contain; }
       .pdp-feature-head { display: flex; flex-direction: column; row-gap: 1vw; text-align: center; align-items: center; margin-bottom: 4vw; }
-      .pdp-hero-row { display: flex; align-items: center; column-gap: 3vw; width: 100%; }
-      .pdp-hero-logo, .pdp-hero-text { display: flex; flex-direction: column; row-gap: 1vw; min-width: 0; }
-      .pdp-hero-logo { flex: 0 0 var(--lw, 30%); align-items: center; }
-      .pdp-hero-logo .livara-banner-description-logo { width: 100%; margin-bottom: 0; }
-      .pdp-hero-text { flex: 1 1 0; }
+      /* Hero: tablet & mobile keep the template's centred stack; desktop gets the custom position and logo-beside-text row. */
+      .pdp-hero-row { display: flex; flex-direction: column; align-items: var(--tha, center); text-align: var(--tht, center); row-gap: 3vw; column-gap: 3vw; width: 100%; }
+      .pdp-hero-logo, .pdp-hero-text { display: flex; flex-direction: column; row-gap: 1vw; min-width: 0; align-items: var(--tha, center); width: 100%; }
+      .pdp-hero-logo { order: -1; }
+      .pdp-hero-logo .livara-banner-description-logo { margin-bottom: 0; }
+      .pdp-hero-custom .livara-banner-description-slogan { text-align: inherit !important; }
+      /* Tablet & mobile: logo, title, paragraph stacked ON the banner, placed by the tablet/mobile grid (default centre). */
+      @media only screen and (max-width: 1200px) {
+        .livara-banner-description.pdp-hero-custom { top: 0; right: 0; bottom: 0; left: 0; width: auto; transform: none; padding: var(--thp, 6vw); justify-content: var(--thj, center); align-items: var(--tha, center); text-align: var(--tht, center); row-gap: 2vw; }
+      }
+      @media only screen and (min-width: 1201px) {
+        .livara-banner-description.pdp-hero-custom { top: 0; right: 0; bottom: 0; left: 0; width: auto; transform: none; padding: var(--hp, 0); justify-content: var(--hj, center); align-items: var(--ha, center); text-align: var(--ht, center); row-gap: 1vw; }
+        .pdp-hero-row, .pdp-hero-logo { align-items: center; }
+        .pdp-hero-custom [style*="--al"] { text-align: var(--al) !important; }
+        .pdp-hero-row { flex-direction: row; text-align: inherit; }
+        .pdp-hero-logo { order: 0; flex: 0 0 var(--lw, 30%); width: auto; }
+        .pdp-hero-logo .livara-banner-description-logo { width: 100%; }
+        .pdp-hero-text { flex: 1 1 0; width: auto; align-items: stretch; }
+      }
       @media only screen and (min-width: 1201px) {
         .livara-product-details[style*="--tw"] .livara-details { width: var(--tw); }
         .livara-product-details[style*="--tw"] .livara-product-img { width: calc(100% - var(--tw)); }
@@ -581,13 +660,25 @@ const PDP_CSS = `
         .pdp-icon-item { width: var(--isz, 13vw); }
       }
 `;
+// Alignment guides: 12 columns, centre lines, and dashed outlines on sections, columns and elements.
+const GRID_CSS = `body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:2147483646;
+  background-image:linear-gradient(to right,transparent calc(50% - 1px),rgba(236,32,110,.75) calc(50% - 1px),rgba(236,32,110,.75) calc(50% + 1px),transparent calc(50% + 1px)),
+  linear-gradient(to bottom,transparent calc(50% - 1px),rgba(236,32,110,.45) calc(50% - 1px),rgba(236,32,110,.45) calc(50% + 1px),transparent calc(50% + 1px)),
+  linear-gradient(to right,rgba(0,132,255,.09) 0 calc(100% - 2vw),transparent 0);
+  background-size:100% 100%,100% 100%,calc((100% + 2vw)/12) 100%;background-repeat:no-repeat,no-repeat,repeat-x}
+section{outline:1px solid rgba(0,132,255,.55)!important;outline-offset:-1px}
+section>*,.pdp-col,.livara-details,.livara-product-img,.livara-banner-description,.pdp-hero-logo,.pdp-hero-text,.pdp-cols>*>*,.pdp-col>*,.livara-details>*,.livara-desc>*,.livara-profile>*,.livara-brand>*,.pdp-hero-text>*,.pdp-hero-logo>*,.livara-banner-description>*{outline:1px dashed rgba(236,32,110,.55);outline-offset:-1px}`;
 const PREVIEW_BASE = `*,*:before,*:after{box-sizing:border-box}html{-webkit-text-size-adjust:100%}body{margin:0}b,strong{font-weight:700}img{vertical-align:middle;border:0}table{border-collapse:collapse;border-spacing:0}ul{margin-top:0;margin-bottom:10px}a{color:#337ab7}.text-center{text-align:center}.w-100{width:100%!important}.h-auto{height:auto!important}.bold{font-weight:bold}.mb-1{margin-bottom:.25rem!important}.mb-3{margin-bottom:1rem!important}.mb-4{margin-bottom:1.5rem!important}`;
 
 function buildHTML(st, assets, opt) {
-  const P = !!(opt && opt.preview), sel = opt && opt.sel;
+  const P = !!(opt && opt.preview), sel = opt && opt.sel, clean = !!(opt && opt.clean), grid = !!(opt && opt.grid);
   const names = autoNames(st), files = new Map(), warns = [];
+  // Files the page already references on the server. An upload with the same file name is that file: point at it, don't ship a copy.
+  const onServer = new Set(), walkS = o => { if (!o || typeof o !== 'object') return; if ('a' in o && 'name' in o && !o.a && String(o.name || '').trim()) onServer.add(String(o.name).trim().toLowerCase()); Object.values(o).forEach(walkS); };
+  walkS(st.blocks);
   const R = (slot, ref, key) => {
-    const f = resolveSlot(slot, ref, names, assets, key);
+    let f = resolveSlot(slot, ref, names, assets, key);
+    if (f && f.kind === 'new' && onServer.has(String(f.asset.name || '').toLowerCase())) f = { name: f.asset.name, kind: 'existing', asset: f.asset, same: true };
     if (f) {
       const prev = files.get(f.name);
       if (prev && prev.kind === 'new' && f.kind === 'new' && prev.asset !== f.asset) warns.push(`Two different uploads are both named ${f.name}. Rename one of them.`);
@@ -595,7 +686,8 @@ function buildHTML(st, assets, opt) {
     }
     return f;
   };
-  const src = (f, ph) => P ? (f ? (f.asset ? f.asset.url : phSVG(f.name, ph)) : phSVG('No image yet', ph, true)) : 'assets/img/' + f.name;
+  const live = P && !!(opt && opt.live), liveBase = String((opt && opt.liveBase) || '').replace(/\/?$/, '/');
+  const src = (f, ph) => P ? (f ? (f.asset ? f.asset.url : (live ? liveBase + encodeURI(f.name) : phSVG(f.name, ph))) : phSVG('No image yet', ph, true)) : 'assets/img/' + f.name;
   const bid = b => P ? ` data-bid="${b.id}"` : '';
   const lbl = b => TYPES[b.type].label;
 
@@ -614,7 +706,7 @@ function buildHTML(st, assets, opt) {
   const txs = (s, cls, o) => {
     o = o || {}; s = s || {}; const css = [];
     let c = String(cls || '').split(' ').filter(Boolean);
-    if (o.part !== 'font' && s.align) { css.push(`text-align:${s.align}!important`, 'align-self:stretch'); if (o.inline) css.push('display:block'); }
+    if (o.part !== 'font' && s.align) { css.push(o.alignVar ? '--al:' + s.align : `text-align:${s.align}!important`, 'align-self:stretch'); if (o.inline) css.push('display:block'); }
     if (o.part !== 'align') {
       if (s.size) { c = c.filter(x => !SIZE_RE.test(x)); c.push('font-' + s.size); }
       if (s.weight) css.push('font-weight:' + (s.weight === 'bold' ? 700 : 400));
@@ -649,6 +741,14 @@ function buildHTML(st, assets, opt) {
     const hgt = +el.ht > 0 ? (+el.ht) + (el.hu === 'vw' ? 'vw' : 'px') : '';
     const sz = [...(+el.w > 0 ? [`width:${Math.min(100, +el.w)}%`] : []), ...(hgt && def.text ? ['min-height:' + hgt] : [])];
     if (def.text && +el.w > 0 && s.align && ALIGN[s.align]) sz.push(...ALIGN[s.align].filter(x => x.startsWith('margin')));
+    if (el.t === 'divider') {
+      const D = el.dv || {}, th = Math.max(1, +D.th || 2), c = [];
+      const c1 = okColor(D.c1) ? D.c1 : '#9F672E', c2 = okColor(D.c2) ? D.c2 : '#4E2312';
+      c.push(`width:${Math.min(100, Math.max(1, +D.w || 100))}%`, `height:${th}px`, D.fill === 'gradient' ? `background-image:linear-gradient(90deg, ${c1}, ${c2})` : 'background-color:' + c1, `border-radius:${D.cap === 'square' ? 0 : th}px`);
+      if (setv(D.sp)) c.push(`margin-top:${+D.sp || 0}px`, `margin-bottom:${+D.sp || 0}px`);
+      c.push(...(ALIGN[s.align || 'center'] || ALIGN.center));
+      return `<div class="pdp-divider${mb}" role="separator" style="${c.join(';')}"></div>`;
+    }
     if (el.t === 'icons') {
       const items = (el.items || []).map(it => ({ it, f: R(it.img, it.id, 'icon') })).filter(x => x.f || P);
       if (!items.length) return '';
@@ -663,12 +763,14 @@ function buildHTML(st, assets, opt) {
     if (el.t === 'button') {
       const B = el.btn || {}, fill = B.fill || 'solid', css = [];
       const c1 = okColor(B.c1) ? B.c1 : '#9F672E', c2 = okColor(B.c2) ? B.c2 : '#4E2312';
-      const tc = okColor(B.tc) ? B.tc : (fill === 'outline' ? c1 : '#FFFFFF');
-      if (fill === 'gradient') css.push(`background-image:linear-gradient(${(+B.angle || 0) % 360}deg, ${c1}, ${c2})`, 'border-color:transparent');
-      else if (fill === 'outline') css.push('background-color:transparent', 'border-color:' + c1);
+      const tc = okColor(B.tc) ? B.tc : (fill === 'outline' || fill === 'line' ? c1 : '#FFFFFF');
+      const line = fill === 'line', lt = Math.max(1, +B.lt || 2);
+      if (line) css.push(`--lt:${lt}px`, `background-image:linear-gradient(90deg, ${c1}, ${B.lg ? c2 : c1})`, `background-size:100% ${lt}px`);
+      else if (fill === 'gradient') css.push(`background-image:linear-gradient(${(+B.angle || 0) % 360}deg, ${c1}, ${c2})`, 'background-origin:border-box', 'background-repeat:no-repeat', 'border-color:transparent'); // paint under the border too, so no edge line shows
+      else if (fill === 'outline') css.push('background-color:transparent', 'border-color:' + c1, `border-width:${Math.max(1, +B.ow || 2)}px`);
       else css.push('background-color:' + c1, 'border-color:' + c1);
       css.push('color:' + tc);
-      if (radiusVal(B, 'r')) css.push('border-radius:' + radiusVal(B, 'r'));
+      if (radiusVal(B, 'r') && !line) css.push('border-radius:' + radiusVal(B, 'r'));
       const bw = el.bw || (+el.w > 0 ? 'pct' : 'auto');
       if (bw === 'full') css.push('width:100%', 'justify-content:center');
       else if (bw === 'pct' && +el.w > 0) css.push(`width:${Math.min(100, +el.w)}%`, 'justify-content:center');
@@ -679,18 +781,18 @@ function buildHTML(st, assets, opt) {
       const href = /^(https?:|#|mailto:|tel:)/i.test((el.href || '').trim()) ? esc(el.href.trim()) : '#';
       const ext = /^https?:/i.test(href) ? ' target="_blank" rel="noopener"' : '';
       const wrap = s.align ? ` style="text-align:${s.align}"` : '';
-      return `<div class="pdp-btn-wrap${mb}"${wrap}><a class="pdp-btn ${{ sm: 'font-sm', md: 'font-md', lg: 'font-lg' }[B.size] || 'font-md'}" href="${href}"${ext} style="${css.join(';')}">${el.iconPos === 'right' ? lbl + icon : icon + lbl}</a></div>`;
+      return `<div class="pdp-btn-wrap${mb}"${wrap}><a class="pdp-btn${line ? ' pdp-btn-line' : ''} ${{ sm: 'font-sm', md: 'font-md', lg: 'font-lg' }[B.size] || 'font-md'}" href="${href}"${ext} style="${css.join(';')}">${el.iconPos === 'right' ? lbl + icon : icon + lbl}</a></div>`;
     }
     if (def.text) {
       if (!el.v.trim() && !P) return '';
       const lines = el.v.split('\n').map(inl).join('<br>');
       if (ctx.name === 'hero' && el.t === 'title')
-        return `<div${txs(s, 'livara-banner-description-slogan text-center' + mb, { part: 'align', css: sz })}>
+        return `<div${txs(s, 'livara-banner-description-slogan text-center' + mb, { part: 'align', css: sz, alignVar: true })}>
           <div${txs(s, 'bold-title font-lg', { part: 'font' })}>${lines}</div>
         </div>`;
       const base = el.t === 'title' && ctx.name === 'feature' ? 'livara-details-title bold font-lg' : def.cls;
       const body = el.t === 'text' ? (el.v.split('\n').some(l => isLi(l) || isOl(l)) ? rich(el.v, 'block') : rich(el.v, 'inline')) : lines;
-      return `<div${txs(s, base + mb, { css: sz })}>${body}${el.t === 'text' && ctx.name === 'feature' ? '\n          ' : ''}</div>`;
+      return `<div${txs(s, base + mb, { css: sz, alignVar: ctx.name === 'hero' })}>${body}${el.t === 'text' && ctx.name === 'feature' ? '\n          ' : ''}</div>`;
     }
     const f = R(el.img, el.id, el.t);
     if (!f && !P) return '';
@@ -767,14 +869,18 @@ function buildHTML(st, assets, opt) {
         const jc = { top: 'flex-start', middle: 'center', bottom: 'flex-end' }[pos.v] || 'center';
         const ai = { left: 'flex-start', center: 'center', right: 'flex-end' }[pos.h] || 'center';
         const pad = [0, 1, 2, 3].map(i => Math.max(0, +((pos.pad || [])[i]) || 0) + '%').join(' ');
-        dcss = ` style="top:0;right:0;bottom:0;left:0;width:auto;transform:none;padding:${pad};justify-content:${jc};align-items:${ai};text-align:${pos.h || 'center'};row-gap:1vw"`;
+        const tm = pos.tm || {}, tpadv = [0, 1, 2, 3].map(i => Math.max(0, +((tm.pad || [])[i]) || 0));
+        const tj = { top: 'flex-start', middle: 'center', bottom: 'flex-end' }[tm.v] || 'center';
+        const ta = { left: 'flex-start', center: 'center', right: 'flex-end' }[tm.h] || 'center';
+        const tpad = tpadv.some(Boolean) ? `;--thp:${tpadv.map(x => x + '%').join(' ')}` : '';
+        dcss = ` class="livara-banner-description pdp-hero-custom" style="--hp:${pad};--hj:${jc};--ha:${ai};--ht:${pos.h || 'center'};--thj:${tj};--tha:${ta};--tht:${tm.h || 'center'}${tpad}"`;
       }
       const alt = (d.els.find(e => e.t === 'title' || e.t === 'headline') || { v: '' }).v.replace(/\s+/g, ' ').trim();
       out.push(`    ${sec(b, 'livara-banner')}
       <div class="w-100">
         ${resp(b, d, alt, [ph('hero', 'desk'), ph('hero', 'tab'), ph('hero', 'mob')], true)}
       </div>
-      <div class="livara-banner-description"${dcss}>
+      <div${dcss || ' class="livara-banner-description"'}>
         ${heroEls(d)}
       </div>
     </section>`);
@@ -883,6 +989,11 @@ ${items}
         </div>
       </div>
     </section>`);
+    } else if (b.type === 'raw') {
+      let h = String(d.html || '').trim(); if (!h) continue;
+      if (P) h = `<div data-bid="${b.id}">${live ? h.replace(/(src=["'])(?:\.\/)?assets\/img\//g, '$1' + liveBase) : h}</div>`;
+      else if (hideCls(b)) h = `<div class="${hideCls(b)}">${h}</div>`;
+      out.push('    ' + h);
     } else if (b.type === 'banner') {
       const imgs = resp(b, d, d.alt, [ph('banner', 'desk'), ph('banner', 'tab'), ph('banner', 'mob')], true);
       if (!imgs) continue;
@@ -895,17 +1006,22 @@ ${items}
   if (!st.sku || !/^[\w-]+$/.test(st.sku.trim())) warns.unshift('Set a SKU (letters, numbers, - or _) before exporting.');
   if (!(st.desc || '').trim()) warns.push('Page settings: the meta description is empty.');
 
-  const body = out.join('\n\n');
+  if (!st.blocks.length) warns.push('The page has no sections yet.');
+  const body = out.length || !P ? out.join('\n\n') : '<div style="display:grid;place-items:center;min-height:70vh;color:#8a7d70;font:16px/1.5 system-ui,sans-serif;text-align:center;padding:40px"><div><div style="font-size:42px">+</div>Blank page<br><span style="font-size:13px">Add a section from the left to start.</span></div></div>';
   if (body.includes('pdp-') || body.includes('--tw:')) css += PDP_CSS;
   if (P) {
     const hl = sel ? `[data-bid="${sel}"]{outline:3px solid #c27a35!important;outline-offset:-3px}` : '';
-    return { html: `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${PREVIEW_BASE}</style><style>${css}</style><style>body{font-family:"GT Walsheim Pro",system-ui,-apple-system,"Segoe UI",sans-serif}[data-bid]{cursor:pointer}[data-bid]:hover{outline:2px dashed rgba(194,122,53,.7);outline-offset:-2px}${hl}</style></head><body>\n${body}\n</body></html>`, files, warns };
+    return { html: `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${PREVIEW_BASE}</style><style>${css}</style><style>body{font-family:"GT Walsheim Pro",system-ui,-apple-system,"Segoe UI",sans-serif}${clean ? '' : `[data-bid]{cursor:pointer}[data-bid]:hover{outline:2px dashed rgba(194,122,53,.7);outline-offset:-2px}${hl}`}${grid ? GRID_CSS : ''}</style></head><body>\n${body}\n</body></html>`, files, warns };
   }
   const head = HEAD_TPL.replace('{{TITLE}}', esc(st.title)).replace('{{DESC}}', esc(st.desc)).replace('{{KW}}', esc(st.kw));
   return { html: `${head}<style>${css}</style>\n  </head>\n\n  <body>\n${body}\n  </body>\n</html>\n`, files, warns };
 }
 
 /* ---------- Starting content: the 343136 page ---------- */
+// New sessions start empty; defaultState() keeps the 343136 example for reference/tests.
+function blankState() {
+  return { sku: '', title: '', desc: '', kw: '', colors: Object.fromEntries(COLOR_KEYS.map(([k, v]) => [k, v])), blocks: [] };
+}
 function defaultState() {
   const sku = '343136', f = n => S(sku + '_PDP_' + n);
   const feat = (n, title, body) => ({ id: uid('i'), els: [newEl('icon', '', { img: f('icon' + n + '.png') }), newEl('title', title), newEl('text', body)], media: [newEl('image', title, { img: f('img' + n + '.jpg') })] });
@@ -968,7 +1084,7 @@ const ICONS = {
   icon: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
   icons: '<circle cx="5" cy="12" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="19" cy="12" r="2.5"/>',
   logo: '<path d="M12 2 21 7v10l-9 5-9-5V7z"/>',
-  button: '<rect x="2" y="7" width="20" height="10" rx="5"/><path d="M8 12h8"/>',
+  button: '<rect x="2" y="7" width="20" height="10" rx="5"/><path d="M8 12h8"/>', divider: '<path d="M3 12h18"/><path d="M7 7h10M7 17h10" opacity=".35"/>',
   up: '<path d="m18 15-6-6-6 6"/>', down: '<path d="m6 9 6 6 6-6"/>',
   copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
   trash: '<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v6M14 11v6"/>',
@@ -978,16 +1094,16 @@ const ICONS = {
   desktop: '<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>', tablet: '<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M11 18h2"/>', mobile: '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>',
   layers: '<path d="m12 2 10 5-10 5L2 7z"/><path d="m2 12 10 5 10-5M2 17l10 5 10-5"/>', settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>', moon: '<path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/>',
-  plus: '<path d="M12 5v14M5 12h14"/>', check: '<path d="M20 6 9 17l-5-5"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>', grid: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>', check: '<path d="M20 6 9 17l-5-5"/>',
 };
 const ico = (n, cls) => `<svg class="ico${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
-const TYPE_ICON = { hero: 'hero', intro: 'intro', text: 'text', columns: 'columns', blank: 'blank', video: 'video', features: 'features', profile: 'profile', brand: 'brand', image: 'image', moreinfo: 'moreinfo', banner: 'banner' };
-const EL_ICON = { headline: 'headline', title: 'title', text: 'para', icon: 'icon', icons: 'icons', image: 'image', logo: 'logo', button: 'button' };
+const TYPE_ICON = { divline: 'divider', hero: 'hero', intro: 'intro', text: 'text', columns: 'columns', blank: 'blank', video: 'video', features: 'features', profile: 'profile', brand: 'brand', image: 'image', moreinfo: 'moreinfo', banner: 'banner' };
+const EL_ICON = { divider: 'divider', headline: 'headline', title: 'title', text: 'para', icon: 'icon', icons: 'icons', image: 'image', logo: 'logo', button: 'button' };
 
 /* ---------- App state ---------- */
-let st = defaultState();
+let st = blankState();
 const assets = {};          // key -> {name, type, blob, url}
-let selId = st.blocks[0].id, tab = 'block', device = 'desktop';
+let selId = null, tab = 'block', device = 'desktop';
 const openItems = new Set();
 const $ = s => document.querySelector(s);
 const DEV = { desktop: 1366, tablet: 834, mobile: 390 };
@@ -1002,8 +1118,40 @@ const findBlock = id => st.blocks.find(b => b.id === id);
 
 /* ---------- Preview ---------- */
 const frame = $('#frame'), wrap = $('#frameWrap'), stage = $('#stage');
-let pvTimer, scrollToSel = false, lastScroll = 0;
+let pvTimer, scrollToSel = false, lastScroll = 0, gridOn = false;
+try { gridOn = localStorage.getItem('pdpGrid') === '1'; } catch (e) {}
 function schedulePreview(now) { clearTimeout(pvTimer); pvTimer = setTimeout(renderPreview, now ? 0 : 220); snap(); }
+
+/* ---------- Autosave: every change is kept in this browser (IndexedDB), so a closed tab can be restored ---------- */
+let dirty = false, asTimer;
+const idb = () => new Promise((ok, no) => { const q = indexedDB.open('pdp-builder', 1); q.onupgradeneeded = () => q.result.createObjectStore('kv'); q.onsuccess = () => ok(q.result); q.onerror = () => no(q.error); });
+const kv = async (mode, fn) => { const db = await idb(); return new Promise((ok, no) => { const tx = db.transaction('kv', mode), req = fn(tx.objectStore('kv')); tx.oncomplete = () => ok(req && req.result); tx.onerror = () => no(tx.error); }); };
+function autosave() {
+  clearTimeout(asTimer);
+  asTimer = setTimeout(async () => {
+    try {
+      const s = JSON.stringify(st), used = {};
+      for (const [k, a] of Object.entries(assets)) if (s.includes('"' + k + '"')) used[k] = { name: a.name, type: a.type, blob: a.blob };
+      await kv('readwrite', o => o.put({ t: Date.now(), state: JSON.parse(s), assets: used }, 'autosave'));
+    } catch (e) { /* storage blocked (private window etc.): Save project still works */ }
+  }, 800);
+}
+async function offerRestore() {
+  let a; try { a = await kv('readonly', o => o.get('autosave')); } catch (e) { return; }
+  if (!a || !a.state || !(a.state.blocks || []).length) return;
+  const when = new Date(a.t), today = new Date().toDateString() === when.toDateString();
+  $('#restoreMsg').textContent = `Unsaved work found from ${today ? 'today' : when.toLocaleDateString()} at ${when.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}${a.state.sku ? ' (SKU ' + a.state.sku + ')' : ''}.`;
+  $('#restoreBar').hidden = false;
+  $('#restoreYes').onclick = () => {
+    for (const k of Object.keys(assets)) { URL.revokeObjectURL(assets[k].url); delete assets[k]; }
+    for (const [k, x] of Object.entries(a.assets || {})) assets[k] = { name: x.name, type: x.type, blob: x.blob, url: URL.createObjectURL(x.blob) };
+    st = migrate(a.state); st.colors = Object.assign(Object.fromEntries(COLOR_KEYS.map(([k, v]) => [k, v])), st.colors || {});
+    skuIn.value = st.sku || ''; selId = st.blocks[0]?.id || null; hist.past = []; hist.future = []; hist.cur = null;
+    renderAll(); commitSnap(); $('#restoreBar').hidden = true; toast('Work restored');
+  };
+  $('#restoreNo').onclick = async () => { $('#restoreBar').hidden = true; try { await kv('readwrite', o => o.delete('autosave')); } catch (e) {} };
+}
+window.addEventListener('beforeunload', e => { if (dirty) { autosave(); e.preventDefault(); e.returnValue = ''; } });
 
 /* ---------- Undo / redo: snapshots of the page state, typing grouped by pause ---------- */
 const hist = { past: [], future: [], cur: null, t: 0 };
@@ -1012,7 +1160,9 @@ function commitSnap() {
   clearTimeout(hist.t);
   const s = JSON.stringify(st); if (s === hist.cur) return;
   if (hist.cur !== null) { hist.past.push(hist.cur); if (hist.past.length > 100) hist.past.shift(); }
+  const first = hist.cur === null;
   hist.cur = s; hist.future = []; updUndo();
+  if (!first) { dirty = true; autosave(); }
 }
 function stepHist(from, to) {
   commitSnap(); if (!from.length) return;
@@ -1033,14 +1183,23 @@ document.addEventListener('keydown', e => {
 });
 function renderPreview() {
   try { lastScroll = frame.contentWindow ? frame.contentWindow.scrollY : 0; } catch (e) { lastScroll = 0; }
-  frame.srcdoc = buildHTML(st, assets, { preview: true, sel: selId }).html;
+  frame.srcdoc = buildHTML(st, assets, { preview: true, sel: selId, grid: gridOn, live: st.liveImg !== false, liveBase: st.imgBase || DEFAULT_IMG_BASE }).html;
   const dot = $('#liveDot'); dot.classList.remove('pulse'); void dot.offsetWidth; dot.classList.add('pulse');
 }
 frame.addEventListener('load', () => {
   let doc; try { doc = frame.contentDocument; } catch (e) { return; }
   if (!doc) return;
-  if (scrollToSel && selId) { const el = doc.querySelector(`[data-bid="${selId}"]`); if (el) el.scrollIntoView({ block: 'start' }); scrollToSel = false; }
+  // Server images that can't load here (blocked or missing) fall back to a labelled placeholder.
+  const base = st.imgBase || DEFAULT_IMG_BASE;
+  doc.querySelectorAll('img').forEach(img => {
+    if (!img.getAttribute('src') || !img.getAttribute('src').startsWith(base)) return;
+    const fall = () => { img.onerror = null; img.src = phSVG(decodeURI(img.getAttribute('src').slice(base.length)) + ' (not found)', [1200, 700]); };
+    if (img.complete && !img.naturalWidth) fall(); else img.onerror = fall;
+  });
+  // Scroll only inside the preview. scrollIntoView would also scroll the builder's own (non-scrollable) panel and hide the top.
+  if (scrollToSel && selId) { const el = doc.querySelector(`[data-bid="${selId}"]`); if (el) frame.contentWindow.scrollTo(0, el.getBoundingClientRect().top + frame.contentWindow.scrollY); scrollToSel = false; }
   else frame.contentWindow.scrollTo(0, lastScroll);
+  stage.scrollTop = 0; stage.scrollLeft = 0;
   doc.addEventListener('click', e => {
     if (e.target.closest('a')) e.preventDefault();
     const el = e.target.closest('[data-bid]'); if (el) select(el.dataset.bid, false);
@@ -1081,7 +1240,7 @@ function renderOutline() {
       <button data-act="down" title="Move down" aria-label="Move down" ${i === st.blocks.length - 1 ? 'disabled' : ''}>${ico('down')}</button>
       <button data-act="dup" title="Duplicate" aria-label="Duplicate">${ico('copy')}</button>
       <button data-act="del" title="Delete" aria-label="Delete">${ico('trash')}</button>
-    </span></li>`).join('') || '<p class="hint">No sections. Drag one here.</p>';
+    </span></li>`).join('') || '<p class="hint">Your page is empty. Click <b>Hero banner</b> or <b>Empty column</b> above, or drag a section here.</p>';
   ol.querySelectorAll('.row').forEach(r => {
     const id = r.dataset.id;
     r.addEventListener('click', e => {
@@ -1136,7 +1295,7 @@ function renderInspector() {
   const key = tab + selId; box.classList.toggle('enter', key !== lastInsp); lastInsp = key;
   if (tab === 'page') return renderPage(box);
   const b = findBlock(selId);
-  if (!b) { box.innerHTML = '<p class="hint" style="padding:0">Select a section in the page list or the preview.</p>'; return; }
+  if (!b) { box.innerHTML = st.blocks.length ? '<p class="hint" style="padding:0">Select a section in the page list or the preview.</p>' : '<p class="hint" style="padding:0">Start by setting the <b>SKU</b> at the top, then add your first section from <b>Add a section</b> on the left.</p>'; return; }
   const head = document.createElement('div'); head.className = 'blockhead';
   head.innerHTML = `<h3><span class="hico">${ico(TYPE_ICON[b.type])}</span>${esc(TYPES[b.type].label)}</h3><span class="mono" style="color:var(--muted)">#${st.blocks.indexOf(b) + 1}</span>`;
   box.appendChild(head);
@@ -1208,7 +1367,7 @@ function elsEditor(label, els, b, names) {
   els.forEach((el, i) => {
     const def = EL[el.t]; if (!def) return;
     const det = document.createElement('details'); det.className = 'item el'; det.open = openItems.has(el.id);
-    const snip = el.t === 'icons' ? (el.items || []).length + ' icons' : def.text || el.t === 'button' ? el.v.split('\n')[0] : (resolveSlot(el.img, el.id, names, assets, el.t) || { name: 'No image' }).name;
+    const snip = el.t === 'divider' ? `${(el.dv || {}).w || 100}% · ${(el.dv || {}).th || 2}px` : el.t === 'icons' ? (el.items || []).length + ' icons' : def.text || el.t === 'button' ? el.v.split('\n')[0] : (resolveSlot(el.img, el.id, names, assets, el.t) || { name: 'No image' }).name;
     det.innerHTML = `<summary><span class="etag">${ico(EL_ICON[el.t], 'sm')}${esc(def.label)}</span><span class="tt">${esc(snip || 'Empty')}</span>${+el.w > 0 ? `<span class="psum">${+el.w}%</span>` : ''}
       <button data-a="up" aria-label="Move up" ${i ? '' : 'disabled'}>${ico('up')}</button><button data-a="down" aria-label="Move down" ${i < els.length - 1 ? '' : 'disabled'}>${ico('down')}</button><button data-a="dup" aria-label="Duplicate">${ico('copy')}</button><button data-a="del" aria-label="Delete">${ico('trash')}</button></summary><div class="body"></div>`;
     det.addEventListener('toggle', () => det.open ? openItems.add(el.id) : openItems.delete(el.id));
@@ -1222,7 +1381,8 @@ function elsEditor(label, els, b, names) {
     });
     const body = det.querySelector('.body'), s = el.style || (el.style = {});
     const tt = det.querySelector('.tt');
-    if (el.t === 'icons') iconsEditor(el, body, names, b, tt);
+    if (el.t === 'divider') dividerEditor(el, body);
+    else if (el.t === 'icons') iconsEditor(el, body, names, b, tt);
     else if (el.t === 'button') buttonEditor(el, body, names, b, tt);
     else if (def.text) {
       const id = fid();
@@ -1362,7 +1522,7 @@ function bgEditor(label, g, ref, names, b) {
     ${g.type === 'gradient' ? `<div class="gradprev"></div>
       <div class="prow"><label for="${ids[0]}">From</label><input type="color" id="${ids[0]}" data-k="c1"></div>
       <div class="prow"><label for="${ids[1]}">To</label><input type="color" id="${ids[1]}" data-k="c2"></div>
-      <div class="prow"><label for="${ids[2]}">Angle</label><div class="pin"><input type="range" min="0" max="360" step="5" id="${ids[2]}" data-k="angle" style="flex:1"><span class="mono" data-av></span></div></div>` : ''}
+      <div data-angle></div>` : ''}
     ${g.type === 'image' ? `<div class="slotbox"></div>
       <div class="prow"><label for="${ids[3]}">Fit</label><select id="${ids[3]}" data-k="size"><option value="cover">Fill (crop edges)</option><option value="contain">Fit whole image</option></select></div>
       <div class="prow"><label for="${ids[4]}">Position</label><select id="${ids[4]}" data-k="pos"><option value="center">Centre</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select></div>
@@ -1371,7 +1531,7 @@ function bgEditor(label, g, ref, names, b) {
   const def = { c1: g.type === 'gradient' ? '#F3E6D8' : '#F3F3F3', c2: '#FFFFFF', angle: '135', size: 'cover', pos: 'center' };
   const upd = () => {
     const pv = body.querySelector('.gradprev'); if (pv) pv.style.background = `linear-gradient(${g.angle}deg, ${g.c1}, ${g.c2})`;
-    const av = body.querySelector('[data-av]'); if (av) av.textContent = g.angle + '°';
+
     schedulePreview();
   };
   body.querySelectorAll('[data-k]').forEach(inp => {
@@ -1380,6 +1540,7 @@ function bgEditor(label, g, ref, names, b) {
   });
   body.querySelectorAll('[data-t]').forEach(btn => btn.onclick = () => { g.type = btn.dataset.t; if (g.type === 'gradient' && (!g.c1 || g.c1 === '#F3F3F3')) g.c1 = '#F3E6D8'; openItems.add('bg' + ref); renderInspector(); schedulePreview(); });
   if (g.type === 'image') { g.img = g.img || S(); body.querySelector('.slotbox').appendChild(slotEl({ k: 'img', ext: 'bg', label: 'Background image' }, g, ref, names, b)); }
+  const angBox = body.querySelector('[data-angle]'); if (angBox) { if (g.angle == null || g.angle === '') g.angle = '135'; angBox.appendChild(angleRow(g, 'angle', upd)); }
   if (g.type) upd();
   return det;
 }
@@ -1413,6 +1574,41 @@ function boxEditor(label, x, key) {
   body.appendChild(radiusRow(x, 'r')); body.appendChild(padRow(x));
   body.addEventListener('input', () => det.querySelector('.psum').textContent = sum());
   return det;
+}
+// Gradient direction: preset arrows or a typed angle (0–360°).
+const ANGLES = [[0, '↑'], [45, '↗'], [90, '→'], [135, '↘'], [180, '↓'], [225, '↙'], [270, '←'], [315, '↖']];
+function angleRow(o, key, onChange) {
+  const row = document.createElement('div'); row.className = 'list'; const id = fid();
+  const cur = () => ((+o[key] || 0) % 360 + 360) % 360;
+  row.innerHTML = `<div class="prow"><label for="${id}">Angle</label><div class="pin"><input type="number" id="${id}" min="0" max="360" step="1" style="width:64px">°</div></div>
+    <div class="angles" role="group" aria-label="Angle presets">${ANGLES.map(([a, s]) => `<button data-ang="${a}" title="${a}°" aria-pressed="${cur() === a}">${s}<small>${a}°</small></button>`).join('')}</div>`;
+  const inp = row.querySelector('input'); inp.value = cur();
+  const set = v => { o[key] = String(v); inp.value = cur(); row.querySelectorAll('[data-ang]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.ang === cur())); onChange(); };
+  inp.oninput = () => { if (inp.value !== '') { o[key] = inp.value; row.querySelectorAll('[data-ang]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.ang === cur())); onChange(); } };
+  row.querySelectorAll('[data-ang]').forEach(b => b.onclick = () => set(b.dataset.ang));
+  return row;
+}
+function dividerEditor(el, body) {
+  const D = el.dv || (el.dv = EL.divider.init().dv), ids = Array.from({ length: 5 }, fid);
+  const prev = document.createElement('div'); prev.className = 'divprev';
+  const paint = () => { prev.innerHTML = `<i style="width:${Math.min(100, +D.w || 100)}%;height:${Math.max(1, +D.th || 2)}px;border-radius:${D.cap === 'square' ? 0 : (+D.th || 2)}px;background:${D.fill === 'gradient' ? `linear-gradient(90deg, ${D.c1}, ${D.c2})` : D.c1}"></i>`; };
+  body.appendChild(prev);
+  body.insertAdjacentHTML('beforeend', `
+    <div class="prow"><label for="${ids[0]}">Width</label><div class="pin"><input type="range" min="5" max="100" step="1" data-r="w" style="flex:1" aria-label="Divider width slider"><input type="number" min="1" max="100" id="${ids[0]}" data-d="w" style="width:58px">%</div></div>
+    <div class="prow"><label for="${ids[1]}">Thickness</label><div class="pin"><input type="range" min="1" max="20" step="1" data-r="th" style="flex:1" aria-label="Thickness slider"><input type="number" min="1" max="60" id="${ids[1]}" data-d="th" style="width:58px">px</div></div>
+    <div class="prow"><span>Ends</span><div class="seg" role="group" aria-label="Line ends"><button data-cap="round" aria-pressed="${D.cap !== 'square'}">◖ Round</button><button data-cap="square" aria-pressed="${D.cap === 'square'}">▮ Square</button></div></div>
+    <div class="prow"><span>Colour</span><div class="seg" role="group" aria-label="Divider colour type"><button data-df="solid" aria-pressed="${D.fill !== 'gradient'}">Solid</button><button data-df="gradient" aria-pressed="${D.fill === 'gradient'}">Gradient</button></div></div>
+    <div class="prow"><label for="${ids[2]}">${D.fill === 'gradient' ? 'From' : 'Colour'}</label><input type="color" id="${ids[2]}" data-c="c1"></div>
+    ${D.fill === 'gradient' ? `<div class="prow"><label for="${ids[3]}">To</label><input type="color" id="${ids[3]}" data-c="c2"></div>` : ''}
+    <div class="prow"><label for="${ids[4]}">Space</label><div class="pin"><input type="number" min="0" id="${ids[4]}" data-d="sp" placeholder="Auto" style="width:64px"><span class="fhint">px above and below</span></div></div>`);
+  const sync = k => { body.querySelectorAll(`[data-r="${k}"],[data-d="${k}"]`).forEach(x => x.value = D[k] ?? ''); };
+  body.querySelectorAll('[data-r]').forEach(x => { x.value = D[x.dataset.r] || ''; x.oninput = () => { D[x.dataset.r] = x.value; sync(x.dataset.r); paint(); schedulePreview(); }; });
+  body.querySelectorAll('[data-d]').forEach(x => { x.value = D[x.dataset.d] ?? ''; x.oninput = () => { D[x.dataset.d] = x.value; sync(x.dataset.d); paint(); schedulePreview(); }; });
+  body.querySelectorAll('[data-c]').forEach(x => { x.value = D[x.dataset.c]; x.oninput = () => { D[x.dataset.c] = x.value.toUpperCase(); paint(); schedulePreview(); }; });
+  body.querySelectorAll('[data-cap]').forEach(x => x.onclick = () => { D.cap = x.dataset.cap; body.querySelectorAll('[data-cap]').forEach(y => y.setAttribute('aria-pressed', y === x)); paint(); schedulePreview(); });
+  body.querySelectorAll('[data-df]').forEach(x => x.onclick = () => { D.fill = x.dataset.df; renderInspector(); schedulePreview(); });
+  paint();
+  body.appendChild(styleRows(el.style || (el.style = {}), () => schedulePreview(), false));
 }
 function iconsEditor(el, body, names, b, tt) {
   const items = el.items || (el.items = []), sId = fid(), gId = fid();
@@ -1451,19 +1647,31 @@ function buttonEditor(el, body, names, b, tt) {
   const B = el.btn || (el.btn = EL.button.init().btn), ids = Array.from({ length: 6 }, fid);
   body.insertAdjacentHTML('beforeend', `<div class="field"><label for="${ids[0]}">Button text</label><input type="text" id="${ids[0]}"></div>
     <div class="field"><label for="${ids[1]}">Link</label><input type="text" id="${ids[1]}" placeholder="https://www.amway.my/…"><div class="fhint">Web links open in a new tab. Leave empty for no link yet.</div></div>
-    <div class="prow"><span>Style</span><div class="seg" role="group" aria-label="Button style">${[['solid', 'Solid'], ['gradient', 'Gradient'], ['outline', 'Outline']].map(([v, t]) => `<button data-fill="${v}" aria-pressed="${B.fill === v}">${t}</button>`).join('')}</div></div>
-    <div class="prow"><label for="${ids[2]}">${B.fill === 'gradient' ? 'From' : B.fill === 'outline' ? 'Line' : 'Colour'}</label><input type="color" id="${ids[2]}" data-b="c1"></div>
-    ${B.fill === 'gradient' ? `<div class="prow"><label for="${ids[3]}">To</label><input type="color" id="${ids[3]}" data-b="c2"></div>
-      <div class="prow"><label for="${ids[4]}">Angle</label><input type="range" min="0" max="360" step="5" id="${ids[4]}" data-b="angle"></div>` : ''}
+    <div class="prow"><span>Style</span><div class="seg" role="group" aria-label="Button style">${[['solid', 'Solid'], ['gradient', 'Gradient'], ['outline', 'Outline'], ['line', 'Line']].map(([v, t]) => `<button data-fill="${v}" aria-pressed="${B.fill === v}">${t}</button>`).join('')}</div></div>
+    <div class="prow"><label for="${ids[2]}">${B.fill === 'gradient' || (B.fill === 'line' && B.lg) ? 'From' : B.fill === 'outline' || B.fill === 'line' ? 'Line' : 'Colour'}</label><input type="color" id="${ids[2]}" data-b="c1"></div>
+    ${B.fill === 'line' ? `<label class="check"><input type="checkbox" data-lg ${B.lg ? 'checked' : ''}> Gradient line</label>
+      ${B.lg ? `<div class="prow"><label for="${ids[3]}">To</label><input type="color" id="${ids[3]}" data-b="c2"></div>` : ''}
+      <div class="prow"><label for="${ids[4]}">Line</label><div class="pin"><input type="number" min="1" max="20" id="${ids[4]}" data-b="lt" style="width:58px" placeholder="2">px thick</div></div>` : ''}
+    ${B.fill === 'gradient' ? `<div class="prow"><label for="${ids[3]}">To</label><input type="color" id="${ids[3]}" data-b="c2"></div><div data-angle></div>` : ''}
+    ${B.fill === 'outline' ? `<div class="prow"><label for="${ids[4]}">Thickness</label><div class="pin"><input type="range" min="1" max="10" step="1" data-owr style="flex:1" aria-label="Outline thickness slider"><input type="number" min="1" max="20" id="${ids[4]}" data-b="ow" style="width:58px" placeholder="2">px</div></div>` : ''}
     <div class="prow"><label for="${ids[5]}">Text</label><input type="color" id="${ids[5]}" data-b="tc"></div>
     <div class="prow"><span>Size</span><div class="seg" role="group" aria-label="Button size">${[['sm', 'S'], ['md', 'M'], ['lg', 'L']].map(([v, t]) => `<button data-size="${v}" aria-pressed="${(B.size || 'md') === v}">${t}</button>`).join('')}</div></div>`);
-  body.appendChild(radiusRow(B, 'r'));
+  const angBox = body.querySelector('[data-angle]'); if (angBox) { B.angle = B.angle ?? '135'; angBox.appendChild(angleRow(B, 'angle', () => schedulePreview())); }
+  const owr = body.querySelector('[data-owr]');
+  if (owr) { const own = body.querySelector('[data-b="ow"]'); owr.value = B.ow || 2; owr.oninput = () => { B.ow = own.value = owr.value; schedulePreview(); }; own.addEventListener('input', () => owr.value = own.value || 2); }
+  if (B.fill !== 'line') body.appendChild(radiusRow(B, 'r'));
   const [ti, li] = [body.querySelector('#' + ids[0]), body.querySelector('#' + ids[1])];
   ti.value = el.v; li.value = el.href || '';
   ti.oninput = () => { el.v = ti.value; tt.textContent = ti.value || 'Empty'; schedulePreview(); };
   li.oninput = () => { el.href = li.value; schedulePreview(); };
   body.querySelectorAll('[data-b]').forEach(inp => { inp.value = B[inp.dataset.b] || (inp.type === 'color' ? '#FFFFFF' : '135'); inp.oninput = () => { B[inp.dataset.b] = inp.type === 'color' ? inp.value.toUpperCase() : inp.value; schedulePreview(); }; });
-  body.querySelectorAll('[data-fill]').forEach(btn => btn.onclick = () => { B.fill = btn.dataset.fill; if (B.fill === 'outline' && B.tc === '#FFFFFF') B.tc = B.c1; if (B.fill !== 'outline' && B.tc === B.c1) B.tc = '#FFFFFF'; renderInspector(); schedulePreview(); });
+  body.querySelectorAll('[data-fill]').forEach(btn => btn.onclick = () => {
+    const see = B.fill === 'outline' || B.fill === 'line'; B.fill = btn.dataset.fill; const now = B.fill === 'outline' || B.fill === 'line';
+    if (now && !see && B.tc === '#FFFFFF') B.tc = B.fill === 'line' ? '#000000' : B.c1;
+    if (!now && see) B.tc = '#FFFFFF';
+    renderInspector(); schedulePreview();
+  });
+  const lgc = body.querySelector('[data-lg]'); if (lgc) lgc.onchange = () => { B.lg = lgc.checked; renderInspector(); schedulePreview(); };
   body.querySelectorAll('[data-size]').forEach(btn => btn.onclick = () => { B.size = btn.dataset.size; body.querySelectorAll('[data-size]').forEach(x => x.setAttribute('aria-pressed', x === btn)); schedulePreview(); });
   const ic = document.createElement('div'); ic.className = 'field';
   ic.innerHTML = `<div class="flabel">Icon (optional)</div><div class="prow"><span>Place</span><div class="seg" role="group" aria-label="Icon side"><button data-ip="left" aria-pressed="${el.iconPos !== 'right'}">Before text</button><button data-ip="right" aria-pressed="${el.iconPos === 'right'}">After text</button></div></div>`;
@@ -1486,9 +1694,9 @@ const hideSum = o => { const h = o.hide || {}; const on = [['d', 'Desktop'], ['t
 // Desktop / Tablet / Mobile toggles. Pressed = shown on that screen.
 function showOnRow(o, label) {
   const h = o.hide || (o.hide = {}), row = document.createElement('div'); row.className = 'prow';
-  row.innerHTML = `<span>${esc(label)}</span><div class="seg" role="group" aria-label="${esc(label)}">${[['d', 'Desktop'], ['t', 'Tablet'], ['m', 'Mobile']].map(([k, l]) => `<button data-h="${k}" aria-pressed="${!h[k]}">${l}</button>`).join('')}</div>`;
+  row.innerHTML = `<span>${esc(label)}</span><div class="seg seg-full showon" role="group" aria-label="${esc(label)}">${[['d', 'Desktop', 'desktop'], ['t', 'Tablet', 'tablet'], ['m', 'Mobile', 'mobile']].map(([k, l, i]) => `<button data-h="${k}" aria-pressed="${!h[k]}" title="${l}: click to ${h[k] ? 'show' : 'hide'}">${ico(i, 'sm')}<span>${l}</span></button>`).join('')}</div>`;
   row.querySelectorAll('[data-h]').forEach(btn => btn.onclick = () => {
-    const k = btn.dataset.h; h[k] = !h[k]; btn.setAttribute('aria-pressed', !h[k]);
+    const k = btn.dataset.h; h[k] = !h[k]; btn.setAttribute('aria-pressed', !h[k]); btn.title = `${btn.textContent}: click to ${h[k] ? 'show' : 'hide'}`;
     if (h.d && h.t && h.m) toast('Hidden on every screen. It will not appear anywhere.');
     else if (h[k]) toast(`Hidden on ${btn.textContent}. Switch the preview to ${btn.textContent} to check.`);
     renderOutline(); schedulePreview();
@@ -1549,24 +1757,31 @@ function posControls(p, opt) {
   return el;
 }
 function heroPosEditor(d, b) {
-  const p = d.pos || (d.pos = { mode: 'template', h: 'center', v: 'middle', pad: ['5', '10', '5', '10'] });
-  const wrapEl = document.createElement('div'); wrapEl.className = 'field';
-  const custom = p.mode === 'custom';
-  wrapEl.innerHTML = `<div class="flabel">Text position</div>
-    <div class="seg" role="group" aria-label="Position mode"><button data-m="template" aria-pressed="${!custom}">Template</button><button data-m="custom" aria-pressed="${custom}">Custom</button></div>
-    <div class="prow"><span>Layout</span><div class="seg" role="group" aria-label="Layout">${[['stack', 'Rows'], ['logo-left', 'Logo left'], ['logo-right', 'Logo right']].map(([v, t]) => `<button data-lay="${v}" aria-pressed="${(p.layout || 'stack') === v}">${t}</button>`).join('')}</div></div>
-    ${(p.layout || 'stack') !== 'stack' ? `<input type="range" data-lw min="10" max="80" step="1" aria-label="Logo column width"><div class="splitlbl"><span>Logo <b></b></span><span>Title &amp; text <b></b></span></div>
-    <div class="fhint">The row spans the whole banner, inside the padding. The logo fills its column; set the logo's own Width to make it smaller inside it.</div>` : ''}
-    ${custom ? '' : '<div class="fhint">Uses the original layout: text on the left on desktop, below the middle on tablet and mobile.</div>'}`;
-  if (custom) wrapEl.appendChild(posControls(p, { label: 'Place text', hint: 'Padding is a % of the banner width, so it scales with the screen.' }));
+  const p = d.pos || (d.pos = { mode: 'custom', layout: 'logo-left', logoW: '30', h: 'left', v: 'middle', pad: ['4', '8', '4', '8'] });
+  const tm = p.tm || (p.tm = { h: 'center', v: 'middle', pad: ['', '', '', ''] });
+  const wrapEl = document.createElement('div'); wrapEl.className = 'list';
+  if (p.mode !== 'custom') { p.mode = 'custom'; if (!p.h) { p.h = 'left'; p.v = 'middle'; } if (!p.layout) p.layout = 'logo-left'; }
+  const custom = true, lay = p.layout || 'stack';
+  wrapEl.innerHTML = `<div class="flabel">Text on the banner</div>
+    ${custom ? `<div class="poscard"><div class="poshead">${ico('desktop')}Desktop</div>
+      <div class="prow"><span>Layout</span><div class="seg" role="group" aria-label="Desktop layout">${[['logo-left', 'Logo left'], ['logo-right', 'Logo right'], ['stack', 'Stacked']].map(([v, t]) => `<button data-lay="${v}" aria-pressed="${lay === v}">${t}</button>`).join('')}</div></div>
+      ${lay !== 'stack' ? `<input type="range" data-lw min="10" max="80" step="1" aria-label="Logo column width"><div class="splitlbl"><span>Logo <b></b></span><span>Title &amp; text <b></b></span></div>` : ''}
+      ${lay === 'stack' ? '<div class="fhint">Logo on top, then title and paragraph, as one centred stack. Move it with the grid below.</div>' : ''}
+      <div data-dpos></div></div>
+    <div class="poscard"><div class="poshead">${ico('tablet')}${ico('mobile')}Tablet &amp; mobile</div>
+      <div class="fhint">Logo, title and paragraph stacked on top of the banner. Pick where the stack sits.</div>
+      <div data-tpos></div></div>` : ''}`;
+  if (custom) {
+    wrapEl.querySelector('[data-dpos]').appendChild(posControls(p, { label: 'Place text on desktop', hint: 'Padding is a % of the banner width.' }));
+    wrapEl.querySelector('[data-tpos]').appendChild(posControls(tm, { label: 'Place stack on tablet and mobile', hint: 'Default: centre of the banner. Padding is a % of the banner width.' }));
+  }
   wrapEl.querySelectorAll('[data-lay]').forEach(btn => btn.onclick = () => {
-    p.layout = btn.dataset.lay;
-    if (p.layout !== 'stack' && p.mode !== 'custom') { p.mode = 'custom'; if (!p.h) { p.h = 'center'; p.v = 'middle'; } toast('Switched to Custom position so the row can use the full banner width'); }
+    const was = p.layout; p.layout = btn.dataset.lay;
+    if (p.layout === 'stack' && was !== 'stack') { p.h = 'center'; p.v = 'middle'; } // start centred, like tablet & mobile
     renderInspector(); schedulePreview();
   });
   const rg = wrapEl.querySelector('[data-lw]');
   if (rg) { const show = () => { const [a, c] = wrapEl.querySelectorAll('.splitlbl b'); a.textContent = rg.value + '%'; c.textContent = (100 - rg.value) + '%'; }; rg.value = p.logoW || 30; show(); rg.oninput = () => { p.logoW = rg.value; show(); schedulePreview(); }; }
-  wrapEl.querySelectorAll('[data-m]').forEach(btn => btn.onclick = () => { p.mode = btn.dataset.m; if (!p.h) { p.h = 'center'; p.v = 'middle'; } renderInspector(); schedulePreview(); });
   return wrapEl;
 }
 function cheat() {
@@ -1669,13 +1884,14 @@ function slotEl(f, obj, ref, names, b) {
   const slot = obj[f.k], el = document.createElement('div'); el.className = 'slot';
   const ek = f.ext || f.k, r = resolveSlot(slot, ref, names, assets, ek);
   const auto = names[ref] ? names[ref] + (slot.a && assets[slot.a] ? (extOf(assets[slot.a].name) || (iconLike(ek) ? '.png' : '.jpg')) : (iconLike(ek) ? '.png' : '.jpg')) : '';
-  const kind = r ? r.kind : 'empty';
-  const badge = { new: 'New upload', existing: 'Existing file', empty: 'Empty' }[kind];
+  const same = r && r.kind === 'new' && JSON.stringify(st.blocks).toLowerCase().includes(`"a":null,"name":"${String(r.asset.name || '').toLowerCase()}"`);
+  const kind = same ? 'existing' : r ? r.kind : 'empty';
+  const badge = same ? 'Same as server' : { new: 'New upload', existing: 'Existing file', empty: 'Empty' }[kind];
   const id = fid(), fnId = fid();
   el.innerHTML = `<div class="thumb">${r && r.asset ? `<img src="${r.asset.url}" alt="">` : (r ? 'On server' : 'Drop<br>image')}</div>
     <div class="meta">
       <div class="top"><span class="fl">${esc(f.label)}</span><span class="badge ${kind}">${badge}</span></div>
-      <code>${esc(r ? r.name : (f.hint ? 'Not set' : auto || '—'))}</code>
+      <code>${esc(same ? r.asset.name : r ? r.name : (f.hint ? 'Not set' : auto || '—'))}</code>${same ? '<div class="fhint">This file is already on the server, so the page points to it and the zip skips it.</div>' : ''}
       ${f.hint ? `<div class="fhint" style="font-size:11.5px;color:var(--muted)">${esc(f.hint)}</div>` : ''}
       <div class="acts">
         <label class="btn sm" for="${id}">${slot.a ? 'Replace' : 'Upload'}</label><input type="file" id="${id}" accept="image/*" hidden>
@@ -1699,6 +1915,7 @@ function slotEl(f, obj, ref, names, b) {
   return el;
 }
 
+const DEFAULT_IMG_BASE = 'https://www.amway.my/pdpcontent/MYBN/assets/img/';
 function renderPage(box) {
   const mk = (lbl, key, area, hint) => {
     const d = document.createElement('div'); d.className = 'field'; const id = fid();
@@ -1708,6 +1925,16 @@ function renderPage(box) {
   mk('Page title', 'title', false, 'Shown in the browser tab.');
   mk('Meta description', 'desc', true, 'Shown by search engines and link previews. About 150 characters.');
   mk('Meta keywords', 'kw', false, 'Comma separated.');
+  const li = document.createElement('div'); li.className = 'field'; const lid = fid(), bid = fid();
+  li.innerHTML = `<div class="flabel">Server images in preview</div>
+    <label class="check"><input type="checkbox" id="${lid}"> Show images that already exist on the server</label>
+    <label for="${bid}" class="fhint">Image folder address</label><input type="text" id="${bid}" placeholder="${DEFAULT_IMG_BASE}">
+    <div class="fhint">Files you reference by name (not uploads) load from this folder. Works when the builder is opened from GitHub or your computer; inside claude.ai outside images are blocked, so placeholders show instead.</div>`;
+  const lc = li.querySelector('#' + lid), lb = li.querySelector('#' + bid);
+  lc.checked = st.liveImg !== false; lb.value = st.imgBase || '';
+  lc.onchange = () => { st.liveImg = lc.checked; schedulePreview(); };
+  lb.oninput = () => { st.imgBase = lb.value.trim(); schedulePreview(); };
+  box.appendChild(li);
   const c = document.createElement('div'); c.className = 'field';
   c.innerHTML = '<div class="flabel">Brand colours</div><div class="colors"></div><div><button class="btn sm ghost">Reset to LIVARA colours</button></div>';
   const g = c.querySelector('.colors');
@@ -1743,17 +1970,99 @@ async function saveFile(filename, data) {
 }
 const saveMsg = e => ({ declined: 'Save cancelled.', rate_limited: 'Another save is waiting. Try again in a moment.', too_large: 'The file is too large to save here.' }[e && e.code] || 'Saving files is not available in this view. Open the page in claude.ai.');
 
+// Things worth fixing before a page goes live. Each finding points at its section.
+const SAMPLE_TEXT = ['Shop now', 'PRODUCT NAME', 'Short line about the product.', 'Paragraph text.', 'Title', 'Headline', 'Your text here.', 'Feature title', 'Feature description.', 'Tagline', 'BRAND: Who We Are', 'About the brand.', 'Describe the product here.', 'NEW ITEM'];
+const SAMPLE_BITS = ['Volume: 50ml', 'Shake well before use.', 'Water, Glycerin, Butylene Glycol, Niacinamide', 'Adults looking for a simple, effective daily routine.'];
+function runChecks() {
+  const out = [], names = autoNames(st), add = (lvl, msg, b) => out.push({ lvl, msg, bid: b && b.id, where: b ? `${TYPES[b.type].label} #${st.blocks.indexOf(b) + 1}` : 'Page' });
+  const sample = v => { const x = String(v || '').replace(/[*]/g, '').trim(); return SAMPLE_TEXT.includes(x) || SAMPLE_BITS.some(s => x.includes(s)); };
+  const deadLink = v => /\]\(\s*#?\s*\)/.test(String(v || ''));
+  if (!st.sku || !/^[\w-]+$/.test(st.sku.trim())) add('error', 'SKU is missing or has spaces/symbols. File names are built from it.');
+  if (!st.blocks.length) add('error', 'The page has no sections.');
+  if (!(st.title || '').trim()) add('warn', 'Page title is empty (Page settings).');
+  if (!(st.desc || '').trim()) add('warn', 'Meta description is empty (Page settings). Search engines and link previews use it.');
+  const els = (b, list) => (list || []).forEach(el => {
+    const lbl = (EL[el.t] || {}).label || 'Element';
+    if ((EL[el.t] || {}).text) {
+      if (sample(el.v)) add('warn', `${lbl} still has sample text: “${String(el.v).replace(/[*]/g, '').split('\n')[0].slice(0, 60)}”`, b);
+      if (deadLink(el.v)) add('warn', `${lbl} has a link with no address.`, b);
+    } else if (el.t === 'button') {
+      if (sample(el.v)) add('warn', `Button text is still “${el.v}”.`, b);
+      if (!/^(https?:|mailto:|tel:)/i.test((el.href || '').trim())) add('warn', `Button “${el.v}” has no link.`, b);
+    } else if (el.t === 'icons') {
+      (el.items || []).forEach((it, i) => { if (!resolveSlot(it.img, it.id, names, assets, 'icon')) add('warn', `Icon row: icon ${i + 1} has no image.`, b); });
+    } else if (EL[el.t] && EL[el.t].img) {
+      if (!resolveSlot(el.img, el.id, names, assets, el.t)) add('warn', `${lbl} has no image.`, b);
+      else if (el.t !== 'icon' && !(el.v || '').trim()) add('info', `${lbl} has no description (alt text).`, b);
+    }
+  });
+  for (const b of st.blocks) {
+    const d = b.data;
+    if (b.type === 'hero' || b.type === 'banner' || b.type === 'image') {
+      if (!resolveSlot(d.desk, b.id + '.desk', names, assets, 'desk')) add(b.type === 'image' ? 'warn' : 'error', 'Desktop image is missing.', b);
+      if (b.type !== 'hero' && !(d.alt || '').trim()) add('info', 'Image has no description (alt text).', b);
+    }
+    if (b.type === 'video' && !ytEmbed(d.url)) add('warn', 'No YouTube link.', b);
+    if (d.els) els(b, d.els);
+    if (d.head) els(b, d.head);
+    if (b.type === 'features') d.items.forEach(it => { els(b, it.els); els(b, it.media); });
+    if (b.type === 'columns') d.cols.forEach(c => els(b, c.els));
+    if (b.type === 'moreinfo') d.items.forEach(it => {
+      if (sample(it.body) || sample(it.specs)) add('warn', `“${it.title}” still has sample text.`, b);
+      if (deadLink(it.body)) add('warn', `“${it.title}” has a link with no address.`, b);
+    });
+    if (b.type === 'raw' && /href=["']#["']/.test(d.html || '')) add('info', 'Custom HTML has links pointing to “#”.', b);
+  }
+  for (const w of buildHTML(st, assets, {}).warns) if (/both named/.test(w)) add('error', w);
+  for (const f of buildHTML(st, assets, {}).files.values()) if (f.same) add('info', `${f.name} matches a file already on the server, so the page uses that one and the zip skips it.`);
+  for (const f of buildHTML(st, assets, {}).files.values())
+    if (f.kind === 'new' && f.asset.blob.size > 800 * 1024) add('info', `${f.name} is ${(f.asset.blob.size / 1048576).toFixed(1)} MB. Turn on “Optimise images” to shrink it.`);
+  const seen = new Map();
+  for (const c of out) { const k = c.lvl + c.where + c.msg; if (seen.has(k)) seen.get(k).n++; else seen.set(k, Object.assign(c, { n: 1 })); }
+  return [...seen.values()].map(c => c.n > 1 ? Object.assign(c, { msg: `${c.msg} (×${c.n})` }) : c);
+}
+
+// Optional: shrink photos before they go in the zip (same file name and type; kept only if smaller).
+async function optimise(blob, name, o) {
+  if (!/^image\/(jpeg|png|webp)$/.test(blob.type)) return blob;
+  const bmp = await createImageBitmap(blob);
+  const maxW = /_mb_/.test(name) ? Math.min(+o.maxW, 1080) : +o.maxW, s = Math.min(1, maxW / bmp.width);
+  if (s === 1 && blob.type === 'image/png') return blob;
+  const c = document.createElement('canvas'); c.width = Math.round(bmp.width * s); c.height = Math.round(bmp.height * s);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  const out = await new Promise(res => c.toBlob(res, blob.type, blob.type === 'image/png' ? undefined : +o.q / 100));
+  return out && out.size < blob.size ? out : blob;
+}
+const mb = n => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+
 function openExport() {
-  const { files, warns } = buildHTML(st, assets, {});
+  const { files } = buildHTML(st, assets, {});
   const list = [...files.values()].sort((a, b) => a.name.localeCompare(b.name));
-  const sku = (st.sku || 'page').trim();
+  const sku = (st.sku || 'page').trim(), checks = runChecks();
+  const O = st.optimise || (st.optimise = { on: false, maxW: '1920', q: '82' });
+  const n = { error: 0, warn: 0, info: 0 }; checks.forEach(c => n[c.lvl]++);
+  const icon = { error: '⛔', warn: '⚠️', info: 'ℹ️' };
   $('#exBody').innerHTML = `
-    ${warns.length ? `<ul class="warns">${warns.map(w => `<li>${esc(w)}</li>`).join('')}</ul>` : ''}
-    <p style="margin:0">The .zip holds <code>${esc(sku)}_en.html</code> and <code>assets/img/</code> with your new uploads. Files marked <b>On server</b> are referenced but not included, because they already exist there. Your existing <code>assets/css/artistry.css</code> and <code>assets/js/</code> files are referenced, not included.</p>
-    <div class="ftable-wrap"><table class="ftable"><thead><tr><th>File</th><th>Status</th></tr></thead><tbody>
-      <tr><td><code>${esc(sku)}_en.html</code></td><td>Included</td></tr>
-      ${list.map(f => `<tr><td><code>assets/img/${esc(f.name)}</code></td><td>${f.kind === 'new' ? 'Included' : 'On server'}</td></tr>`).join('')}
+    <div class="chk-head ${n.error ? 'bad' : n.warn ? 'meh' : 'good'}">${n.error ? `${n.error} to fix` : n.warn ? 'Almost ready' : 'Ready to export'}${checks.length ? ` · ${n.error} error${n.error === 1 ? '' : 's'}, ${n.warn} warning${n.warn === 1 ? '' : 's'}, ${n.info} tip${n.info === 1 ? '' : 's'}` : ' · no issues found'}</div>
+    ${checks.length ? `<ul class="checks">${checks.map((c, i) => `<li class="${c.lvl}"><span aria-hidden="true">${icon[c.lvl]}</span><div><b>${esc(c.where)}</b> ${esc(c.msg)}</div>${c.bid ? `<button class="btn sm" data-go="${i}">Go to</button>` : ''}</li>`).join('')}</ul>` : ''}
+    <div class="optbox">
+      <label class="check"><input type="checkbox" id="optOn" ${O.on ? 'checked' : ''}> <b>Optimise images</b> &nbsp;<span class="fhint">resize and compress uploads in the zip</span></label>
+      <div class="optrow" ${O.on ? '' : 'hidden'}>
+        <label>Max width <select id="optW">${['1200', '1440', '1920', '2400'].map(w => `<option ${O.maxW === w ? 'selected' : ''}>${w}</option>`).join('')}</select> px</label>
+        <label>Quality <input type="range" id="optQ" min="60" max="95" value="${O.q}"> <span id="optQv">${O.q}</span></label>
+        <span class="fhint">Mobile images (_mb_) are capped at 1080px. PNGs are only resized. Names stay the same.</span>
+      </div>
+    </div>
+    <p style="margin:0" class="fhint">The .zip holds <code>${esc(sku)}_en.html</code> and <code>assets/img/</code> with your new uploads. <b>On server</b> files are referenced, not included. Your existing <code>assets/css</code> and <code>assets/js</code> are referenced, not included.</p>
+    <div class="ftable-wrap"><table class="ftable"><thead><tr><th>File</th><th>Status</th><th>Size</th></tr></thead><tbody>
+      <tr><td><code>${esc(sku)}_en.html</code></td><td>Included</td><td></td></tr>
+      ${list.map(f => `<tr><td><code>assets/img/${esc(f.name)}</code></td><td>${f.kind === 'new' ? 'Included' : f.same ? 'Same as server file, skipped' : 'On server'}</td><td class="mono">${f.kind === 'new' ? mb(f.asset.blob.size) : ''}</td></tr>`).join('')}
     </tbody></table></div>`;
+  $('#exBody').querySelectorAll('[data-go]').forEach(btn => btn.onclick = () => { $('#modal').hidden = true; select(checks[+btn.dataset.go].bid, true); });
+  const on = $('#optOn'), row = $('#exBody .optrow');
+  on.onchange = () => { O.on = on.checked; row.hidden = !on.checked; };
+  $('#optW').onchange = e => O.maxW = e.target.value;
+  $('#optQ').oninput = e => { O.q = e.target.value; $('#optQv').textContent = e.target.value; };
   $('#exStatus').textContent = '';
   $('#modal').hidden = false; $('#exZip').focus();
 }
@@ -1768,35 +2077,139 @@ $('#exHtml').onclick = async () => {
   catch (e) { $('#exStatus').textContent = saveMsg(e); }
 };
 $('#exZip').onclick = async () => {
-  const sku = (st.sku || 'page').trim(), { html, files } = buildHTML(st, assets, {});
+  const sku = (st.sku || 'page').trim(), { html, files } = buildHTML(st, assets, {}), O = st.optimise || {};
   if (!window.JSZip) { $('#exStatus').textContent = 'The zip tool did not load. Reload the page and try again.'; return; }
-  $('#exStatus').textContent = 'Building zip…';
+  $('#exStatus').textContent = O.on ? 'Optimising images…' : 'Building zip…';
   const zip = new JSZip(); zip.file(sku + '_en.html', html);
-  for (const f of files.values()) if (f.kind === 'new') zip.file('assets/img/' + f.name, f.asset.blob);
-  const blob = await zip.generateAsync({ type: 'blob' });
-  try { await saveFile(sku + '_en.zip', blob); $('#exStatus').textContent = 'Saved ' + sku + '_en.zip'; }
-  catch (e) { $('#exStatus').textContent = saveMsg(e); }
+  let before = 0, after = 0;
+  for (const f of files.values()) if (f.kind === 'new') {
+    let blob = f.asset.blob; before += blob.size;
+    if (O.on) { try { blob = await optimise(blob, f.name, O); } catch (e) { blob = f.asset.blob; } }
+    after += blob.size; zip.file('assets/img/' + f.name, blob);
+  }
+  const zb = await zip.generateAsync({ type: 'blob' });
+  const saved = O.on && before ? ` Images ${mb(before)} → ${mb(after)}.` : '';
+  try { await saveFile(sku + '_en.zip', zb); dirty = false; $('#exStatus').textContent = 'Saved ' + sku + '_en.zip.' + saved; }
+  catch (e) { $('#exStatus').textContent = saveMsg(e) + saved; }
 };
+
+/* ---------- Import a live PDP page (.html) into editable sections ---------- */
+function importPdp(html, fname) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  // HTML collapses whitespace; do the same so line breaks in the source don't become line breaks in text.
+  const tw = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT); while (tw.nextNode()) tw.currentNode.nodeValue = tw.currentNode.nodeValue.replace(/\s+/g, ' ');
+  const file = img => img ? decodeURIComponent((img.getAttribute('src') || '').split(/[?#]/)[0].split('/').pop()) : '';
+  const md = el => rteToMd(el).split('\n').map(l => l.trim()).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  const unbold = v => v.replace(/^\*\*([\s\S]*)\*\*$/, '$1');
+  const resp = root => {
+    const any = root.querySelector('img'), d = file(root.querySelector('img.desktop') || any), t = file(root.querySelector('img.tablet')), m = file(root.querySelector('img.mobile'));
+    return { desk: S(d), tab: S(t && t !== d ? t : ''), mob: S(m && m !== (t || d) ? m : ''), alt: (any && any.getAttribute('alt')) || '' };
+  };
+  const toEl = (node, opt) => {
+    opt = opt || {};
+    if (node.nodeType !== 1 || node.matches('br, script, style')) return null;
+    const img = node.matches('img') ? node : (node.children.length === 1 && node.firstElementChild.matches('img') && !node.textContent.trim() ? node.firstElementChild : null);
+    if (img) {
+      const t = node.matches('.livara-icon, .livara-icon *') ? 'icon' : /logo/i.test(node.className + ' ' + img.className) ? 'logo' : 'image';
+      return newEl(t, img.getAttribute('alt') || '', { img: S(file(img)) });
+    }
+    const v = md(node); if (!v) return null;
+    const c = node.className || '';
+    if (/\bfont-xlg\b/.test(c)) return newEl('headline', unbold(v));
+    if (/\b(bold|font-bold|bold-title|livara-details-title)\b/.test(c) || (/^\*\*[\s\S]*\*\*$/.test(v) && !v.includes('\n'))) {
+      const e = newEl('title', unbold(v)); if (/\bfont-md\b/.test(c)) e.style = { size: 'md' }; return e;
+    }
+    const e = newEl('text', v), sz = (c.match(/\bfont-(xs|sm|lg)\b/) || [])[1];
+    if (sz && !opt.plain) e.style = { size: sz };
+    if (/\bbold\b/.test(c)) e.style = Object.assign(e.style || {}, { weight: 'bold' });
+    return e;
+  };
+  const kids = el => [...el.children].map(n => toEl(n)).filter(Boolean);
+  const blocks = [];
+  const push = (type, data) => blocks.push({ id: uid(), type, data });
+  const secs = [...doc.body.children].filter(n => n.nodeType === 1 && !n.matches('script, style, link, noscript'));
+  secs.forEach((sec, idx) => {
+    const q = s => sec.matches(s) ? sec : sec.querySelector(s);
+    if (q('.livara-banner-description')) {
+      const r = resp(sec.querySelector('.w-100') || sec), dsc = q('.livara-banner-description'), seen = new Set(), els = [];
+      dsc.querySelectorAll('.livara-banner-description-logo img').forEach(img => { const f = file(img); if (!seen.has(f)) { seen.add(f); els.push(newEl('logo', img.getAttribute('alt') || '', { img: S(f) })); } });
+      dsc.querySelectorAll('.livara-banner-description-slogan').forEach(s => { const v = unbold(md(s)); if (v) els.push(newEl('title', v)); });
+      return push('hero', { desk: r.desk, tab: r.tab, mob: r.mob, els, pos: { mode: 'custom', layout: 'logo-left', logoW: '30', h: 'left', v: 'middle', pad: ['4', '8', '4', '8'], tm: { h: 'center', v: 'middle', pad: ['', '', '', ''] } } });
+    }
+    if (q('.video-section iframe, iframe[src*="youtube"]')) return push('video', { url: q('iframe').getAttribute('src') || '' });
+    if (q('.livara-details-column, .livara-details-column-reverse')) {
+      const rows = [...sec.querySelectorAll('.livara-details-column, .livara-details-column-reverse')];
+      return push('features', { startRev: rows[0].classList.contains('livara-details-column-reverse'), items: rows.map(row => {
+        const det = row.querySelector('.livara-details'), pic = row.querySelector('.livara-product-img');
+        return { id: uid('i'), els: det ? kids(det) : [], media: pic ? [...pic.querySelectorAll('img')].map(img => newEl('image', img.getAttribute('alt') || '', { img: S(file(img)) })) : [] };
+      }) });
+    }
+    if (q('.more-info')) {
+      const mi = q('.more-info');
+      return push('moreinfo', { title: md(mi.querySelector('.info-title') || doc.createElement('i')) || 'MORE INFORMATION', items: [...mi.querySelectorAll('.info-content-item')].map(it => {
+        const ttl = it.querySelector('.title'), title = ttl ? unbold(md(ttl)) : '', specs = [...it.querySelectorAll('table tr')].map(tr => [...tr.children].map(td => md(td)).join(' | ')).join('\n');
+        const c = it.cloneNode(true); c.querySelectorAll('.title, table').forEach(x => x.remove());
+        return { id: uid('i'), title, body: md(c), specs };
+      }) });
+    }
+    // One template section can hold both the brand profile and the brand strip.
+    let got = false;
+    if (q('.livara-profile')) { push('profile', { els: kids(q('.livara-profile')) }); got = true; }
+    if (q('.livara-brand')) {
+      const br = q('.livara-brand'), els = [];
+      [...br.children].forEach(n => { const im = n.querySelector && n.querySelector('img'); if (im && !n.textContent.trim()) els.push(newEl('logo', im.getAttribute('alt') || '', { img: S(file(im)) })); else { const e = toEl(n); if (e) els.push(e); } });
+      push('brand', { els }); got = true;
+    }
+    if (got) return;
+    if (q('.livara-desc')) return push('intro', { els: kids(q('.livara-desc')) });
+    // Image-only sections: responsive banner/image.
+    if (sec.querySelector('img') && !sec.textContent.trim() && sec.querySelectorAll('img').length <= 3) {
+      const r = resp(sec), after = blocks.some(x => x.type === 'moreinfo');
+      return push(after || idx === secs.length - 1 ? 'banner' : 'image', r);
+    }
+    push('raw', { html: sec.outerHTML });
+  });
+  const ns = st;
+  st = blankState();
+  st.title = (doc.querySelector('title') || {}).textContent || '';
+  st.desc = (doc.querySelector('meta[name="description"]') || { getAttribute: () => '' }).getAttribute('content') || '';
+  st.kw = (doc.querySelector('meta[name="keywords"]') || { getAttribute: () => '' }).getAttribute('content') || '';
+  st.sku = ((fname || '').match(/(\d{4,})/) || html.match(/assets\/img\/(\d{4,})_PDP_/) || [])[1] || '';
+  st.blocks = blocks;
+  for (const k of Object.keys(assets)) if (!JSON.stringify(ns).includes(k)) { /* keep uploads for undo */ }
+  skuIn.value = st.sku; selId = st.blocks[0]?.id || null; tab = 'block'; renderAll(); commitSnap();
+  const raw = blocks.filter(b => b.type === 'raw').length;
+  toast(`Imported ${blocks.length} section${blocks.length === 1 ? '' : 's'}${raw ? ` (${raw} as Custom HTML)` : ''}. Undo brings back your previous page.`);
+}
 
 /* ---------- Project save / open (keeps uploads inside the .json) ---------- */
 const toDataURL = blob => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(blob); });
 function fromDataURL(u) { const [h, b64] = u.split(','); const bin = atob(b64), a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new Blob([a], { type: h.slice(5).split(';')[0] }); }
+// Project file = a normal .html page you can open in a browser to look at, with the editable project embedded inside it.
+const PROJ_ID = 'pdp-builder-project';
 $('#saveProject').onclick = async () => {
-  const used = {};
-  for (const [k, a] of Object.entries(assets)) if (JSON.stringify(st).includes('"' + k + '"')) used[k] = { name: a.name, type: a.type, data: await toDataURL(a.blob) };
-  try { await saveFile((st.sku || 'page') + '_builder.json', JSON.stringify({ app: 'pdp-builder', v: 1, state: st, assets: used })); toast('Project saved'); }
+  const used = {}, view = {};
+  for (const [k, a] of Object.entries(assets)) if (JSON.stringify(st).includes('"' + k + '"')) { const data = await toDataURL(a.blob); used[k] = { name: a.name, type: a.type, data }; view[k] = { name: a.name, url: data }; }
+  const data = JSON.stringify({ app: 'pdp-builder', v: 1, state: st, assets: used }).replace(/</g, '\\u003c');
+  const page = buildHTML(st, view, { preview: true, clean: true }).html
+    .replace('<head>', `<head><title>${esc(st.title || st.sku || 'PDP')} · PDP Builder project</title><meta name="generator" content="PDP Builder">`)
+    .replace('</body>', `<script type="application/json" id="${PROJ_ID}">${data}<\/script>\n</body>`);
+  try { await saveFile((st.sku || 'page') + '_project.html', page); dirty = false; toast('Project saved'); }
   catch (e) { toast(saveMsg(e)); }
 };
 $('#openProject').addEventListener('change', async e => {
   const file = e.target.files[0]; e.target.value = ''; if (!file) return;
   try {
-    const p = JSON.parse(await file.text());
+    const txt = await file.text();
+    const m = txt.match(new RegExp(`<script type="application/json" id="${PROJ_ID}">([\\s\\S]*?)<\/script>`));
+    if (!m && /<(section|body)[\s>]/i.test(txt) && !/^\s*\{/.test(txt)) { importPdp(txt, file.name); return; }
+    const p = JSON.parse(m ? m[1] : txt);
     if (p.app !== 'pdp-builder' || !p.state || !Array.isArray(p.state.blocks)) throw 0;
     for (const k of Object.keys(assets)) { URL.revokeObjectURL(assets[k].url); delete assets[k]; }
     for (const [k, a] of Object.entries(p.assets || {})) { const blob = fromDataURL(a.data); assets[k] = { name: a.name, type: a.type, blob, url: URL.createObjectURL(blob) }; }
     st = migrate(p.state); st.colors = Object.assign(Object.fromEntries(COLOR_KEYS.map(([k, v]) => [k, v])), st.colors || {});
     skuIn.value = st.sku; selId = st.blocks[0]?.id || null; tab = 'block'; hist.past = []; hist.future = []; hist.cur = null; renderAll(); commitSnap(); toast('Project opened');
-  } catch (err) { toast('That file is not a PDP Builder project.'); }
+  } catch (err) { console.error(err); toast('That file is not a PDP Builder project or a PDP page.'); }
 });
 
 document.querySelectorAll('i[data-ico]').forEach(i => i.outerHTML = ico(i.dataset.ico));
@@ -1806,8 +2219,13 @@ const applyTheme = th => { if (th) document.documentElement.dataset.theme = th; 
 let theme = null; try { theme = localStorage.getItem('pdpTheme'); } catch (e) {}
 applyTheme(theme);
 themeBtn.onclick = () => { const dark = document.documentElement.dataset.theme ? document.documentElement.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; theme = dark ? 'light' : 'dark'; try { localStorage.setItem('pdpTheme', theme); } catch (e) {} document.body.classList.add('theming'); applyTheme(theme); setTimeout(() => document.body.classList.remove('theming'), 400); };
+const gridBtn = $('#gridBtn');
+const setGrid = on => { gridOn = on; gridBtn.setAttribute('aria-pressed', on); try { localStorage.setItem('pdpGrid', on ? '1' : '0'); } catch (e) {} renderPreview(); };
+gridBtn.setAttribute('aria-pressed', gridOn); gridBtn.onclick = () => setGrid(!gridOn);
+document.addEventListener('keydown', e => { if (e.key.toLowerCase() === 'g' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.target.closest('input, textarea, select, [contenteditable]')) setGrid(!gridOn); });
 $('#undoBtn').onclick = undo; $('#redoBtn').onclick = redo;
 renderLib(); renderAll(); fit(); commitSnap();
+offerRestore();
 </script>
 
 </body>
