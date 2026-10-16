@@ -228,6 +228,12 @@ details.el > summary .tt { font-weight: 500 }
 .cheat { font-size: 12px; color: var(--muted); background: var(--raised); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; line-height: 1.6 }
 .cheat code { color: var(--fg) }
 
+.keysbtn { position: fixed; left: 14px; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font: 600 15px/1 system-ui, sans-serif; cursor: pointer; z-index: 15; box-shadow: 0 2px 8px rgba(0,0,0,.12) }
+.keysbtn:hover { border-color: var(--accent, #c27a35); color: var(--accent, #c27a35) }
+.keys { width: 100%; border-collapse: collapse; font-size: 13px }
+.keys td { padding: 6px 4px; border-bottom: 1px solid var(--line); vertical-align: middle }
+.keys td:first-child { white-space: nowrap; padding-right: 14px }
+kbd { display: inline-block; min-width: 22px; padding: 2px 6px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; background: var(--raised); font: 12px/1.3 var(--mono); text-align: center }
 .modal { position: fixed; inset: 0; background: rgba(20,14,8,.45); display: grid; place-items: center; z-index: 20; padding: 16px }
 .dialog { width: min(720px, 100%); max-height: 88vh; overflow: auto; background: var(--surface); border-radius: 12px; border: 1px solid var(--line); padding: 20px; display: flex; flex-direction: column; gap: 14px }
 .dialog h3 { margin: 0; font-size: 18px }
@@ -341,6 +347,28 @@ details.item[open] > .body { animation: rise .2s ease-out }
     </div>
   </div>
 </div>
+<div class="modal" id="keysModal" hidden>
+  <div class="dialog" role="dialog" aria-labelledby="keysTitle" style="width:min(460px,100%)">
+    <h3 id="keysTitle">Keyboard shortcuts</h3>
+    <table class="keys"><tbody>
+      <tr><td><kbd>⌘/Ctrl</kbd> <kbd>S</kbd></td><td>Save project (.html)</td></tr>
+      <tr><td><kbd>⌘/Ctrl</kbd> <kbd>O</kbd></td><td>Open / import a file</td></tr>
+      <tr><td><kbd>⌘/Ctrl</kbd> <kbd>E</kbd></td><td>Export</td></tr>
+      <tr><td><kbd>⌘/Ctrl</kbd> <kbd>Z</kbd></td><td>Undo</td></tr>
+      <tr><td><kbd>⌘/Ctrl</kbd> <kbd>⇧</kbd> <kbd>Z</kbd> · <kbd>⌘/Ctrl</kbd> <kbd>Y</kbd></td><td>Redo</td></tr>
+      <tr><td><kbd>⌘/Ctrl</kbd> <kbd>D</kbd></td><td>Duplicate the selected element, or the section</td></tr>
+      <tr><td><kbd>Delete</kbd> · <kbd>Backspace</kbd></td><td>Delete the selected element, or the section</td></tr>
+      <tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>Select the previous / next section</td></tr>
+      <tr><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></td><td>Preview Desktop / Tablet / Mobile</td></tr>
+      <tr><td><kbd>G</kbd></td><td>Grid lines on / off</td></tr>
+      <tr><td><kbd>?</kbd></td><td>Show this list</td></tr>
+      <tr><td><kbd>Esc</kbd></td><td>Close a window</td></tr>
+    </tbody></table>
+    <div class="fhint">Single keys do nothing while you are typing in a box. An element is selected when you click it in the preview.</div>
+    <div class="acts"><button class="btn" id="keysClose">Close</button></div>
+  </div>
+</div>
+<button class="keysbtn" id="keysBtn" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">?</button>
 <div class="toast" id="toast" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -1245,13 +1273,7 @@ function stepHist(from, to) {
 }
 const undo = () => stepHist(hist.past, hist.future), redo = () => stepHist(hist.future, hist.past);
 function updUndo() { $('#undoBtn').disabled = !hist.past.length; $('#redoBtn').disabled = !hist.future.length; }
-document.addEventListener('keydown', e => {
-  if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
-  if (e.target.closest('input, textarea, select, [contenteditable]')) return; // let text fields use their own undo
-  const k = e.key.toLowerCase();
-  if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
-  else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); redo(); }
-});
+
 function renderPreview() {
   try { lastScroll = frame.contentWindow ? frame.contentWindow.scrollY : 0; } catch (e) { lastScroll = 0; }
   frame.srcdoc = buildHTML(st, assets, { preview: true, sel: selId, selEl, grid: gridOn, live: st.liveImg !== false, liveBase: st.imgBase || DEFAULT_IMG_BASE }).html;
@@ -1260,6 +1282,7 @@ function renderPreview() {
 frame.addEventListener('load', () => {
   let doc; try { doc = frame.contentDocument; } catch (e) { return; }
   if (!doc) return;
+  doc.addEventListener('keydown', onKey); // shortcuts also work while the preview has focus
   // Server images that can't load here (blocked or missing) fall back to a labelled placeholder.
   const base = st.imgBase || DEFAULT_IMG_BASE;
   doc.querySelectorAll('img').forEach(img => {
@@ -2211,7 +2234,7 @@ function openExport() {
 $('#exportBtn').onclick = openExport;
 $('#exClose').onclick = () => $('#modal').hidden = true;
 $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') $('#modal').hidden = true; });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') $('#modal').hidden = true; });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { $('#modal').hidden = true; $('#keysModal').hidden = true; } });
 
 $('#exHtml').onclick = async () => {
   const sku = (st.sku || 'page').trim();
@@ -2366,6 +2389,54 @@ const setGrid = on => { gridOn = on; gridBtn.setAttribute('aria-pressed', on); t
 gridBtn.setAttribute('aria-pressed', gridOn); gridBtn.onclick = () => setGrid(!gridOn);
 document.addEventListener('keydown', e => { if (e.key.toLowerCase() === 'g' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.target.closest('input, textarea, select, [contenteditable]')) setGrid(!gridOn); });
 $('#undoBtn').onclick = undo; $('#redoBtn').onclick = redo;
+
+/* ---------- Keyboard shortcuts ---------- */
+const showKeys = () => { $('#keysModal').hidden = false; $('#keysClose').focus(); };
+$('#keysBtn').onclick = showKeys; $('#keysClose').onclick = () => $('#keysModal').hidden = true;
+$('#keysModal').addEventListener('click', e => { if (e.target.id === 'keysModal') e.target.hidden = true; });
+// The array that holds the selected element / column / card / row (keys as used by data-oid).
+function findHolder(o, key) {
+  if (Array.isArray(o)) {
+    const i = o.findIndex(x => x && typeof x === 'object' && x.id && [x.id, 'col' + x.id, 'card' + x.id].includes(key));
+    if (i >= 0) return { arr: o, i };
+  }
+  if (o && typeof o === 'object') for (const v of Object.values(o)) { const h = findHolder(v, key); if (h) return h; }
+  return null;
+}
+function onKey(e) {
+  const mod = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
+  const typing = e.target.closest && e.target.closest('input, textarea, select, [contenteditable]');
+  const modalOpen = !$('#modal').hidden || !$('#keysModal').hidden;
+  if (mod && !e.altKey && k === 's') { e.preventDefault(); $('#saveProject').click(); return; }
+  if (mod && !e.altKey && k === 'o') { e.preventDefault(); $('#openProject').click(); return; }
+  if (mod && !e.altKey && k === 'e') { e.preventDefault(); $('#exportBtn').click(); return; }
+  if (typing || modalOpen || e.altKey) return;
+  if (mod && (k === 'z' || k === 'y')) { e.preventDefault(); k === 'y' || e.shiftKey ? redo() : undo(); return; } // text boxes keep their own undo (returned above)
+  const b = findBlock(selId), i = st.blocks.indexOf(b), h = b && selEl ? findHolder(b.data, selEl) : null;
+  if (mod && k === 'd') {
+    e.preventDefault(); if (!b) return; commitSnap(); // own undo step
+    if (h) { const c = reId(h.arr[h.i]); h.arr.splice(h.i + 1, 0, c); toast('Duplicated'); }
+    else { const c = reId(b); st.blocks.splice(i + 1, 0, c); selId = c.id; enterIds.add(c.id); toast('Section duplicated'); }
+    selEl = null; renderAll(); return;
+  }
+  if (mod) return;
+  if ((k === 'delete' || k === 'backspace') && b) {
+    e.preventDefault(); commitSnap(); // own undo step
+    if (h) { h.arr.splice(h.i, 1); toast('Deleted · ⌘/Ctrl Z to undo'); }
+    else { st.blocks.splice(i, 1); selId = (st.blocks[i] || st.blocks[i - 1] || {}).id || null; toast('Section deleted · ⌘/Ctrl Z to undo'); }
+    selEl = null; renderAll(); return;
+  }
+  if ((k === 'arrowup' || k === 'arrowdown') && st.blocks.length) {
+    e.preventDefault();
+    const n = i < 0 ? 0 : Math.min(st.blocks.length - 1, Math.max(0, i + (k === 'arrowup' ? -1 : 1)));
+    select(st.blocks[n].id, true); return;
+  }
+  if (['1', '2', '3'].includes(e.key)) { document.querySelector(`[data-dev="${['desktop', 'tablet', 'mobile'][+e.key - 1]}"]`).click(); return; }
+  if (e.key === '?') { e.preventDefault(); showKeys(); return; }
+  if (k === 'g' && e.target.ownerDocument !== document) setGrid(!gridOn); // builder doc has its own G handler
+  if (k === 'escape') { $('#modal').hidden = true; $('#keysModal').hidden = true; }
+}
+document.addEventListener('keydown', onKey);
 renderLib(); renderAll(); fit(); commitSnap();
 offerRestore();
 </script>
