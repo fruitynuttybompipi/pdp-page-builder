@@ -47,6 +47,7 @@ header.bar {
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden }
 .seg button { border: 0; background: transparent; padding: 6px 10px; color: var(--muted) }
 .seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--fg); font-weight: 600 }
+.seg button:disabled { opacity: .4; cursor: default }
 .spacer { flex: 1 }
 .btn { border: 1px solid var(--line); background: var(--surface); border-radius: 7px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap }
 .btn:hover { border-color: var(--muted) }
@@ -123,6 +124,40 @@ details.item > summary button:hover { color: var(--fg); background: var(--raised
 details.item[open] > summary { border-bottom: 1px solid var(--line) }
 details.item .body { padding: 10px; display: flex; flex-direction: column; gap: 12px }
 .list { display: flex; flex-direction: column; gap: 8px }
+.corners { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; padding: 8px; border: 1px dashed var(--line); border-radius: 8px }
+.corners label { display: flex; align-items: center; gap: 5px; font-size: 12px }
+.corners span { color: var(--accent); font-size: 14px; width: 14px }
+.corners input { width: 60px; border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; background: var(--raised) }
+.icoitem { border: 1px solid var(--line); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 8px; background: var(--surface) }
+.icohead { display: flex; align-items: center; gap: 4px }
+.icohead .n { font-family: var(--mono); font-size: 11px; color: var(--muted) }
+.gradprev { height: 28px; border-radius: 6px; border: 1px solid var(--line) }
+.splitlbl { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted) }
+.splitlbl b { color: var(--fg) }
+input[type=range] { width: 100%; accent-color: var(--accent) }
+.tbar { display: flex; gap: 4px; flex-wrap: wrap }
+.tbar button { border: 1px solid var(--line); background: var(--surface); border-radius: 5px; padding: 2px 8px; font-size: 12px; min-width: 28px }
+.tbar button:hover { border-color: var(--muted) }
+.addbar { display: flex; flex-wrap: wrap; gap: 5px; align-items: center }
+.addbar > span { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; margin-right: 2px }
+.etag { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); min-width: 62px }
+details.el > summary .tt { font-weight: 500 }
+.posrow { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap }
+.grid9 { display: grid; grid-template-columns: repeat(3, 30px); gap: 4px; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--stage) }
+.grid9 button { width: 30px; height: 26px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); display: grid; place-items: center; padding: 0 }
+.grid9 button i { width: 10px; height: 4px; border-radius: 2px; background: var(--line) }
+.grid9 button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft) }
+.grid9 button[aria-pressed="true"] i { background: var(--accent) }
+.pads { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; font-size: 12px }
+.pads label { display: flex; flex-direction: column; gap: 3px }
+.pads input { width: 64px; border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; background: var(--raised) }
+.psum { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55% }
+.prow { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: center; gap: 8px; font-size: 12.5px }
+.prow select, .pin input[type=number] { border: 1px solid var(--line); border-radius: 6px; padding: 5px 7px; background: var(--raised); min-width: 0 }
+.pin { display: flex; gap: 6px; align-items: center; min-width: 0 }
+.pin input[type=number] { width: 90px }
+.pin input[type=color] { width: 40px; height: 28px; border: 1px solid var(--line); border-radius: 5px; padding: 0; background: none }
+.prow .seg button { padding: 4px 8px; font-size: 12px }
 
 .colors { display: grid; grid-template-columns: 1fr; gap: 8px }
 .colorrow { display: grid; grid-template-columns: 36px minmax(0, 1fr) 88px; align-items: center; gap: 8px; font-size: 12.5px }
@@ -154,7 +189,35 @@ details.item .body { padding: 10px; display: flex; flex-direction: column; gap: 
   .center { height: 72vh; order: 0 }
   .left { order: 1 } .right { order: 2 }
 }
-@media (prefers-reduced-motion: reduce) { * { transition: none !important } }
+/* Motion: short, purposeful, off for reduced-motion users */
+@keyframes rise { from { opacity: 0; transform: translateY(6px) } }
+@keyframes pop { 0% { transform: scale(.96); opacity: 0 } 100% { transform: none; opacity: 1 } }
+@keyframes flash { 0% { box-shadow: 0 0 0 3px var(--accent) } 100% { box-shadow: 0 0 0 0 transparent } }
+@keyframes ping { 0% { transform: scale(1); opacity: .9 } 100% { transform: scale(2.6); opacity: 0 } }
+@keyframes slideUp { from { opacity: 0; transform: translate(-50%, 12px) } }
+@keyframes slideDown { to { opacity: 0; transform: translate(-50%, 12px) } }
+@keyframes glow { 50% { opacity: .35 } }
+.btn, .chip, .row, .seg button, .tabs button, .tbar button, .grid9 button, details.item > summary button, .slot, .thumb img { transition: background-color .18s, border-color .18s, color .18s, transform .18s, box-shadow .18s, opacity .18s }
+.btn:active, .chip:active, .tbar button:active, .grid9 button:active { transform: scale(.96) }
+.btn.primary:hover { box-shadow: 0 4px 14px -4px var(--accent) }
+.chip:hover { transform: translateY(-1px); box-shadow: 0 6px 14px -8px rgba(0,0,0,.35) }
+.row.enter { animation: rise .3s ease-out, flash .9s ease-out .1s }
+.row.sel { box-shadow: inset 3px 0 0 var(--accent) }
+.insp.enter > * { animation: rise .26s ease-out both }
+.insp.enter > *:nth-child(2) { animation-delay: .03s } .insp.enter > *:nth-child(3) { animation-delay: .06s } .insp.enter > *:nth-child(4) { animation-delay: .09s } .insp.enter > *:nth-child(n+5) { animation-delay: .12s }
+details.item > summary::before { content: "▸"; color: var(--muted); font-size: 11px; transition: transform .18s; display: inline-block }
+details.item[open] > summary::before { transform: rotate(90deg) }
+details.item[open] > .body { animation: rise .2s ease-out }
+.drop-line { animation: glow .8s ease-in-out infinite }
+.slot.over { transform: scale(1.01) }
+.thumb img { animation: pop .3s ease-out }
+.modal:not([hidden]) { animation: rise .18s ease-out } .modal:not([hidden]) .dialog { animation: pop .22s ease-out }
+.toast.in { animation: slideUp .22s ease-out } .toast.out { animation: slideDown .22s ease-in forwards }
+.frame-wrap { transition: width .35s cubic-bezier(.2,.8,.2,1), transform .35s cubic-bezier(.2,.8,.2,1), margin-left .35s cubic-bezier(.2,.8,.2,1) }
+.frame-wrap iframe { transition: width .35s cubic-bezier(.2,.8,.2,1) }
+.live { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); flex: none }
+.live.pulse::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--ok); animation: ping .7s ease-out }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important } }
 </style>
 
 </head>
@@ -170,6 +233,7 @@ details.item .body { padding: 10px; display: flex; flex-direction: column; gap: 
     </div>
     <div class="spacer"></div>
     <label class="btn" for="openProject">Open project<input id="openProject" type="file" accept=".json,application/json" hidden></label>
+    <div class="seg" role="group" aria-label="History"><button id="undoBtn" title="Undo (Ctrl+Z)" disabled>↶ Undo</button><button id="redoBtn" title="Redo (Ctrl+Shift+Z)" disabled>Redo ↷</button></div>
     <button class="btn" id="saveProject">Save project</button>
     <button class="btn primary" id="exportBtn">Export</button>
   </header>
@@ -184,7 +248,7 @@ details.item .body { padding: 10px; display: flex; flex-direction: column; gap: 
     </aside>
 
     <main class="center">
-      <div class="stagebar"><span id="stageInfo"></span><span class="spacer"></span><span>Click a section in the preview to edit it</span></div>
+      <div class="stagebar"><span class="live" id="liveDot" title="Preview updates as you edit"></span><span id="stageInfo"></span><span class="spacer"></span><span>Click a section in the preview to edit it</span></div>
       <div class="stage" id="stage"><div class="frame-wrap" id="frameWrap"><iframe id="frame" title="Page preview"></iframe></div></div>
     </main>
 
@@ -238,6 +302,7 @@ function inl(s) {
     .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, t, u) => /^(https?:|#|mailto:)/i.test(u) ? `<a href="${u}">${t}</a>` : t);
 }
 const isLi = l => /^\s*[-•]\s+/.test(l);
+const isOl = l => /^\s*\d+[.)]\s+/.test(l);
 // Text formatting: **bold**, *italic*, [link](url), "- " bullets, blank line = new paragraph.
 function rich(src, mode) {
   const groups = String(src || '').replace(/\r/g, '').trim().split(/\n\s*\n/).filter(g => g.trim());
@@ -248,9 +313,14 @@ function rich(src, mode) {
     return `<div${last ? '' : ' class="mb-3"'}>${g.split('\n').map(inl).join('<br>')}</div>`;
   }).join('\n        ');
   return groups.map(g => {
-    let out = '', ul = [];
-    const flush = () => { if (ul.length) { out += '<ul>' + ul.map(x => `<li>${inl(x)}</li>`).join('') + '</ul>'; ul = []; } };
-    for (const l of g.split('\n')) { if (isLi(l)) ul.push(l.replace(/^\s*[-•]\s+/, '')); else { flush(); out += `<div>${inl(l)}</div>`; } }
+    let out = '', ul = [], tag = '';
+    const flush = () => { if (ul.length) { out += `<${tag}>` + ul.map(x => `<li>${inl(x)}</li>`).join('') + `</${tag}>`; ul = []; } };
+    for (const l of g.split('\n')) {
+      const k = isLi(l) ? 'ul' : isOl(l) ? 'ol' : '';
+      if (k !== tag || !k) flush();
+      tag = k;
+      if (k) ul.push(l.replace(k === 'ul' ? /^\s*[-•]\s+/ : /^\s*\d+[.)]\s+/, '')); else out += `<div>${inl(l)}</div>`;
+    }
     flush(); return out;
   }).join('<br>');
 }
@@ -259,7 +329,31 @@ function ytEmbed(u) {
   let m = u.match(/youtu\.be\/([\w-]{6,})/) || u.match(/[?&]v=([\w-]{6,})/) || u.match(/\/shorts\/([\w-]{6,})/);
   return m ? 'https://www.youtube.com/embed/' + m[1] : u;
 }
+// Corner radius: one value for all corners, or four (top-left, top-right, bottom-right, bottom-left). Empty corner = the "all" value.
+const setv = v => String(v ?? '') !== '';
+function radiusVal(x, key) {
+  x = x || {}; const all = Math.max(0, +x[key] || 0), four = x[key + '4'] || [];
+  if (four.some(setv)) return [0, 1, 2, 3].map(i => (setv(four[i]) ? Math.max(0, +four[i] || 0) : all) + 'px').join(' ');
+  return setv(x[key]) ? all + 'px' : '';
+}
+const roundCss = (x, key) => { const v = radiusVal(x, key); return v && /[1-9]/.test(v) ? [`border-radius:${v}`, 'overflow:hidden'] : []; };
 const extOf = n => { const m = String(n || '').toLowerCase().match(/\.([a-z0-9]{2,5})$/); return m ? '.' + (m[1] === 'jpeg' ? 'jpg' : m[1]) : ''; };
+
+/* ---------- Elements: the pieces inside a column ---------- */
+const EL = {
+  headline: { label: 'Headline', text: true, cls: 'bold font-xlg', def: 'Headline' },
+  title: { label: 'Title', text: true, cls: 'bold font-lg', def: 'Title' },
+  text: { label: 'Paragraph', text: true, area: true, cls: 'font-md', def: 'Paragraph text.' },
+  icon: { label: 'Icon', img: true, ph: [160, 160] },
+  image: { label: 'Image', img: true, ph: [900, 700] },
+  logo: { label: 'Logo', img: true, ph: [600, 200] },
+  icons: { label: 'Icon row', init: () => ({ items: [newIco(), newIco(), newIco()], isz: '', isu: 'vw', gap: '' }) },
+  button: { label: 'Button', def: 'Shop now', init: () => ({ href: '', iconPos: 'left', btn: { fill: 'solid', c1: '#9F672E', c2: '#4E2312', tc: '#FFFFFF', angle: '135', r: '6', size: 'md' } }) },
+};
+const EL_ORDER = ['headline', 'title', 'text', 'icon', 'icons', 'image', 'logo', 'button'];
+function newIco() { return { id: uid('k'), img: S(), cap: '' }; }
+const newEl = (t, v, extra) => Object.assign({ id: uid('e'), t, v: v ?? (EL[t].def || ''), img: S(), style: {}, w: '' }, EL[t].init ? EL[t].init() : {}, extra || {});
+const elSum = els => { const e = (els || []).find(x => EL[x.t] && EL[x.t].text && x.v.trim()); return e ? e.v.split('\n')[0] : (els || []).length + ' elements'; };
 
 /* ---------- Block types ---------- */
 const IMG_HINT_T = 'Optional. Uses the desktop image if empty.';
@@ -269,36 +363,43 @@ const TYPES = {
     { k: 'desk', t: 'img', label: 'Banner · desktop', ph: [1920, 800] },
     { k: 'tab', t: 'img', label: 'Banner · tablet', ph: [1200, 1500], hint: IMG_HINT_T },
     { k: 'mob', t: 'img', label: 'Banner · mobile', ph: [750, 1100], hint: IMG_HINT_M },
-    { k: 'logo', t: 'img', label: 'Logo', ph: [600, 200] },
-    { k: 'title', t: 'area', label: 'Product name', hint: 'Press Enter for a line break.', rows: 3 } ],
-    make: () => ({ desk: S(), tab: S(), mob: S(), logo: S(), title: 'PRODUCT NAME' }),
-    sum: d => d.title.split('\n')[0] },
-  intro: { label: 'Intro text', fields: [
-    { k: 'headline', t: 'text', label: 'Headline' },
-    { k: 'body', t: 'area', label: 'Paragraph', fmt: true } ],
-    make: () => ({ headline: 'Headline', body: 'Describe the product here.' }), sum: d => d.headline },
+    { k: 'pos', t: 'heropos', label: 'Text position' },
+    { k: 'els', t: 'els', label: 'Text on the banner' } ],
+    make: () => ({ desk: S(), tab: S(), mob: S(), pos: { mode: 'custom', layout: 'logo-left', logoW: '30', h: 'left', v: 'middle', pad: ['4', '8', '4', '8'] }, els: [newEl('logo'), newEl('title', 'PRODUCT NAME', { style: { align: 'left' } }), newEl('text', 'Short line about the product.', { style: { align: 'left' } })] }),
+    sum: d => elSum(d.els) },
+  intro: { label: 'Intro text', fields: [{ k: 'els', t: 'els', label: 'Elements' }],
+    make: () => ({ els: [newEl('title', 'Headline'), newEl('text', 'Describe the product here.')] }), sum: d => elSum(d.els) },
+  text: { label: 'Text', fields: [{ k: 'els', t: 'els', label: 'Elements' }],
+    make: () => ({ els: [newEl('title'), newEl('text', 'Your text here.')] }), sum: d => elSum(d.els) },
+  columns: { label: 'Columns', fields: [
+    { k: 'sbg', t: 'bg', label: 'Section background' },
+    { k: 'sbox', t: 'box1', label: 'Section corners & padding' },
+    { k: 'gaps', t: 'gaps', label: 'Spacing' },
+    { k: 'valign', t: 'select', label: 'Line up columns at', opts: [['flex-start', 'Top'], ['center', 'Middle'], ['flex-end', 'Bottom']] },
+    { k: 'cols', t: 'cols', label: 'Columns' } ],
+    make: () => ({ bg: '', valign: 'flex-start', cols: [newCol([newEl('image'), newEl('title'), newEl('text')]), newCol([newEl('image'), newEl('title'), newEl('text')])] }),
+    sum: d => d.cols.length + ' columns' },
   video: { label: 'YouTube video', fields: [
     { k: 'url', t: 'text', label: 'YouTube link', hint: 'Paste any YouTube link. It is converted to an embed link.' } ],
     make: () => ({ url: '' }), sum: d => ytEmbed(d.url).replace('https://www.youtube.com/embed/', '') || 'No link yet' },
   features: { label: 'Feature rows', fields: [
     { k: 'startRev', t: 'check', label: 'First row has the image on the left' },
-    { k: 'items', t: 'list', label: 'Rows', add: 'Add row', title: it => it.title,
-      make: () => ({ id: uid('i'), icon: S(), img: S(), title: 'Feature title', body: 'Feature description.' }),
+    { k: 'textW', t: 'split', label: 'Column widths' },
+    { k: 'bg', t: 'bg', label: 'Section background' },
+    { k: 'head', t: 'els', label: 'Section heading (above the rows)' },
+    { k: 'items', t: 'list', label: 'Rows', add: 'Add row', title: it => elSum(it.els),
+      make: () => ({ id: uid('i'), els: [newEl('icon'), newEl('title', 'Feature title'), newEl('text', 'Feature description.')], media: [newEl('image')] }),
       fields: [
-        { k: 'icon', t: 'img', label: 'Icon', ph: [160, 160] },
-        { k: 'img', t: 'img', label: 'Photo', ph: [900, 700] },
-        { k: 'title', t: 'text', label: 'Title' },
-        { k: 'body', t: 'area', label: 'Text', fmt: true } ] } ],
-    make: () => ({ startRev: false, items: [TYPES.features.fields[1].make()] }), sum: d => d.items.length + ' rows' },
-  profile: { label: 'Brand profile', fields: [
-    { k: 'title', t: 'text', label: 'Heading' },
-    { k: 'body', t: 'area', label: 'Text', fmt: true, rows: 9, hint: 'Start a paragraph with ## to make it a sub-heading.' } ],
-    make: () => ({ title: 'BRAND: Who We Are', body: 'About the brand.' }), sum: d => d.title },
-  brand: { label: 'Brand strip', fields: [
-    { k: 'logo', t: 'img', label: 'White logo', ph: [600, 200] },
-    { k: 'tagline', t: 'text', label: 'Tagline' },
-    { k: 'note', t: 'text', label: 'Small italic note' } ],
-    make: () => ({ logo: S(), tagline: 'Tagline', note: 'Exclusively available through Amway Malaysia.' }), sum: d => d.tagline },
+        { k: 'els', t: 'els', label: 'Text column', ctx: 'feature' },
+        { k: 'bg', t: 'bg', label: 'Text column background' },
+        { k: 'box', t: 'boxes', label: 'Corners & padding' },
+        { k: 'media', t: 'els', label: 'Photo column', ctx: 'media' } ] } ],
+    make: () => ({ startRev: false, items: [TYPES.features.fields.find(f => f.k === 'items').make()] }), sum: d => d.items.length + ' rows' },
+  profile: { label: 'Brand profile', fields: [{ k: 'els', t: 'els', label: 'Elements' }],
+    make: () => ({ els: [newEl('title', 'BRAND: Who We Are'), newEl('text', 'About the brand.')] }), sum: d => elSum(d.els) },
+  brand: { label: 'Brand strip', fields: [{ k: 'els', t: 'els', label: 'Elements', ctx: 'brand' }],
+    make: () => ({ els: [newEl('logo'), newEl('text', 'Tagline', { style: { size: 'lg' } }), newEl('text', '*Exclusively available through Amway Malaysia.*', { style: { weight: 'bold', size: 'xs' } })] }),
+    sum: d => elSum(d.els) },
   image: { label: 'Full-width image', fields: [
     { k: 'desk', t: 'img', label: 'Image · desktop', ph: [1920, 1000] },
     { k: 'tab', t: 'img', label: 'Image · tablet', ph: [1200, 900], hint: 'Optional. Leave both empty to use one image for all screens.' },
@@ -321,24 +422,72 @@ const TYPES = {
     { k: 'alt', t: 'text', label: 'Image description (alt text)' } ],
     make: () => ({ desk: S(), tab: S(), mob: S(), alt: '' }), sum: d => d.alt || 'Banner' },
 };
-const ORDER = ['hero', 'intro', 'video', 'features', 'profile', 'brand', 'image', 'moreinfo', 'banner'];
+function newCol(els) { return { id: uid('c'), els: els || [], bg: '' }; }
+// Section-wide text styles (only where text is not made of elements).
+const STYLES = { moreinfo: [['title', 'Item headings'], ['text', 'Item text']] };
+// "Empty column" is a Columns section that starts with one blank column.
+TYPES.blank = { label: 'Empty column', as: 'columns', make: () => ({ valign: 'flex-start', cols: [newCol([])] }) };
+const ORDER = ['blank', 'hero', 'intro', 'text', 'columns', 'video', 'features', 'profile', 'brand', 'image', 'moreinfo', 'banner'];
 const iconLike = k => k === 'icon' || k === 'logo';
+
+/* ---------- Upgrade projects saved before elements existed ---------- */
+function migrate(st) {
+  for (const b of st.blocks) {
+    const d = b.data, sty = g => ((b.style || {})[g]) || {};
+    if (b.type === 'hero' && !d.els) {
+      d.els = [...(d.logo ? [newEl('logo', '', { img: d.logo })] : []), newEl('title', d.title || '', { style: sty('title') })];
+      d.pos = { mode: 'template', h: 'center', v: 'middle', pad: ['5', '10', '5', '10'] };
+    } else if (b.type === 'intro' && !d.els) d.els = [newEl('title', d.headline || '', { style: sty('title') }), newEl('text', d.body || '', { style: sty('text') })];
+    else if (b.type === 'text' && !d.els) d.els = [...((d.title || '').trim() ? [newEl('title', d.title, { style: sty('title') })] : []), newEl('text', d.body || '', { style: sty('text') })];
+    else if (b.type === 'profile' && !d.els) {
+      d.els = [newEl('title', d.title || '', { style: sty('title') })];
+      String(d.body || '').split(/\n\s*\n/).filter(g => g.trim()).forEach(g => d.els.push(/^##\s+/.test(g) ? newEl('title', g.replace(/^##\s+/, ''), { style: { size: 'md' } }) : newEl('text', g, { style: Object.assign({}, sty('text')) })));
+    } else if (b.type === 'brand' && !d.els) {
+      d.els = [newEl('logo', '', { img: d.logo || S() }), newEl('text', d.tagline || '', { style: Object.assign({ size: 'lg' }, sty('title')) })];
+      if ((d.note || '').trim()) d.els.push(newEl('text', '*' + d.note + '*', { style: Object.assign({ weight: 'bold', size: 'xs' }, sty('text')) }));
+    } else if (b.type === 'features') {
+      for (const it of d.items) if (!it.els) {
+        it.els = [newEl('icon', '', { img: it.icon || S() }), newEl('title', it.title || '', { style: sty('title') }), newEl('text', it.body || '', { style: sty('text') })];
+        it.media = [newEl('image', it.title || '', { img: it.img || S() })];
+      }
+    }
+    if (b.type !== 'moreinfo') delete b.style;
+  }
+  return st;
+}
 
 /* ---------- File naming: {SKU}_PDP_{part}{n}.{ext}, numbered in page order like the original ---------- */
 function autoNames(st) {
-  const m = {}, c = { banner: 0, img: 0, icon: 0, logo: 0, wl: 0 };
+  const m = {}, c = { banner: 0, img: 0, icon: 0, logo: 0, wl: 0, bg: 0, btn: 0 };
   const P = (st.sku || '').trim() + '_PDP_';
+  const walk = (els, logoName) => (els || []).forEach(el => {
+    if (el.t === 'icon') m[el.id] = P + 'icon' + (++c.icon);
+    else if (el.t === 'image') m[el.id] = P + 'img' + (++c.img);
+    else if (el.t === 'logo') m[el.id] = logoName();
+    else if (el.t === 'icons') (el.items || []).forEach(it => m[it.id] = P + 'icon' + (++c.icon));
+    else if (el.t === 'button' && el.img && (el.img.a || el.img.name)) m[el.id] = P + 'btn_icon' + (++c.btn);
+  });
+  const heroLogo = () => { const n = ++c.logo; return P + 'logo' + (n > 1 ? n : ''); };
+  const whiteLogo = () => { const n = ++c.wl; return P + 'whitelogo' + (n > 1 ? n : ''); };
   for (const b of st.blocks) {
     const d = b.data, id = b.id;
     if (b.type === 'hero' || b.type === 'banner') {
       const n = ++c.banner;
       m[id + '.desk'] = P + 'banner' + n; m[id + '.tab'] = P + 'tb_banner' + n; m[id + '.mob'] = P + 'mb_banner' + n;
-      if (b.type === 'hero') { const l = ++c.logo; m[id + '.logo'] = P + 'logo' + (l > 1 ? l : ''); }
+      if (b.type === 'hero') walk(d.els, heroLogo);
     } else if (b.type === 'features') {
-      d.items.forEach(it => { m[id + '.' + it.id + '.icon'] = P + 'icon' + (++c.icon); m[id + '.' + it.id + '.img'] = P + 'img' + (++c.img); });
-    } else if (b.type === 'image') {
+      if ((d.bg || {}).type === 'image') m[id + '.bg'] = P + 'bg' + (++c.bg);
+      walk(d.head, heroLogo);
+      d.items.forEach(it => { if ((it.bg || {}).type === 'image') m[id + '.' + it.id + '.bg'] = P + 'bg' + (++c.bg); walk(it.els, heroLogo); walk(it.media, heroLogo); });
+    }
+    else if (b.type === 'columns') {
+      if ((d.sbg || {}).type === 'image') m[id + '.sbg.bg'] = P + 'bg' + (++c.bg);
+      d.cols.forEach(col => { if ((col.bgx || {}).type === 'image') m[id + '.' + col.id + '.bg'] = P + 'bg' + (++c.bg); walk(col.els, heroLogo); });
+    }
+    else if (b.type === 'image') {
       const n = ++c.img; m[id + '.desk'] = P + 'img' + n; m[id + '.tab'] = P + 'tb_img' + n; m[id + '.mob'] = P + 'mb_img' + n;
-    } else if (b.type === 'brand') { const n = ++c.wl; m[id + '.logo'] = P + 'whitelogo' + (n > 1 ? n : ''); }
+    } else if (b.type === 'brand') walk(d.els, whiteLogo);
+    else if (d.els) walk(d.els, heroLogo);
   }
   return m;
 }
@@ -361,6 +510,40 @@ function phSVG(text, wh, empty) {
 }
 
 /* ---------- HTML builder (shared by preview and export) ---------- */
+// Added to the page CSS only when Columns or free images/logos are used.
+const PDP_CSS = `
+      /* PDP Builder: columns and free elements */
+      .pdp-columns { padding: 5vw 12vw; }
+      .pdp-cols { --cg: 4vw; --per: 6; display: flex; flex-wrap: wrap; column-gap: var(--cg); row-gap: 4vw; align-items: flex-start; }
+      .pdp-col { flex: 1 1 calc((100% - (var(--per) - 1) * var(--cg)) / var(--per)); min-width: 0; display: flex; flex-direction: column; row-gap: var(--eg, 1vw); }
+      .pdp-col[style*="--w"] { flex: 0 0 calc(var(--w) - var(--cg)); }
+      .pdp-image img { max-width: 100%; }
+      .pdp-logo { width: 20vw; max-width: 100%; }
+      .pdp-btn-wrap { align-self: stretch; }
+      .pdp-icons { display: flex; flex-wrap: wrap; gap: 2vw; align-items: flex-start; align-self: stretch; }
+      .pdp-icon-item { width: var(--isz, 5.5vw); display: flex; flex-direction: column; align-items: center; text-align: center; gap: .4em; }
+      .pdp-icon-item img { width: 100%; height: auto; }
+      .pdp-btn { display: inline-flex; align-items: center; gap: .5em; padding: .7em 1.6em; border: 2px solid transparent; border-radius: 6px; font-weight: 700; line-height: 1.2; text-decoration: none !important; transition: transform .15s ease, filter .15s ease, box-shadow .15s ease; }
+      .pdp-btn:hover { filter: brightness(1.08); transform: translateY(-1px); box-shadow: 0 6px 16px -8px rgba(0,0,0,.45); }
+      .pdp-btn-icon { width: 1.25em; height: 1.25em; object-fit: contain; }
+      .pdp-feature-head { display: flex; flex-direction: column; row-gap: 1vw; text-align: center; align-items: center; margin-bottom: 4vw; }
+      .pdp-hero-row { display: flex; align-items: center; column-gap: 3vw; width: 100%; }
+      .pdp-hero-logo, .pdp-hero-text { display: flex; flex-direction: column; row-gap: 1vw; min-width: 0; }
+      .pdp-hero-logo { flex: 0 0 var(--lw, 30%); align-items: center; }
+      .pdp-hero-logo .livara-banner-description-logo { width: 100%; margin-bottom: 0; }
+      .pdp-hero-text { flex: 1 1 0; }
+      @media only screen and (min-width: 1201px) {
+        .livara-product-details[style*="--tw"] .livara-details { width: var(--tw); }
+        .livara-product-details[style*="--tw"] .livara-product-img { width: calc(100% - var(--tw)); }
+      }
+      @media only screen and (max-width: 768px) {
+        .pdp-columns { padding: 6vw 8vw; }
+        .pdp-cols { flex-direction: column; row-gap: 6vw; }
+        .pdp-col, .pdp-col[style*="--w"] { flex: 0 0 auto; width: 100%; row-gap: var(--eg, 3vw); }
+        .pdp-logo { width: 40vw; }
+        .pdp-icon-item { width: var(--isz, 13vw); }
+      }
+`;
 const PREVIEW_BASE = `*,*:before,*:after{box-sizing:border-box}html{-webkit-text-size-adjust:100%}body{margin:0}b,strong{font-weight:700}img{vertical-align:middle;border:0}table{border-collapse:collapse;border-spacing:0}ul{margin-top:0;margin-bottom:10px}a{color:#337ab7}.text-center{text-align:center}.w-100{width:100%!important}.h-auto{height:auto!important}.bold{font-weight:bold}.mb-1{margin-bottom:.25rem!important}.mb-3{margin-bottom:1rem!important}.mb-4{margin-bottom:1.5rem!important}`;
 
 function buildHTML(st, assets, opt) {
@@ -388,41 +571,206 @@ function buildHTML(st, assets, opt) {
   }
   const ph = (type, k) => TYPES[type].fields.find(f => f.k === k).ph;
 
+  // Text style (align/weight/size/colour) and section size. Empty = template default.
+  const SIZE_RE = /^font-(xs|sm|md|lg|xlg)$/;
+  const okColor = c => /^#[0-9a-f]{3,8}$/i.test(c || '');
+  const txs = (s, cls, o) => {
+    o = o || {}; s = s || {}; const css = [];
+    let c = String(cls || '').split(' ').filter(Boolean);
+    if (o.part !== 'font' && s.align) { css.push(`text-align:${s.align}!important`, 'align-self:stretch'); if (o.inline) css.push('display:block'); }
+    if (o.part !== 'align') {
+      if (s.size) { c = c.filter(x => !SIZE_RE.test(x)); c.push('font-' + s.size); }
+      if (s.weight) css.push('font-weight:' + (s.weight === 'bold' ? 700 : 400));
+      if (okColor(s.color)) css.push('color:' + s.color);
+    }
+    if (o.css) css.push(...o.css);
+    return (c.length ? ` class="${c.join(' ')}"` : '') + (css.length ? ` style="${css.join(';')}"` : '');
+  };
+  const sv = (b, g) => ((b.style || {})[g]) || {};
+  const tx = (b, g, cls, o) => txs(sv(b, g), cls, o);
+  const styled = (b, g) => { const s = sv(b, g); return !!(s.align || s.size || s.weight || okColor(s.color)); };
+  const wrapT = (b, g, html) => styled(b, g) ? `<div${tx(b, g, '')}>${html}</div>` : html;
+  const boxCss = b => {
+    const x = b.box || {}, c = [], n = v => String(v || '').trim();
+    if (+n(x.w) > 0) c.push(`width:${+n(x.w)}${x.wu === 'px' ? 'px' : '%'}`, 'max-width:100%', 'margin-left:auto', 'margin-right:auto');
+    if (+n(x.h) > 0) c.push(`height:${+n(x.h)}${x.hu === 'vh' ? 'vh' : 'px'}`, 'overflow:hidden');
+    return c;
+  };
+  const sec = (b, cls, extra) => { const c = [...(extra || []), ...boxCss(b)]; return `<section${cls ? ` class="${cls}"` : ''}${bid(b)}${c.length ? ` style="${c.join(';')}"` : ''}>`; };
+
+  // One element (headline, title, paragraph, icon, image, logo) inside a column.
+  const ALIGN = { left: ['margin-right:auto', 'align-self:flex-start'], center: ['margin-left:auto', 'margin-right:auto', 'align-self:center'], right: ['margin-left:auto', 'align-self:flex-end'] };
+  const LOGO_CLS = { hero: 'livara-banner-description-logo', brand: 'livara-brand-logo' };
+  function renderEl(el, ctx, last) {
+    const s = el.style || {}, mb = ctx.stack && !last ? ' mb-3' : '', def = EL[el.t];
+    if (!def) return '';
+    // Row size: width % of the container; height px or vw (text: minimum height, never cut off).
+    const hgt = +el.ht > 0 ? (+el.ht) + (el.hu === 'vw' ? 'vw' : 'px') : '';
+    const sz = [...(+el.w > 0 ? [`width:${Math.min(100, +el.w)}%`] : []), ...(hgt && def.text ? ['min-height:' + hgt] : [])];
+    if (def.text && +el.w > 0 && s.align && ALIGN[s.align]) sz.push(...ALIGN[s.align].filter(x => x.startsWith('margin')));
+    if (el.t === 'icons') {
+      const items = (el.items || []).map(it => ({ it, f: R(it.img, it.id, 'icon') })).filter(x => x.f || P);
+      if (!items.length) return '';
+      const css = [];
+      if (+el.isz > 0) css.push(`--isz:${+el.isz}${el.isu === 'px' ? 'px' : 'vw'}`);
+      if (setv(el.gap)) css.push(`gap:${Math.max(0, +el.gap || 0)}px`);
+      if (s.align) css.push('justify-content:' + ({ left: 'flex-start', center: 'center', right: 'flex-end' }[s.align] || 'flex-start'));
+      return `<div class="pdp-icons${mb}"${css.length ? ` style="${css.join(';')}"` : ''}>${items.map(({ it, f }) => `
+          <div class="pdp-icon-item"><img src="${src(f, [160, 160])}" alt="${esc(it.cap || '')}">${it.cap.trim() ? `<div class="font-xs"${okColor(s.color) ? ` style="color:${s.color}"` : ''}>${inl(it.cap)}</div>` : ''}</div>`).join('')}
+        </div>`;
+    }
+    if (el.t === 'button') {
+      const B = el.btn || {}, fill = B.fill || 'solid', css = [];
+      const c1 = okColor(B.c1) ? B.c1 : '#9F672E', c2 = okColor(B.c2) ? B.c2 : '#4E2312';
+      const tc = okColor(B.tc) ? B.tc : (fill === 'outline' ? c1 : '#FFFFFF');
+      if (fill === 'gradient') css.push(`background-image:linear-gradient(${(+B.angle || 0) % 360}deg, ${c1}, ${c2})`, 'border-color:transparent');
+      else if (fill === 'outline') css.push('background-color:transparent', 'border-color:' + c1);
+      else css.push('background-color:' + c1, 'border-color:' + c1);
+      css.push('color:' + tc);
+      if (radiusVal(B, 'r')) css.push('border-radius:' + radiusVal(B, 'r'));
+      const bw = el.bw || (+el.w > 0 ? 'pct' : 'auto');
+      if (bw === 'full') css.push('width:100%', 'justify-content:center');
+      else if (bw === 'pct' && +el.w > 0) css.push(`width:${Math.min(100, +el.w)}%`, 'justify-content:center');
+      if (hgt) css.push('min-height:' + hgt);
+      const ic = el.img && (el.img.a || el.img.name) ? R(el.img, el.id, 'icon') : null;
+      const icon = ic ? `<img class="pdp-btn-icon" src="${src(ic, [64, 64])}" alt="">` : '';
+      const lbl = `<span>${inl(el.v)}</span>`;
+      const href = /^(https?:|#|mailto:|tel:)/i.test((el.href || '').trim()) ? esc(el.href.trim()) : '#';
+      const ext = /^https?:/i.test(href) ? ' target="_blank" rel="noopener"' : '';
+      const wrap = s.align ? ` style="text-align:${s.align}"` : '';
+      return `<div class="pdp-btn-wrap${mb}"${wrap}><a class="pdp-btn ${{ sm: 'font-sm', md: 'font-md', lg: 'font-lg' }[B.size] || 'font-md'}" href="${href}"${ext} style="${css.join(';')}">${el.iconPos === 'right' ? lbl + icon : icon + lbl}</a></div>`;
+    }
+    if (def.text) {
+      if (!el.v.trim() && !P) return '';
+      const lines = el.v.split('\n').map(inl).join('<br>');
+      if (ctx.name === 'hero' && el.t === 'title')
+        return `<div${txs(s, 'livara-banner-description-slogan text-center' + mb, { part: 'align', css: sz })}>
+          <div${txs(s, 'bold-title font-lg', { part: 'font' })}>${el.v.split('\n').map(esc).join('<br>')}</div>
+        </div>`;
+      const base = el.t === 'title' && ctx.name === 'feature' ? 'livara-details-title bold font-lg' : def.cls;
+      const body = el.t === 'text' ? (el.v.split('\n').some(l => isLi(l) || isOl(l)) ? rich(el.v, 'block') : rich(el.v, 'inline')) : lines;
+      return `<div${txs(s, base + mb, { css: sz })}>${body}${el.t === 'text' && ctx.name === 'feature' ? '\n          ' : ''}</div>`;
+    }
+    const f = R(el.img, el.id, el.t);
+    if (!f && !P) return '';
+    const css = [...sz];
+    if (hgt) css.push('height:' + hgt);
+    const fit = hgt ? ' style="height:100%!important;width:auto!important;max-width:100%"' : '';
+    if (s.align && ALIGN[s.align]) css.push(...ALIGN[s.align], ...(ctx.name === 'media' ? ['display:block'] : []));
+    const st = css.length ? ` style="${css.join(';')}"` : '';
+    const alt = esc(el.v || '');
+    if (el.t === 'icon') return `<div class="livara-icon${mb}"${st}><img src="${src(f, def.ph)}" alt="${alt}"${fit}></div>`;
+    if (el.t === 'logo') return `<div class="${LOGO_CLS[ctx.name] || 'pdp-logo'}${mb}"${st}>
+          <img src="${src(f, def.ph)}"${ctx.name === 'brand' ? '' : ' class="w-100 h-auto"'} alt="${alt || 'Logo'}"${fit} />
+        </div>`;
+    if (ctx.name === 'media') return `<img src="${src(f, def.ph)}" alt="${alt}"${hgt ? ` style="${[...css.filter(x => !x.startsWith('height')), 'height:' + hgt, 'width:auto!important', 'max-width:100%'].join(';')}"` : st}>`;
+    return `<div class="pdp-image${mb}"${st}><img src="${src(f, def.ph)}" class="w-100 h-auto" alt="${alt}"${fit}></div>`;
+  }
+  // Hero text: stacked rows, or logo in its own column beside the other elements.
+  const heroEls = d => {
+    const lay = (d.pos || {}).layout || 'stack';
+    if (lay === 'stack') return renderEls(d.els, { name: 'hero' }, '        ');
+    const logos = d.els.filter(e => e.t === 'logo'), rest = d.els.filter(e => e.t !== 'logo');
+    const L = `<div class="pdp-hero-logo">\n            ${renderEls(logos, { name: 'hero' }, '            ')}\n          </div>`;
+    const T = `<div class="pdp-hero-text">\n            ${renderEls(rest, { name: 'hero' }, '            ')}\n          </div>`;
+    const lw = Math.min(80, Math.max(10, +(d.pos || {}).logoW || 30));
+    return `<div class="pdp-hero-row"${lw !== 30 ? ` style="--lw:${lw}%"` : ''}>\n          ${lay === 'logo-right' ? T + '\n          ' + L : L + '\n          ' + T}\n        </div>`;
+  };
+  // Corner radius (px) and padding (% T R B L) for a row or column.
+  const boxStyle = x => {
+    x = x || {}; const c = [], pads = (x.pad || []).map(v => Math.max(0, +v || 0));
+    c.push(...roundCss(x, 'r'));
+    if (pads.some(Boolean)) c.push('padding:' + pads.map(v => v + '%').join(' '));
+    return c;
+  };
+  // Spacing between columns, between wrapped lines, and between elements inside each column (px).
+  const gapCss = g => { g = g || {}; const c = [], px = v => Math.max(0, +v || 0) + 'px';
+    if (setv(g.per) && +g.per !== 6) c.push('--per:' + Math.min(12, Math.max(1, Math.round(+g.per) || 6)));
+    if (setv(g.col)) c.push('--cg:' + px(g.col)); if (setv(g.row)) c.push('row-gap:' + px(g.row)); if (setv(g.el)) c.push('--eg:' + px(g.el)); return c; };
+  const styleAttr = c => c.length ? ` style="${c.join(';')}"` : '';
+  // Background: colour, two-colour gradient, or image (cover/contain).
+  const bgCss = (g, ref) => {
+    g = g || {}; const c = [];
+    if (g.type === 'color' && okColor(g.c1)) c.push('background-color:' + g.c1);
+    if (g.type === 'gradient' && okColor(g.c1) && okColor(g.c2)) c.push(`background-image:linear-gradient(${(+g.angle || 0) % 360}deg, ${g.c1}, ${g.c2})`);
+    if (g.type === 'image') {
+      const f = R(g.img, ref, 'bg');
+      if (f || P) c.push(`background-image:url(&quot;${src(f, [1600, 900])}&quot;)`, 'background-size:' + (g.size === 'contain' ? 'contain' : 'cover'), 'background-position:' + (g.pos || 'center'), 'background-repeat:no-repeat');
+      if (okColor(g.c1)) c.push('background-color:' + g.c1);
+    }
+    return c;
+  };
+  // Consecutive Icon elements sit side by side in one row.
+  const renderEls = (els, ctx, ind) => {
+    const out = [], a = els || [];
+    for (let i = 0; i < a.length; i++) {
+      if (a[i].t === 'icon' && a[i + 1] && a[i + 1].t === 'icon') {
+        let j = i; while (a[j + 1] && a[j + 1].t === 'icon') j++;
+        const run = a.slice(i, j + 1), al = (run[0].style || {}).align;
+        const inner = run.map(el => renderEl(Object.assign({}, el, { style: Object.assign({}, el.style, { align: '' }) }), {}, true)).filter(Boolean);
+        if (inner.length) out.push(`<div class="pdp-icons${ctx.stack && j < a.length - 1 ? ' mb-3' : ''}"${al ? ` style="justify-content:${{ left: 'flex-start', center: 'center', right: 'flex-end' }[al]}"` : ''}>${inner.join('')}</div>`);
+        i = j; continue;
+      }
+      out.push(renderEl(a[i], ctx, i === a.length - 1));
+    }
+    return out.filter(Boolean).join('\n' + ind);
+  };
+
   const out = [];
   for (const b of st.blocks) {
     const d = b.data;
     if (b.type === 'hero') {
-      const logo = R(d.logo, b.id + '.logo', 'logo');
-      const alt = d.title.replace(/\s+/g, ' ').trim();
-      out.push(`    <section class="livara-banner"${bid(b)}>
+      const pos = d.pos || {};
+      let dcss = '';
+      if (pos.mode === 'custom') {
+        const jc = { top: 'flex-start', middle: 'center', bottom: 'flex-end' }[pos.v] || 'center';
+        const ai = { left: 'flex-start', center: 'center', right: 'flex-end' }[pos.h] || 'center';
+        const pad = [0, 1, 2, 3].map(i => Math.max(0, +((pos.pad || [])[i]) || 0) + '%').join(' ');
+        dcss = ` style="top:0;right:0;bottom:0;left:0;width:auto;transform:none;padding:${pad};justify-content:${jc};align-items:${ai};text-align:${pos.h || 'center'};row-gap:1vw"`;
+      }
+      const alt = (d.els.find(e => e.t === 'title' || e.t === 'headline') || { v: '' }).v.replace(/\s+/g, ' ').trim();
+      out.push(`    ${sec(b, 'livara-banner')}
       <div class="w-100">
         ${resp(b, d, alt, [ph('hero', 'desk'), ph('hero', 'tab'), ph('hero', 'mob')], true)}
       </div>
-      <div class="livara-banner-description">${logo || P ? `
-        <div class="livara-banner-description-logo">
-          <img src="${src(logo, ph('hero', 'logo'))}" class="w-100 h-auto" alt="${esc(alt)} logo" />
-        </div>` : ''}
-        <div class="livara-banner-description-slogan text-center">
-          <div class="bold-title font-lg">${d.title.split('\n').map(esc).join('<br>')}</div>
-        </div>
+      <div class="livara-banner-description"${dcss}>
+        ${heroEls(d)}
       </div>
     </section>`);
-    } else if (b.type === 'intro') {
-      out.push(`    <section${bid(b)}>
+    } else if (b.type === 'intro' || b.type === 'text') {
+      out.push(`    ${sec(b)}
       <div class="livara-desc">
-        <span class="font-lg"><b>${inl(d.headline)}</b></span>
-        <br><br>
-        <span class="font-md">
-          ${rich(d.body, 'inline')}
-        </span>
+        ${renderEls(d.els, { name: 'stack', stack: true }, '        ')}
+      </div>
+    </section>`);
+    } else if (b.type === 'columns') {
+      const cols = d.cols.map(col => {
+        const c = [], pads = (col.pad || []).map(x => Math.max(0, +x || 0));
+        if (+col.w > 0) c.push(`--w:${Math.min(100, +col.w)}%`);
+        if (+col.mh > 0) c.push(`min-height:${+col.mh}px`);
+        if (col.v) c.push('justify-content:' + ({ top: 'flex-start', middle: 'center', bottom: 'flex-end' }[col.v] || 'flex-start'));
+        if (col.h) c.push('align-items:' + ({ left: 'flex-start', center: 'center', right: 'flex-end' }[col.h] || 'stretch'), 'text-align:' + col.h);
+        if (okColor(col.bg)) c.push('background-color:' + col.bg);
+        c.push(...roundCss(col, 'r'));
+        if (pads.some(Boolean)) c.push('padding:' + pads.map(x => x + '%').join(' '));
+        else if (okColor(col.bg) || (col.bgx || {}).type) c.push('padding:3vw');
+        c.push(...bgCss(col.bgx, b.id + '.' + col.id + '.bg'));
+        const cs = c.length ? ` style="${c.join(';')}"` : '';
+        return `        <div class="pdp-col"${cs}>
+          ${col.els.length || !P ? renderEls(col.els, { name: 'col' }, '          ') : '<div style="border:2px dashed #c9bfb3;border-radius:8px;padding:5vw 2vw;text-align:center;color:#8a7d70;font:14px/1.4 system-ui,sans-serif">Empty column<br>Add elements in the editor on the right</div>'}
+        </div>`;
+      }).join('\n');
+      out.push(`    ${sec(b, 'pdp-columns', [...(okColor(d.bg) ? ['background-color:' + d.bg] : []), ...bgCss(d.sbg, b.id + '.sbg.bg'), ...boxStyle(d.sbox)])}
+      <div class="pdp-cols"${styleAttr([...(d.valign && d.valign !== 'flex-start' ? ['align-items:' + d.valign] : []), ...gapCss(d.gaps)])}>
+${cols}
       </div>
     </section>`);
     } else if (b.type === 'video') {
       const u = ytEmbed(d.url);
       if (!u && !P) { warns.push('YouTube video: no link, so the video is left out.'); continue; }
       out.push(P
-        ? `    <section class="video-section"${bid(b)}><div style="aspect-ratio:16/9;width:100%;background:#151210;color:#e9e1d7;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;font:14px/1.4 system-ui,sans-serif;text-align:center;padding:12px"><div style="font-size:40px;line-height:1">&#9654;</div><div>YouTube video</div><div style="opacity:.65;font:12px monospace;word-break:break-all">${esc(u || 'No link yet')}</div></div></section>`
-        : `    <section class="video-section">
+        ? `    ${sec(b, 'video-section')}<div style="aspect-ratio:16/9;width:100%;background:#151210;color:#e9e1d7;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;font:14px/1.4 system-ui,sans-serif;text-align:center;padding:12px"><div style="font-size:40px;line-height:1">&#9654;</div><div>YouTube video</div><div style="opacity:.65;font:12px monospace;word-break:break-all">${esc(u || 'No link yet')}</div></div></section>`
+        : `    ${sec(b, 'video-section')}
       <iframe src="${esc(u)}"
         title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media;
         gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
@@ -430,36 +778,31 @@ function buildHTML(st, assets, opt) {
     </section>`);
     } else if (b.type === 'features') {
       const rows = d.items.map((it, i) => {
-        const ic = R(it.icon, b.id + '.' + it.id + '.icon', 'icon'), im = R(it.img, b.id + '.' + it.id + '.img', 'img');
-        if (!im && !P) warns.push(`Feature row "${it.title}": no photo.`);
+        const pbg = bgCss(it.bg, b.id + '.' + it.id + '.bg');
         const cls = ((i % 2 === 1) !== !!d.startRev) ? 'livara-details-column-reverse' : 'livara-details-column';
-        return `      <div class="${cls}">
-        <div class="livara-details">${ic || P ? `
-          <div class="livara-icon"><img src="${src(ic, [160, 160])}" alt=""></div>` : ''}
-          <div class="livara-details-title bold font-lg">${inl(it.title)}</div>
-          <div class="font-md">${rich(it.body, 'inline')}
-          </div>
+        const bx = it.box || {};
+        return `      <div class="${cls}"${styleAttr(boxStyle(bx.row))}>
+        <div class="livara-details"${styleAttr([...pbg, ...boxStyle(bx.text)])}>
+          ${renderEls(it.els, { name: 'feature' }, '          ')}
         </div>
-        <div class="livara-product-img">${im || P ? `
-          <img src="${src(im, [900, 700])}" alt="${esc(it.title)}">` : ''}
+        <div class="livara-product-img"${styleAttr(boxStyle(bx.photo))}>
+          ${renderEls(it.media, { name: 'media' }, '          ')}
         </div>
       </div>`;
       }).join('\n');
-      out.push(`    <section class="livara-product-details"${bid(b)}>\n${rows}\n    </section>`);
+      const tw = Math.min(85, Math.max(15, +d.textW || 0));
+      const head = (d.head || []).length ? `      <div class="pdp-feature-head">\n        ${renderEls(d.head, { name: 'col' }, '        ')}\n      </div>\n` : '';
+      out.push(`    ${sec(b, 'livara-product-details', [...(+d.textW > 0 ? ['--tw:' + tw + '%'] : []), ...bgCss(d.bg, b.id + '.bg')])}\n${head}${rows}\n    </section>`);
     } else if (b.type === 'profile') {
-      out.push(`    <section${bid(b)}>
+      out.push(`    ${sec(b)}
       <div class="livara-profile">
-        <div class="bold font-lg">${inl(d.title)}</div>
-        ${rich(d.body, 'profile')}
+        ${renderEls(d.els, { name: 'stack', stack: true }, '        ')}
       </div>
     </section>`);
     } else if (b.type === 'brand') {
-      const lg = R(d.logo, b.id + '.logo', 'logo');
-      out.push(`    <section${bid(b)}>
-      <div class="livara-brand">${lg || P ? `
-        <div class="livara-brand-logo mb-3"><img src="${src(lg, [600, 200])}" alt="Brand logo"></div>` : ''}
-        <div class="font-lg mb-4">${inl(d.tagline)}</div>${d.note.trim() ? `
-        <div class="bold font-xs"><i>${inl(d.note)}</i></div>` : ''}
+      out.push(`    ${sec(b)}
+      <div class="livara-brand">
+        ${renderEls(d.els, { name: 'brand', stack: true }, '        ')}
       </div>
     </section>`);
     } else if (b.type === 'image') {
@@ -467,7 +810,7 @@ function buildHTML(st, assets, opt) {
       if (single) {
         const D = R(d.desk, b.id + '.desk', 'desk');
         if (!D && !P) { warns.push('Full-width image: no image, so it is left out.'); continue; }
-        out.push(`    <section${bid(b)}>
+        out.push(`    ${sec(b)}
       <div>
         <img src="${src(D, ph('image', 'desk'))}" width="100%" alt="${esc(d.alt)}">
       </div>
@@ -475,7 +818,7 @@ function buildHTML(st, assets, opt) {
       } else {
         const imgs = resp(b, d, d.alt, [ph('image', 'desk'), ph('image', 'tab'), ph('image', 'mob')], true);
         if (!imgs) continue;
-        out.push(`    <section${bid(b)}>\n      <div class="w-100">\n        ${imgs}\n      </div>\n    </section>`);
+        out.push(`    ${sec(b)}\n      <div class="w-100">\n        ${imgs}\n      </div>\n    </section>`);
       }
     } else if (b.type === 'moreinfo') {
       const items = d.items.map(it => {
@@ -483,12 +826,13 @@ function buildHTML(st, assets, opt) {
           const k = l.indexOf('|'); const a = k < 0 ? l : l.slice(0, k), v = k < 0 ? '' : l.slice(k + 1);
           return `                <tr>\n                  <td class="bold">${inl(a.trim())}</td>\n                  <td>${inl(v.trim())}</td>\n                </tr>`;
         });
+        const content = rich(it.body, 'block') + (rows.length ? `\n              <table>\n${rows.join('\n')}\n              </table>` : '');
         return `            <div class="info-content-item">
-              <div class="title font-lg font-bold">${inl(it.title)}</div>
-              ${rich(it.body, 'block')}${rows.length ? `\n              <table>\n${rows.join('\n')}\n              </table>` : ''}
+              <div${tx(b, 'title', 'title font-lg font-bold')}>${inl(it.title)}</div>
+              ${wrapT(b, 'text', content)}
             </div>`;
       }).join('\n');
-      out.push(`    <section${bid(b)}>
+      out.push(`    ${sec(b)}
       <div class="more-info">
         <div class="info-body" style="position: relative; z-index: 9;">
           <div class="info-title font-xlg font-bold">${inl(d.title)}</div>
@@ -501,7 +845,7 @@ ${items}
     } else if (b.type === 'banner') {
       const imgs = resp(b, d, d.alt, [ph('banner', 'desk'), ph('banner', 'tab'), ph('banner', 'mob')], true);
       if (!imgs) continue;
-      out.push(`    <section${bid(b)}>\n      <div class="w-100">\n        ${imgs}\n      </div>\n    </section>`);
+      out.push(`    ${sec(b)}\n      <div class="w-100">\n        ${imgs}\n      </div>\n    </section>`);
     }
   }
 
@@ -511,6 +855,7 @@ ${items}
   if (!(st.desc || '').trim()) warns.push('Page settings: the meta description is empty.');
 
   const body = out.join('\n\n');
+  if (body.includes('pdp-') || body.includes('--tw:')) css += PDP_CSS;
   if (P) {
     const hl = sel ? `[data-bid="${sel}"]{outline:3px solid #c27a35!important;outline-offset:-3px}` : '';
     return { html: `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${PREVIEW_BASE}</style><style>${css}</style><style>body{font-family:"GT Walsheim Pro",system-ui,-apple-system,"Segoe UI",sans-serif}[data-bid]{cursor:pointer}[data-bid]:hover{outline:2px dashed rgba(194,122,53,.7);outline-offset:-2px}${hl}</style></head><body>\n${body}\n</body></html>`, files, warns };
@@ -522,15 +867,15 @@ ${items}
 /* ---------- Starting content: the 343136 page ---------- */
 function defaultState() {
   const sku = '343136', f = n => S(sku + '_PDP_' + n);
-  const feat = (n, title, body) => ({ id: uid('i'), icon: f('icon' + n + '.png'), img: f('img' + n + '.jpg'), title, body });
+  const feat = (n, title, body) => ({ id: uid('i'), els: [newEl('icon', '', { img: f('icon' + n + '.png') }), newEl('title', title), newEl('text', body)], media: [newEl('image', title, { img: f('img' + n + '.jpg') })] });
   return {
     sku, title: 'LIVARA TRI-BREW CAPSULES & ESPRESSO MACHINE',
     desc: 'LIVARA Tri-Brew Capsules & Espresso Machine brews Dolce Gusto® and Nespresso® compatible capsules or ground coffee, with a 20-bar pump, precision temperature control and manual milk frothing.',
     kw: 'LIVARA, Tri-Brew, espresso machine, capsule coffee machine, coffee maker',
     colors: Object.fromEntries(COLOR_KEYS.map(([k, v]) => [k, v])),
     blocks: [
-      { id: uid(), type: 'hero', data: { desk: f('banner1.jpg'), tab: f('tb_banner1.jpg'), mob: f('mb_banner1.jpg'), logo: f('logo.png'), title: 'TRI-BREW CAPSULES &\nESPRESSO MACHINE' } },
-      { id: uid(), type: 'intro', data: { headline: 'One Machine. Endless Possibilities.', body: 'Discover more ways to enjoy coffee with the Livara Tri-Brew Capsules & Espresso Machine. Enjoy the convenience of coffee brewed from capsules or ground coffee at leisure, all from one machine. Featuring a powerful 20-bar pressure system, precision temp control and manual milk frothing, Livara Tri-Brew Capsules & Espresso Machine enhances your coffee beverages from the comfort of your home.' } },
+      { id: uid(), type: 'hero', data: { desk: f('banner1.jpg'), tab: f('tb_banner1.jpg'), mob: f('mb_banner1.jpg'), pos: { mode: 'custom', layout: 'logo-left', logoW: '30', h: 'left', v: 'middle', pad: ['4', '8', '4', '8'] }, els: [newEl('logo', 'LIVARA', { img: f('logo.png') }), newEl('title', 'TRI-BREW CAPSULES &\nESPRESSO MACHINE', { style: { align: 'left' } })] } },
+      { id: uid(), type: 'intro', data: { els: [newEl('title', 'One Machine. Endless Possibilities.'), newEl('text', 'Discover more ways to enjoy coffee with the Livara Tri-Brew Capsules & Espresso Machine. Enjoy the convenience of coffee brewed from capsules or ground coffee at leisure, all from one machine. Featuring a powerful 20-bar pressure system, precision temp control and manual milk frothing, Livara Tri-Brew Capsules & Espresso Machine enhances your coffee beverages from the comfort of your home.')] } },
       { id: uid(), type: 'video', data: { url: 'https://www.youtube.com/embed/VQhK3ANJY40?si=GAmU6siMZHuaMaaT' } },
       { id: uid(), type: 'features', data: { startRev: false, items: [
         feat(1, '3-in-1 Brewing Flexibility', 'Suitable for **Dolce Gusto® compatible capsules**, **Nespresso® compatible capsules** or **ground coffee powder** to suit every mood, taste and occasion. Enjoy the flexibility to brew your favourite coffee the way you like it.'),
@@ -538,8 +883,13 @@ function defaultState() {
         feat(3, 'Precision Temperature Control', 'A **digital display** paired with an **aluminium die-cast boiler** maintains the ideal brewing temperature for consistently rich flavour, balanced aroma and exceptional extraction in every cup.'),
         feat(4, 'Barista-Style Milk Frothing', 'Create silky, velvety microfoam with the manual steam wand for barista-style lattes, cappuccinos and other milk-based favourites just the way you like them.'),
         feat(5, 'Hot & Cold Brewing Versatility', 'Powered by a professional **20-bar pressure pump**, the machine delivers rich crema and full-bodied espresso while giving you the flexibility to enjoy both hot and cold coffee creations at home.') ] } },
-      { id: uid(), type: 'profile', data: { title: 'LIVARA: Who We Are', body: 'At LIVARA, we believe everyday living can be made better through thoughtful design and purposeful innovation. Our products are developed around real consumer needs, combining practical functionality, considered design and dependable performance to bring greater ease, comfort and enjoyment into modern homes.\n\n## The Expertise Behind LIVARA\n\nLIVARA products are supplied by **Black Dots Marketing Sdn Bhd, a subsidiary of Russell Taylors**, an established home appliance brand with extensive industry experience.\n\nBacked by expertise across **product development, quality assurance, certification, distribution and after-sales support**, LIVARA creates well-designed, dependable and safe products that consumers can purchase with confidence.' } },
-      { id: uid(), type: 'brand', data: { logo: f('whitelogo.png'), tagline: 'Thoughtfully made for better everyday living.', note: 'Exclusively available through Amway Malaysia.' } },
+      { id: uid(), type: 'profile', data: { els: [
+        newEl('title', 'LIVARA: Who We Are'),
+        newEl('text', 'At LIVARA, we believe everyday living can be made better through thoughtful design and purposeful innovation. Our products are developed around real consumer needs, combining practical functionality, considered design and dependable performance to bring greater ease, comfort and enjoyment into modern homes.'),
+        newEl('title', 'The Expertise Behind LIVARA', { style: { size: 'md' } }),
+        newEl('text', 'LIVARA products are supplied by **Black Dots Marketing Sdn Bhd, a subsidiary of Russell Taylors**, an established home appliance brand with extensive industry experience.'),
+        newEl('text', 'Backed by expertise across **product development, quality assurance, certification, distribution and after-sales support**, LIVARA creates well-designed, dependable and safe products that consumers can purchase with confidence.')] } },
+      { id: uid(), type: 'brand', data: { els: [newEl('logo', 'LIVARA', { img: f('whitelogo.png') }), newEl('text', 'Thoughtfully made for better everyday living.', { style: { size: 'lg' } }), newEl('text', '*Exclusively available through Amway Malaysia.*', { style: { weight: 'bold', size: 'xs' } })] } },
       { id: uid(), type: 'image', data: { desk: f('img6.jpg'), tab: S(), mob: S(), alt: 'LIVARA Tri-Brew Capsules & Espresso Machine' } },
       { id: uid(), type: 'moreinfo', data: { title: 'MORE INFORMATION', items: [
         { id: uid('i'), title: 'HOW TO USE', body: 'Please read the operation manual before use.', specs: '' },
@@ -565,16 +915,47 @@ const openItems = new Set();
 const $ = s => document.querySelector(s);
 const DEV = { desktop: 1366, tablet: 834, mobile: 390 };
 
-function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, 2600); }
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.hidden = false; t.classList.remove('out'); void t.offsetWidth; t.classList.add('in');
+  clearTimeout(toast.t); toast.t = setTimeout(() => { t.classList.add('out'); setTimeout(() => t.hidden = true, 220); }, 2400);
+}
+const reId = o => JSON.parse(JSON.stringify(o).replace(/"id":"[^"]+"/g, () => '"id":"' + uid('x') + '"'));
+let enterIds = new Set();
 const findBlock = id => st.blocks.find(b => b.id === id);
 
 /* ---------- Preview ---------- */
 const frame = $('#frame'), wrap = $('#frameWrap'), stage = $('#stage');
 let pvTimer, scrollToSel = false, lastScroll = 0;
-function schedulePreview(now) { clearTimeout(pvTimer); pvTimer = setTimeout(renderPreview, now ? 0 : 220); }
+function schedulePreview(now) { clearTimeout(pvTimer); pvTimer = setTimeout(renderPreview, now ? 0 : 220); snap(); }
+
+/* ---------- Undo / redo: snapshots of the page state, typing grouped by pause ---------- */
+const hist = { past: [], future: [], cur: null, t: 0 };
+function snap() { clearTimeout(hist.t); hist.t = setTimeout(commitSnap, 400); }
+function commitSnap() {
+  clearTimeout(hist.t);
+  const s = JSON.stringify(st); if (s === hist.cur) return;
+  if (hist.cur !== null) { hist.past.push(hist.cur); if (hist.past.length > 100) hist.past.shift(); }
+  hist.cur = s; hist.future = []; updUndo();
+}
+function stepHist(from, to) {
+  commitSnap(); if (!from.length) return;
+  to.push(hist.cur); hist.cur = from.pop(); st = JSON.parse(hist.cur);
+  skuIn.value = st.sku; if (!findBlock(selId)) selId = st.blocks[0]?.id || null;
+  renderOutline(); renderInspector(); schedulePreview(true); updUndo();
+}
+const undo = () => stepHist(hist.past, hist.future), redo = () => stepHist(hist.future, hist.past);
+function updUndo() { $('#undoBtn').disabled = !hist.past.length; $('#redoBtn').disabled = !hist.future.length; }
+document.addEventListener('keydown', e => {
+  if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+  if (e.target.closest('input, textarea, select')) return; // let text fields use their own undo
+  const k = e.key.toLowerCase();
+  if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+  else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); redo(); }
+});
 function renderPreview() {
   try { lastScroll = frame.contentWindow ? frame.contentWindow.scrollY : 0; } catch (e) { lastScroll = 0; }
   frame.srcdoc = buildHTML(st, assets, { preview: true, sel: selId }).html;
+  const dot = $('#liveDot'); dot.classList.remove('pulse'); void dot.offsetWidth; dot.classList.add('pulse');
 }
 frame.addEventListener('load', () => {
   let doc; try { doc = frame.contentDocument; } catch (e) { return; }
@@ -607,12 +988,13 @@ function renderLib() {
   });
 }
 function addBlock(type, at) {
-  const b = { id: uid(), type, data: TYPES[type].make() };
-  st.blocks.splice(at, 0, b); scrollToSel = true; select(b.id, true); toast(TYPES[type].label + ' added');
+  const b = { id: uid(), type: TYPES[type].as || type, data: TYPES[type].make() };
+  (b.data.cols || []).forEach(c => openItems.add('col' + c.id));
+  st.blocks.splice(at, 0, b); enterIds.add(b.id); scrollToSel = true; select(b.id, true); toast(TYPES[type].label + ' added');
 }
 function renderOutline() {
-  const ol = $('#outline');
-  ol.innerHTML = st.blocks.map((b, i) => `<li class="row${b.id === selId ? ' sel' : ''}" draggable="true" data-id="${b.id}">
+  const ol = $('#outline'); setTimeout(() => enterIds.clear(), 0);
+  ol.innerHTML = st.blocks.map((b, i) => `<li class="row${b.id === selId ? ' sel' : ''}${enterIds.has(b.id) ? ' enter' : ''}" draggable="true" data-id="${b.id}">
     <span class="grip" aria-hidden="true">⋮⋮</span>
     <span class="lbl"><div class="t">${esc(TYPES[b.type].label)}</div><div class="s">${esc(TYPES[b.type].sum(b.data))}</div></span>
     <span class="acts">
@@ -629,7 +1011,7 @@ function renderOutline() {
       e.stopPropagation();
       if (act === 'up' && i > 0) [st.blocks[i - 1], st.blocks[i]] = [st.blocks[i], st.blocks[i - 1]];
       if (act === 'down' && i < st.blocks.length - 1) [st.blocks[i + 1], st.blocks[i]] = [st.blocks[i], st.blocks[i + 1]];
-      if (act === 'dup') { const c = JSON.parse(JSON.stringify(st.blocks[i])); c.id = uid(); (c.data.items || []).forEach(it => it.id = uid('i')); st.blocks.splice(i + 1, 0, c); selId = c.id; }
+      if (act === 'dup') { const c = reId(st.blocks[i]); st.blocks.splice(i + 1, 0, c); selId = c.id; enterIds.add(c.id); }
       if (act === 'del') { st.blocks.splice(i, 1); if (selId === id) selId = (st.blocks[i] || st.blocks[i - 1] || {}).id || null; toast('Section deleted'); }
       renderAll();
     });
@@ -668,9 +1050,11 @@ const fid = () => 'f' + (++_uid);
 function setTab(t) { tab = t; $('#tabBlock').setAttribute('aria-selected', t === 'block'); $('#tabPage').setAttribute('aria-selected', t === 'page'); renderInspector(); }
 $('#tabBlock').onclick = () => setTab('block'); $('#tabPage').onclick = () => setTab('page');
 
+let lastInsp = null;
 function renderInspector() {
   $('#tabBlock').setAttribute('aria-selected', tab === 'block'); $('#tabPage').setAttribute('aria-selected', tab === 'page');
   const box = $('#insp'); box.innerHTML = '';
+  const key = tab + selId; box.classList.toggle('enter', key !== lastInsp); lastInsp = key;
   if (tab === 'page') return renderPage(box);
   const b = findBlock(selId);
   if (!b) { box.innerHTML = '<p class="hint" style="padding:0">Select a section in the page list or the preview.</p>'; return; }
@@ -678,8 +1062,350 @@ function renderInspector() {
   head.innerHTML = `<h3>${esc(TYPES[b.type].label)}</h3><span class="mono" style="color:var(--muted)">#${st.blocks.indexOf(b) + 1}</span>`;
   box.appendChild(head);
   const names = autoNames(st);
+  box.appendChild(sizeEditor(b));
   for (const f of TYPES[b.type].fields) box.appendChild(fieldEl(f, b.data, b.id, names, b));
+  for (const [g, lbl] of STYLES[b.type] || []) box.appendChild(styleEditor(b, g, lbl));
   if (TYPES[b.type].fields.some(f => f.fmt || (f.fields || []).some(x => x.fmt))) box.appendChild(cheat());
+}
+function panel(key, title, sumText) {
+  const det = document.createElement('details'); det.className = 'item'; det.open = openItems.has(key);
+  det.innerHTML = `<summary><span class="tt">${esc(title)}</span><span class="psum">${esc(sumText)}</span></summary><div class="body"></div>`;
+  det.addEventListener('toggle', () => det.open ? openItems.add(key) : openItems.delete(key));
+  return det;
+}
+function sizeEditor(b) {
+  const x = b.box || (b.box = { w: '', wu: '%', h: '', hu: 'px' });
+  const sum = () => `${+x.w > 0 ? x.w + x.wu : 'Auto'} × ${+x.h > 0 ? x.h + x.hu : 'Auto'}`;
+  const det = panel('box' + b.id, 'Section size', sum()), body = det.querySelector('.body');
+  const wId = fid(), hId = fid();
+  body.innerHTML = `<div class="prow"><label for="${wId}">Width</label><div class="pin"><input type="number" min="1" id="${wId}" placeholder="Auto"><select aria-label="Width unit"><option value="%">%</option><option value="px">px</option></select></div></div>
+    <div class="prow"><label for="${hId}">Height</label><div class="pin"><input type="number" min="1" id="${hId}" placeholder="Auto"><select aria-label="Height unit"><option value="px">px</option><option value="vh">% of screen</option></select></div></div>
+    <div class="fhint">Leave empty for automatic. A narrower section is centred. A fixed height cuts off anything taller.</div>
+    <div><button class="btn sm ghost">Reset to auto</button></div>`;
+  const [wi, ws] = body.querySelectorAll('.pin')[0].children, [hi, hs] = body.querySelectorAll('.pin')[1].children;
+  wi.value = x.w; ws.value = x.wu; hi.value = x.h; hs.value = x.hu;
+  const upd = () => { x.w = wi.value; x.wu = ws.value; x.h = hi.value; x.hu = hs.value; det.querySelector('.psum').textContent = sum(); schedulePreview(); };
+  [wi, ws, hi, hs].forEach(i => i.addEventListener('input', upd));
+  body.querySelector('button').onclick = () => { wi.value = hi.value = ''; upd(); };
+  return det;
+}
+const styleSum = s => [s.align && s.align[0].toUpperCase() + s.align.slice(1), s.weight && s.weight[0].toUpperCase() + s.weight.slice(1), s.size && s.size.toUpperCase(), s.color].filter(Boolean).join(' · ') || 'Default style';
+const alignSeg = (cur, label) => `<div class="prow"><span>${label || 'Align'}</span><div class="seg" role="group" aria-label="${label || 'Align'}">${[['', 'Default'], ['left', 'Left'], ['center', 'Center'], ['right', 'Right']].map(([v, t]) => `<button data-v="${v}" aria-pressed="${(cur || '') === v}">${t}</button>`).join('')}</div></div>`;
+// Align / weight / size / colour controls for one style object. Text only when withFont.
+function styleRows(s, onChange, withFont) {
+  const box = document.createElement('div'); box.className = 'list';
+  const wId = fid(), zId = fid(), cId = fid();
+  box.innerHTML = alignSeg(s.align) + (withFont ? `
+    <div class="prow"><label for="${wId}">Weight</label><select id="${wId}"><option value="">Default</option><option value="bold">Bold</option><option value="regular">Regular</option></select></div>
+    <div class="prow"><label for="${zId}">Size</label><select id="${zId}"><option value="">Default</option><option value="xs">XS</option><option value="sm">S</option><option value="md">M</option><option value="lg">L</option><option value="xlg">XL</option></select></div>
+    <div class="prow"><label for="${cId}">Colour</label><div class="pin"><input type="color" id="${cId}"><button class="btn sm ghost" data-c>Default</button></div></div>` : '');
+  box.querySelectorAll('.seg button').forEach(btn => btn.onclick = () => { s.align = btn.dataset.v; box.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', x === btn)); onChange(); });
+  if (withFont) {
+    const [we, ze] = box.querySelectorAll('select'), ce = box.querySelector('input[type=color]'), cb = box.querySelector('[data-c]');
+    we.value = s.weight || ''; ze.value = s.size || ''; ce.value = s.color || '#000000'; cb.hidden = !s.color;
+    we.onchange = () => { s.weight = we.value; onChange(); };
+    ze.onchange = () => { s.size = ze.value; onChange(); };
+    ce.oninput = () => { s.color = ce.value.toUpperCase(); cb.hidden = false; onChange(); };
+    cb.onclick = () => { s.color = ''; cb.hidden = true; onChange(); };
+  }
+  return box;
+}
+function styleEditor(b, g, lbl) {
+  const s = (b.style || (b.style = {}))[g] || (b.style[g] = { align: '', weight: '', size: '', color: '' });
+  const det = panel('sty' + g + b.id, lbl + ' style', styleSum(s)), body = det.querySelector('.body');
+  body.appendChild(styleRows(s, () => { det.querySelector('.psum').textContent = styleSum(s); schedulePreview(); }, true));
+  return det;
+}
+
+/* Elements inside a column: add, edit, reorder, style */
+function elsEditor(label, els, b, names) {
+  const wrapEl = document.createElement('div'); wrapEl.className = 'field';
+  wrapEl.innerHTML = `<div class="flabel">${esc(label)}</div><div class="list"></div>
+    <div class="addbar"><span>Add</span>${EL_ORDER.map(t => `<button class="btn sm" data-add="${t}">+ ${EL[t].label}</button>`).join('')}</div>`;
+  const list = wrapEl.querySelector('.list');
+  if (!els.length) list.innerHTML = '<p class="fhint" style="margin:0">Empty. Add an element below.</p>';
+  els.forEach((el, i) => {
+    const def = EL[el.t]; if (!def) return;
+    const det = document.createElement('details'); det.className = 'item el'; det.open = openItems.has(el.id);
+    const snip = el.t === 'icons' ? (el.items || []).length + ' icons' : def.text || el.t === 'button' ? el.v.split('\n')[0] : (resolveSlot(el.img, el.id, names, assets, el.t) || { name: 'No image' }).name;
+    det.innerHTML = `<summary><span class="etag">${esc(def.label)}</span><span class="tt">${esc(snip || 'Empty')}</span>${+el.w > 0 ? `<span class="psum">${+el.w}%</span>` : ''}
+      <button data-a="up" aria-label="Move up" ${i ? '' : 'disabled'}>↑</button><button data-a="down" aria-label="Move down" ${i < els.length - 1 ? '' : 'disabled'}>↓</button><button data-a="dup" aria-label="Duplicate">⧉</button><button data-a="del" aria-label="Delete">✕</button></summary><div class="body"></div>`;
+    det.addEventListener('toggle', () => det.open ? openItems.add(el.id) : openItems.delete(el.id));
+    det.querySelector('summary').addEventListener('click', e => {
+      const a = e.target.closest('button')?.dataset.a; if (!a) return; e.preventDefault();
+      if (a === 'up') [els[i - 1], els[i]] = [els[i], els[i - 1]];
+      if (a === 'down') [els[i + 1], els[i]] = [els[i], els[i + 1]];
+      if (a === 'dup') { const c = reId(el); els.splice(i + 1, 0, c); openItems.add(c.id); }
+      if (a === 'del') els.splice(i, 1);
+      renderAll();
+    });
+    const body = det.querySelector('.body'), s = el.style || (el.style = {});
+    const tt = det.querySelector('.tt');
+    if (el.t === 'icons') iconsEditor(el, body, names, b, tt);
+    else if (el.t === 'button') buttonEditor(el, body, names, b, tt);
+    else if (def.text) {
+      const id = fid();
+      body.insertAdjacentHTML('beforeend', `<div class="field"><label for="${id}">Text</label>${def.area ? TOOLBAR : ''}<textarea id="${id}" rows="${def.area ? 5 : 2}"></textarea><div class="fhint">${def.area ? 'Select text, then use the buttons. Each list item goes on its own line.' : 'Press Enter for a line break.'}</div></div>`);
+      const ta = body.querySelector('textarea'); ta.value = el.v;
+      if (def.area) bindToolbar(body.querySelector('.tbar'), ta);
+      ta.addEventListener('input', () => { el.v = ta.value; tt.textContent = ta.value.split('\n')[0] || 'Empty'; onEdit(b); });
+      body.appendChild(sizeRows(el, true));
+      body.appendChild(styleRows(s, () => schedulePreview(), true));
+    } else {
+      body.appendChild(slotEl({ k: 'img', ext: el.t, label: def.label }, el, el.id, names, b));
+      const aId = fid();
+      body.insertAdjacentHTML('beforeend', `<div class="field"><label for="${aId}">Image description (alt text)</label><input type="text" id="${aId}"></div>`);
+      const ai = body.querySelector('#' + aId); ai.value = el.v;
+      ai.oninput = () => { el.v = ai.value; schedulePreview(); };
+      body.appendChild(sizeRows(el, false));
+      body.appendChild(styleRows(s, () => schedulePreview(), false));
+    }
+    list.appendChild(det);
+  });
+  wrapEl.querySelectorAll('[data-add]').forEach(btn => btn.onclick = () => { const el = newEl(btn.dataset.add); els.push(el); openItems.add(el.id); renderAll(); });
+  return wrapEl;
+}
+
+// Width / height of one element's row.
+function sizeRows(el, isText, opt) {
+  const box = document.createElement('div'); box.className = 'list'; const wId = fid(), hId = fid();
+  box.innerHTML = `<div class="prow"><label for="${wId}">Width</label><div class="pin"><input type="range" min="5" max="100" step="1" aria-label="Width slider" style="flex:1"><input type="number" min="1" max="100" id="${wId}" placeholder="Auto" style="width:64px">%</div></div>
+    <div class="prow"><label for="${hId}">Height</label><div class="pin"><input type="number" min="1" id="${hId}" placeholder="Auto"><select aria-label="Height unit"><option value="px">px</option><option value="vw">% of screen width</option></select></div></div>
+    <div class="fhint">Width is a % of the column this element sits in. ${isText ? 'Use Align to place a narrower text box. Height is a minimum, so text is never cut off.' : 'Set a height and the width follows the image shape. Use % of screen width to scale with the banner.'}</div>`;
+  if (opt && opt.noWidth) { box.querySelector('.prow').remove(); box.querySelector('.fhint').textContent = 'Height is a minimum.'; }
+  const wi = box.querySelector('#' + wId) || document.createElement('input'), hi = box.querySelector('#' + hId), hu = box.querySelector('select');
+  const ws = box.querySelector('input[type=range]') || document.createElement('input');
+  wi.value = el.w || ''; ws.value = el.w || 100; hi.value = el.ht || ''; hu.value = el.hu || 'px';
+  wi.oninput = () => { el.w = wi.value; ws.value = wi.value || 100; schedulePreview(); };
+  ws.oninput = () => { el.w = ws.value === '100' ? '' : ws.value; wi.value = el.w; schedulePreview(); };
+  hi.oninput = () => { el.ht = hi.value; schedulePreview(); };
+  hu.onchange = () => { el.hu = hu.value; schedulePreview(); };
+  return box;
+}
+const TOOLBAR = `<div class="tbar" role="toolbar" aria-label="Text formatting"><button data-f="b" title="Bold"><b>B</b></button><button data-f="i" title="Italic"><i>I</i></button><button data-f="ul" title="Bullet list">• List</button><button data-f="ol" title="Numbered list">1. List</button><button data-f="a" title="Link">Link</button></div>`;
+// Toolbar edits the plain text the page is built from (**bold**, *italic*, - bullets, 1. numbers, [text](url)).
+function bindToolbar(bar, ta) {
+  bar.querySelectorAll('button').forEach(btn => btn.onmousedown = e => e.preventDefault());
+  bar.querySelectorAll('button').forEach(btn => btn.onclick = () => {
+    const v = ta.value, s = ta.selectionStart, e = ta.selectionEnd, sel = v.slice(s, e), f = btn.dataset.f;
+    let out, cs = s, ce;
+    if (f === 'b' || f === 'i' || f === 'a') {
+      const [o, c] = f === 'b' ? ['**', '**'] : f === 'i' ? ['*', '*'] : ['[', '](https://)'];
+      const txt = sel || (f === 'a' ? 'link text' : 'text');
+      out = v.slice(0, s) + o + txt + c + v.slice(e); cs = s + o.length; ce = cs + txt.length;
+    } else {
+      const ls = v.lastIndexOf('\n', s - 1) + 1, le = v.indexOf('\n', e) < 0 ? v.length : v.indexOf('\n', e);
+      const lines = v.slice(ls, le).split('\n');
+      const strip = l => l.replace(/^\s*([-•]|\d+[.)])\s+/, '');
+      const already = lines.every(l => (f === 'ul' ? isLi : isOl)(l));
+      const block = lines.map((l, i) => already ? strip(l) : (f === 'ul' ? '- ' : (i + 1) + '. ') + strip(l)).join('\n');
+      out = v.slice(0, ls) + block + v.slice(le); cs = ls; ce = ls + block.length;
+    }
+    ta.value = out; ta.focus(); ta.setSelectionRange(cs, ce ?? cs);
+    ta.dispatchEvent(new Event('input'));
+  });
+}
+function bgEditor(label, g, ref, names, b) {
+  const sum = { '': 'None', color: 'Colour', gradient: 'Gradient', image: 'Image' }[g.type || ''];
+  const det = panel('bg' + ref, label, sum), body = det.querySelector('.body');
+  const ids = [fid(), fid(), fid(), fid(), fid()];
+  body.innerHTML = `<div class="seg" role="group" aria-label="Background type">${[['', 'None'], ['color', 'Colour'], ['gradient', 'Gradient'], ['image', 'Image']].map(([v, t]) => `<button data-t="${v}" aria-pressed="${(g.type || '') === v}">${t}</button>`).join('')}</div>
+    ${g.type === 'color' ? `<div class="prow"><label for="${ids[0]}">Colour</label><input type="color" id="${ids[0]}" data-k="c1"></div>` : ''}
+    ${g.type === 'gradient' ? `<div class="gradprev"></div>
+      <div class="prow"><label for="${ids[0]}">From</label><input type="color" id="${ids[0]}" data-k="c1"></div>
+      <div class="prow"><label for="${ids[1]}">To</label><input type="color" id="${ids[1]}" data-k="c2"></div>
+      <div class="prow"><label for="${ids[2]}">Angle</label><div class="pin"><input type="range" min="0" max="360" step="5" id="${ids[2]}" data-k="angle" style="flex:1"><span class="mono" data-av></span></div></div>` : ''}
+    ${g.type === 'image' ? `<div class="slotbox"></div>
+      <div class="prow"><label for="${ids[3]}">Fit</label><select id="${ids[3]}" data-k="size"><option value="cover">Fill (crop edges)</option><option value="contain">Fit whole image</option></select></div>
+      <div class="prow"><label for="${ids[4]}">Position</label><select id="${ids[4]}" data-k="pos"><option value="center">Centre</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option></select></div>
+      <div class="prow"><label for="${ids[0]}">Behind</label><input type="color" id="${ids[0]}" data-k="c1"></div>
+      <div class="fhint">The colour shows behind the image when it doesn't fill the space. Make sure text stays readable on top.</div>` : ''}`;
+  const def = { c1: g.type === 'gradient' ? '#F3E6D8' : '#F3F3F3', c2: '#FFFFFF', angle: '135', size: 'cover', pos: 'center' };
+  const upd = () => {
+    const pv = body.querySelector('.gradprev'); if (pv) pv.style.background = `linear-gradient(${g.angle}deg, ${g.c1}, ${g.c2})`;
+    const av = body.querySelector('[data-av]'); if (av) av.textContent = g.angle + '°';
+    schedulePreview();
+  };
+  body.querySelectorAll('[data-k]').forEach(inp => {
+    const k = inp.dataset.k; if (g[k] == null || g[k] === '') g[k] = def[k];
+    inp.value = g[k]; inp.addEventListener('input', () => { g[k] = inp.type === 'color' ? inp.value.toUpperCase() : inp.value; upd(); });
+  });
+  body.querySelectorAll('[data-t]').forEach(btn => btn.onclick = () => { g.type = btn.dataset.t; if (g.type === 'gradient' && (!g.c1 || g.c1 === '#F3F3F3')) g.c1 = '#F3E6D8'; openItems.add('bg' + ref); renderInspector(); schedulePreview(); });
+  if (g.type === 'image') { g.img = g.img || S(); body.querySelector('.slotbox').appendChild(slotEl({ k: 'img', ext: 'bg', label: 'Background image' }, g, ref, names, b)); }
+  if (g.type) upd();
+  return det;
+}
+// Corner radius slider + padding % (top, right, bottom, left).
+function radiusRow(x, key) {
+  const box = document.createElement('div'); box.className = 'prow'; const id = fid();
+  const k4 = key + '4', four = x[k4] || (x[k4] = ['', '', '', '']);
+  const each = four.some(setv);
+  box.className = 'list';
+  box.innerHTML = `<div class="prow"><label for="${id}">Corners</label><div class="pin"><input type="range" min="0" max="60" step="1" id="${id}" style="flex:1"><input type="number" min="0" max="999" aria-label="All corners px" style="width:58px" placeholder="0">px</div></div>
+    <label class="check"><input type="checkbox" ${each ? 'checked' : ''}> Set each corner</label>
+    <div class="corners" ${each ? '' : 'hidden'}>${[['↖', 'Top left'], ['↗', 'Top right'], ['↙', 'Bottom left'], ['↘', 'Bottom right']].map(([a, l]) => `<label title="${l}"><span aria-hidden="true">${a}</span><input type="number" min="0" max="999" data-c="${{ 'Top left': 0, 'Top right': 1, 'Bottom right': 2, 'Bottom left': 3 }[l]}" aria-label="${l} px" placeholder="all">px</label>`).join('')}</div>`;
+  const [rg, nb] = box.querySelectorAll('.prow input'), cb = box.querySelector('.check input'), grid = box.querySelector('.corners');
+  rg.value = nb.value = x[key] || '';
+  rg.oninput = () => { x[key] = rg.value === '0' ? '' : rg.value; nb.value = x[key]; schedulePreview(); };
+  nb.oninput = () => { x[key] = nb.value; rg.value = nb.value || 0; schedulePreview(); };
+  grid.querySelectorAll('[data-c]').forEach(inp => { inp.value = four[+inp.dataset.c]; inp.oninput = () => { four[+inp.dataset.c] = inp.value; box.dispatchEvent(new Event('input', { bubbles: true })); schedulePreview(); }; });
+  cb.onchange = () => { grid.hidden = !cb.checked; if (!cb.checked) { four.fill(''); grid.querySelectorAll('input').forEach(i => i.value = ''); schedulePreview(); } };
+  return box;
+}
+function padRow(x) {
+  x.pad = x.pad || ['', '', '', ''];
+  const box = document.createElement('div');
+  box.innerHTML = `<div class="pads">${['Top', 'Right', 'Bottom', 'Left'].map((t, i) => `<label>${t}<span class="pin"><input type="number" min="0" max="45" data-i="${i}" placeholder="Auto" value="${esc(x.pad[i])}">%</span></label>`).join('')}</div><div class="fhint">Padding is a % of the width. Empty means the template default.</div>`;
+  box.querySelectorAll('input').forEach(inp => inp.oninput = () => { x.pad[+inp.dataset.i] = inp.value; schedulePreview(); });
+  return box;
+}
+function boxEditor(label, x, key) {
+  const sum = () => [/[1-9]/.test(radiusVal(x, 'r')) && radiusVal(x, 'r').replace(/px/g, '') + ' corners', (x.pad || []).some(v => +v > 0) && 'padding'].filter(Boolean).join(' · ') || 'Default';
+  const det = panel('box' + key, label, sum()), body = det.querySelector('.body');
+  body.appendChild(radiusRow(x, 'r')); body.appendChild(padRow(x));
+  body.addEventListener('input', () => det.querySelector('.psum').textContent = sum());
+  return det;
+}
+function iconsEditor(el, body, names, b, tt) {
+  const items = el.items || (el.items = []), sId = fid(), gId = fid();
+  const list = document.createElement('div'); list.className = 'list';
+  items.forEach((it, i) => {
+    const box = document.createElement('div'); box.className = 'icoitem';
+    box.innerHTML = `<div class="icohead"><span class="n">${i + 1}</span><span class="spacer"></span><button class="btn sm ghost" data-a="up" aria-label="Move left" ${i ? '' : 'disabled'}>↑</button><button class="btn sm ghost" data-a="down" aria-label="Move right" ${i < items.length - 1 ? '' : 'disabled'}>↓</button><button class="btn sm ghost danger" data-a="del" aria-label="Remove icon">✕</button></div>`;
+    box.appendChild(slotEl({ k: 'img', ext: 'icon', label: 'Icon ' + (i + 1) }, it, it.id, names, b));
+    const cId = fid();
+    box.insertAdjacentHTML('beforeend', `<div class="prow"><label for="${cId}">Caption</label><input type="text" id="${cId}" placeholder="Optional, shown under the icon"></div>`);
+    const ci = box.querySelector('#' + cId); ci.value = it.cap || ''; ci.oninput = () => { it.cap = ci.value; schedulePreview(); };
+    box.querySelectorAll('[data-a]').forEach(btn => btn.onclick = () => {
+      const a = btn.dataset.a;
+      if (a === 'up') [items[i - 1], items[i]] = [items[i], items[i - 1]];
+      if (a === 'down') [items[i + 1], items[i]] = [items[i], items[i + 1]];
+      if (a === 'del') items.splice(i, 1);
+      tt.textContent = items.length + ' icons'; renderAll();
+    });
+    list.appendChild(box);
+  });
+  body.appendChild(list);
+  body.insertAdjacentHTML('beforeend', `<div><button class="btn sm" data-addico>+ Add icon</button></div>
+    <div class="prow"><label for="${sId}">Icon size</label><div class="pin"><input type="number" min="1" id="${sId}" placeholder="Auto" style="width:64px"><select aria-label="Icon size unit"><option value="vw">% of screen width</option><option value="px">px</option></select></div></div>
+    <div class="prow"><label for="${gId}">Spacing</label><div class="pin"><input type="range" min="0" max="80" step="2" style="flex:1" aria-label="Space between icons"><input type="number" min="0" id="${gId}" placeholder="Auto" style="width:58px">px</div></div>
+    <div class="fhint">Icons sit side by side and wrap to a new line if they run out of space. Auto size matches the feature-row icons.</div>`);
+  body.querySelector('[data-addico]').onclick = () => { items.push(newIco()); renderAll(); };
+  const si = body.querySelector('#' + sId), su = si.nextElementSibling, gi = body.querySelector('#' + gId), gr = gi.previousElementSibling;
+  si.value = el.isz || ''; su.value = el.isu || 'vw'; gi.value = el.gap ?? ''; gr.value = el.gap || 0;
+  si.oninput = () => { el.isz = si.value; schedulePreview(); };
+  su.onchange = () => { el.isu = su.value; schedulePreview(); };
+  gr.oninput = () => { el.gap = gi.value = gr.value; schedulePreview(); };
+  gi.oninput = () => { el.gap = gi.value; gr.value = gi.value || 0; schedulePreview(); };
+  body.appendChild(styleRows(el.style || (el.style = {}), () => schedulePreview(), false));
+}
+function buttonEditor(el, body, names, b, tt) {
+  const B = el.btn || (el.btn = EL.button.init().btn), ids = Array.from({ length: 6 }, fid);
+  body.insertAdjacentHTML('beforeend', `<div class="field"><label for="${ids[0]}">Button text</label><input type="text" id="${ids[0]}"></div>
+    <div class="field"><label for="${ids[1]}">Link</label><input type="text" id="${ids[1]}" placeholder="https://www.amway.my/…"><div class="fhint">Web links open in a new tab. Leave empty for no link yet.</div></div>
+    <div class="prow"><span>Style</span><div class="seg" role="group" aria-label="Button style">${[['solid', 'Solid'], ['gradient', 'Gradient'], ['outline', 'Outline']].map(([v, t]) => `<button data-fill="${v}" aria-pressed="${B.fill === v}">${t}</button>`).join('')}</div></div>
+    <div class="prow"><label for="${ids[2]}">${B.fill === 'gradient' ? 'From' : B.fill === 'outline' ? 'Line' : 'Colour'}</label><input type="color" id="${ids[2]}" data-b="c1"></div>
+    ${B.fill === 'gradient' ? `<div class="prow"><label for="${ids[3]}">To</label><input type="color" id="${ids[3]}" data-b="c2"></div>
+      <div class="prow"><label for="${ids[4]}">Angle</label><input type="range" min="0" max="360" step="5" id="${ids[4]}" data-b="angle"></div>` : ''}
+    <div class="prow"><label for="${ids[5]}">Text</label><input type="color" id="${ids[5]}" data-b="tc"></div>
+    <div class="prow"><span>Size</span><div class="seg" role="group" aria-label="Button size">${[['sm', 'S'], ['md', 'M'], ['lg', 'L']].map(([v, t]) => `<button data-size="${v}" aria-pressed="${(B.size || 'md') === v}">${t}</button>`).join('')}</div></div>`);
+  body.appendChild(radiusRow(B, 'r'));
+  const [ti, li] = [body.querySelector('#' + ids[0]), body.querySelector('#' + ids[1])];
+  ti.value = el.v; li.value = el.href || '';
+  ti.oninput = () => { el.v = ti.value; tt.textContent = ti.value || 'Empty'; schedulePreview(); };
+  li.oninput = () => { el.href = li.value; schedulePreview(); };
+  body.querySelectorAll('[data-b]').forEach(inp => { inp.value = B[inp.dataset.b] || (inp.type === 'color' ? '#FFFFFF' : '135'); inp.oninput = () => { B[inp.dataset.b] = inp.type === 'color' ? inp.value.toUpperCase() : inp.value; schedulePreview(); }; });
+  body.querySelectorAll('[data-fill]').forEach(btn => btn.onclick = () => { B.fill = btn.dataset.fill; if (B.fill === 'outline' && B.tc === '#FFFFFF') B.tc = B.c1; if (B.fill !== 'outline' && B.tc === B.c1) B.tc = '#FFFFFF'; renderInspector(); schedulePreview(); });
+  body.querySelectorAll('[data-size]').forEach(btn => btn.onclick = () => { B.size = btn.dataset.size; body.querySelectorAll('[data-size]').forEach(x => x.setAttribute('aria-pressed', x === btn)); schedulePreview(); });
+  const ic = document.createElement('div'); ic.className = 'field';
+  ic.innerHTML = `<div class="flabel">Icon (optional)</div><div class="prow"><span>Place</span><div class="seg" role="group" aria-label="Icon side"><button data-ip="left" aria-pressed="${el.iconPos !== 'right'}">Before text</button><button data-ip="right" aria-pressed="${el.iconPos === 'right'}">After text</button></div></div>`;
+  ic.insertBefore(slotEl({ k: 'img', ext: 'icon', label: 'Button icon' }, el, el.id, names, b), ic.lastChild);
+  ic.querySelectorAll('[data-ip]').forEach(btn => btn.onclick = () => { el.iconPos = btn.dataset.ip; ic.querySelectorAll('[data-ip]').forEach(x => x.setAttribute('aria-pressed', x === btn)); schedulePreview(); });
+  body.appendChild(ic);
+  // Button width: fit its text, fill the column, or a custom %.
+  const bw = el.bw || (+el.w > 0 ? 'pct' : 'auto'), wId = fid(), wr = document.createElement('div'); wr.className = 'list';
+  wr.innerHTML = `<div class="prow"><span>Width</span><div class="seg" role="group" aria-label="Button width">${[['auto', 'Fit text'], ['full', 'Full width'], ['pct', 'Custom %']].map(([v, t]) => `<button data-bw="${v}" aria-pressed="${bw === v}">${t}</button>`).join('')}</div></div>
+    ${bw === 'pct' ? `<div class="prow"><label for="${wId}">Percent</label><div class="pin"><input type="range" min="10" max="100" step="1" style="flex:1" aria-label="Button width slider"><input type="number" min="1" max="100" id="${wId}" style="width:58px" placeholder="50">%</div></div>` : ''}
+    <div class="fhint">${bw === 'full' ? 'Fills the whole width of the column it sits in.' : bw === 'pct' ? 'A % of the column it sits in. Align places it.' : 'As wide as its text and icon.'}</div>`;
+  wr.querySelectorAll('[data-bw]').forEach(btn => btn.onclick = () => { el.bw = btn.dataset.bw; if (el.bw === 'pct' && !(+el.w > 0)) el.w = '50'; renderInspector(); schedulePreview(); });
+  const [wrg, wnb] = wr.querySelectorAll('.pin input');
+  if (wrg) { wrg.value = wnb.value = el.w || 50; wrg.oninput = () => { el.w = wnb.value = wrg.value; schedulePreview(); }; wnb.oninput = () => { el.w = wrg.value = wnb.value; schedulePreview(); }; }
+  body.appendChild(wr);
+  body.appendChild(sizeRows(el, true, { noWidth: true }));
+  body.appendChild(styleRows(el.style || (el.style = {}), () => schedulePreview(), false));
+}
+function colsEditor(d, b, names) {
+  const wrapEl = document.createElement('div'); wrapEl.className = 'field';
+  wrapEl.innerHTML = `<div class="flabel">Columns</div><div class="list"></div><div><button class="btn sm" data-addcol>+ Add column</button> <span class="fhint">Add as many as you like. Up to 6 sit side by side (change it under Per line), then the next drops to a new line. They stack on mobile.</span></div>`;
+  const list = wrapEl.querySelector('.list');
+  d.cols.forEach((col, i) => {
+    const key = 'col' + col.id, det = document.createElement('details'); det.className = 'item'; det.open = openItems.has(key);
+    det.innerHTML = `<summary><span class="n">${i + 1}</span><span class="tt">Column ${i + 1} · ${esc(elSum(col.els))}</span>
+      <button data-a="up" aria-label="Move left" ${i ? '' : 'disabled'}>↑</button><button data-a="down" aria-label="Move right" ${i < d.cols.length - 1 ? '' : 'disabled'}>↓</button><button data-a="dup" aria-label="Duplicate">⧉</button><button data-a="del" aria-label="Delete">✕</button></summary><div class="body"></div>`;
+    det.addEventListener('toggle', () => det.open ? openItems.add(key) : openItems.delete(key));
+    det.querySelector('summary').addEventListener('click', e => {
+      const a = e.target.closest('button')?.dataset.a; if (!a) return; e.preventDefault();
+      if (a === 'up') [d.cols[i - 1], d.cols[i]] = [d.cols[i], d.cols[i - 1]];
+      if (a === 'down') [d.cols[i + 1], d.cols[i]] = [d.cols[i], d.cols[i + 1]];
+      if (a === 'dup') { const c = reId(col); d.cols.splice(i + 1, 0, c); }
+      if (a === 'del') d.cols.splice(i, 1);
+      renderAll();
+    });
+    const body = det.querySelector('.body');
+    const wId = fid(), hId = fid();
+    body.insertAdjacentHTML('beforeend', `<div class="prow"><label for="${wId}">Width</label><div class="pin"><input type="number" min="5" max="100" id="${wId}" placeholder="Auto"><span class="fhint">% of the row</span></div></div>
+      <div class="prow"><label for="${hId}">Height</label><div class="pin"><input type="number" min="1" id="${hId}" placeholder="Auto"><span class="fhint">px, at least</span></div></div>`);
+    const wi = body.querySelector('#' + wId), hi = body.querySelector('#' + hId);
+    wi.value = col.w || ''; hi.value = col.mh || '';
+    body.appendChild(radiusRow(col, 'r'));
+    wi.oninput = () => { col.w = wi.value; schedulePreview(); };
+    hi.oninput = () => { col.mh = hi.value; schedulePreview(); };
+    body.appendChild(fieldEl({ k: 'bgx', t: 'bg', label: 'Column background' }, col, b.id + '.' + col.id, names, b));
+    const pf = document.createElement('div'); pf.className = 'field';
+    pf.innerHTML = '<div class="flabel">Content position</div>';
+    pf.appendChild(posControls(col, { label: 'Place content', reset: true, hint: 'Top/middle/bottom shows when the column is taller than its content. Padding is a % of the column width.' }));
+    body.appendChild(pf);
+    body.appendChild(elsEditor('Elements', col.els, b, names));
+    list.appendChild(det);
+  });
+  wrapEl.querySelector('[data-addcol]').onclick = () => { const c = newCol([newEl('title'), newEl('text')]); d.cols.push(c); openItems.add('col' + c.id); renderAll(); };
+  return wrapEl;
+}
+
+// 3x3 placement grid + padding % (shared by hero text and columns)
+function posControls(p, opt) {
+  opt = opt || {};
+  p.pad = p.pad || ['', '', '', ''];
+  const el = document.createElement('div'); el.className = 'list';
+  el.innerHTML = `<div class="posrow"><div class="grid9" role="group" aria-label="${opt.label || 'Place content'}">${['top', 'middle', 'bottom'].map(v => ['left', 'center', 'right'].map(h => `<button data-h="${h}" data-v="${v}" aria-label="${v} ${h}" aria-pressed="${p.h === h && p.v === v}"><i></i></button>`).join('')).join('')}</div>
+    <div class="pads">${['Top', 'Right', 'Bottom', 'Left'].map((t, i) => `<label>${t}<span class="pin"><input type="number" min="0" max="45" data-i="${i}" placeholder="0" value="${esc(p.pad[i])}">%</span></label>`).join('')}</div></div>
+    ${opt.reset ? '<div><button class="btn sm ghost" data-reset>Reset position</button></div>' : ''}
+    <div class="fhint">${opt.hint || 'Padding is a % of the width, so it scales with the screen.'}</div>`;
+  el.querySelectorAll('.grid9 button').forEach(btn => btn.onclick = () => { p.h = btn.dataset.h; p.v = btn.dataset.v; el.querySelectorAll('.grid9 button').forEach(x => x.setAttribute('aria-pressed', x === btn)); schedulePreview(); });
+  el.querySelectorAll('.pads input').forEach(inp => inp.oninput = () => { p.pad[+inp.dataset.i] = inp.value; schedulePreview(); });
+  el.querySelector('[data-reset]')?.addEventListener('click', () => { p.h = p.v = ''; p.pad = ['', '', '', '']; renderInspector(); schedulePreview(); });
+  return el;
+}
+function heroPosEditor(d, b) {
+  const p = d.pos || (d.pos = { mode: 'template', h: 'center', v: 'middle', pad: ['5', '10', '5', '10'] });
+  const wrapEl = document.createElement('div'); wrapEl.className = 'field';
+  const custom = p.mode === 'custom';
+  wrapEl.innerHTML = `<div class="flabel">Text position</div>
+    <div class="seg" role="group" aria-label="Position mode"><button data-m="template" aria-pressed="${!custom}">Template</button><button data-m="custom" aria-pressed="${custom}">Custom</button></div>
+    <div class="prow"><span>Layout</span><div class="seg" role="group" aria-label="Layout">${[['stack', 'Rows'], ['logo-left', 'Logo left'], ['logo-right', 'Logo right']].map(([v, t]) => `<button data-lay="${v}" aria-pressed="${(p.layout || 'stack') === v}">${t}</button>`).join('')}</div></div>
+    ${(p.layout || 'stack') !== 'stack' ? `<input type="range" data-lw min="10" max="80" step="1" aria-label="Logo column width"><div class="splitlbl"><span>Logo <b></b></span><span>Title &amp; text <b></b></span></div>
+    <div class="fhint">The row spans the whole banner, inside the padding. The logo fills its column; set the logo's own Width to make it smaller inside it.</div>` : ''}
+    ${custom ? '' : '<div class="fhint">Uses the original layout: text on the left on desktop, below the middle on tablet and mobile.</div>'}`;
+  if (custom) wrapEl.appendChild(posControls(p, { label: 'Place text', hint: 'Padding is a % of the banner width, so it scales with the screen.' }));
+  wrapEl.querySelectorAll('[data-lay]').forEach(btn => btn.onclick = () => {
+    p.layout = btn.dataset.lay;
+    if (p.layout !== 'stack' && p.mode !== 'custom') { p.mode = 'custom'; if (!p.h) { p.h = 'center'; p.v = 'middle'; } toast('Switched to Custom position so the row can use the full banner width'); }
+    renderInspector(); schedulePreview();
+  });
+  const rg = wrapEl.querySelector('[data-lw]');
+  if (rg) { const show = () => { const [a, c] = wrapEl.querySelectorAll('.splitlbl b'); a.textContent = rg.value + '%'; c.textContent = (100 - rg.value) + '%'; }; rg.value = p.logoW || 30; show(); rg.oninput = () => { p.logoW = rg.value; show(); schedulePreview(); }; }
+  wrapEl.querySelectorAll('[data-m]').forEach(btn => btn.onclick = () => { p.mode = btn.dataset.m; if (!p.h) { p.h = 'center'; p.v = 'middle'; } renderInspector(); schedulePreview(); });
+  return wrapEl;
 }
 function cheat() {
   const d = document.createElement('div'); d.className = 'cheat';
@@ -691,6 +1417,56 @@ function onEdit(b) { schedulePreview(); const r = $(`#outline .row[data-id="${b.
 function fieldEl(f, obj, ref, names, b) {
   const wrapEl = document.createElement('div'); wrapEl.className = 'field';
   const id = fid();
+  if (f.t === 'gaps') {
+    const g = obj[f.k] || (obj[f.k] = {});
+    const pId = fid();
+    wrapEl.innerHTML = `<div class="prow"><label for="${pId}">Per line</label><div class="pin"><input type="number" id="${pId}" min="1" max="12" data-per placeholder="6" style="width:58px"><span class="fhint">columns max, then the next drops down</span></div></div>
+      <div class="flabel">Spacing</div>${[['col', 'Between columns'], ['row', 'Between rows (top & bottom)'], ['el', 'Inside columns']].map(([k, l]) => `<div class="prow"><span>${l}</span><div class="pin"><input type="range" min="0" max="120" step="2" data-g="${k}" aria-label="${l}" style="flex:1"><input type="number" min="0" max="400" data-gn="${k}" placeholder="Auto" style="width:58px" aria-label="${l} px">px</div></div>`).join('')}
+      <div class="fhint">Between rows is the gap when columns wrap onto a new line. Inside columns is the space between elements. Empty = template default.</div>`;
+    const pe = wrapEl.querySelector('[data-per]'); pe.value = g.per || ''; pe.oninput = () => { g.per = pe.value; schedulePreview(); };
+    wrapEl.querySelectorAll('[data-g]').forEach(rg => {
+      const k = rg.dataset.g, nb = wrapEl.querySelector(`[data-gn="${k}"]`); rg.value = g[k] || 0; nb.value = g[k] ?? '';
+      rg.oninput = () => { g[k] = rg.value; nb.value = rg.value; schedulePreview(); };
+      nb.oninput = () => { g[k] = nb.value; rg.value = nb.value || 0; schedulePreview(); };
+    });
+    return wrapEl;
+  }
+  if (f.t === 'box1') return boxEditor(f.label, obj[f.k] || (obj[f.k] = {}), ref + '.' + f.k);
+  if (f.t === 'boxes') {
+    const bx = obj[f.k] || (obj[f.k] = {});
+    const wrapB = document.createElement('div'); wrapB.className = 'list';
+    [['row', 'Whole row'], ['text', 'Text column'], ['photo', 'Photo column']].forEach(([k, l]) => wrapB.appendChild(boxEditor(l + ' · corners & padding', bx[k] || (bx[k] = {}), ref + '.box' + k)));
+    return wrapB;
+  }
+  if (f.t === 'els') return elsEditor(f.label, obj[f.k] || (obj[f.k] = []), b, names);
+  if (f.t === 'bg') return bgEditor(f.label, obj[f.k] || (obj[f.k] = { type: '' }), ref + '.bg', names, b);
+  if (f.t === 'cols') return colsEditor(obj, b, names);
+  if (f.t === 'heropos') return heroPosEditor(obj, b);
+  if (f.t === 'split') {
+    const v = +obj[f.k] || 50;
+    wrapEl.innerHTML = `<label for="${id}">${esc(f.label)}</label><input type="range" id="${id}" min="15" max="85" step="1"><div class="splitlbl"><span>Text <b></b></span><span>Photo <b></b></span></div>
+      <div class="pin"><button class="btn sm ghost">Reset to 50 / 50</button><span class="fhint">Desktop only. Tablet and mobile stack the columns.</span></div>`;
+    const rg = wrapEl.querySelector('input'), [a, c] = wrapEl.querySelectorAll('.splitlbl b');
+    const show = () => { const x = +rg.value; a.textContent = x + '%'; c.textContent = (100 - x) + '%'; };
+    rg.value = v; show();
+    rg.oninput = () => { obj[f.k] = rg.value === '50' ? '' : rg.value; show(); onEdit(b); };
+    wrapEl.querySelector('button').onclick = () => { obj[f.k] = ''; rg.value = 50; show(); onEdit(b); };
+    return wrapEl;
+  }
+  if (f.t === 'color') {
+    wrapEl.innerHTML = `<div class="prow"><label for="${id}">${esc(f.label)}</label><div class="pin"><input type="color" id="${id}"><button class="btn sm ghost">Default</button></div></div>`;
+    const ci = wrapEl.querySelector('input'), cb = wrapEl.querySelector('button');
+    ci.value = obj[f.k] || '#ffffff'; cb.hidden = !obj[f.k];
+    ci.oninput = () => { obj[f.k] = ci.value.toUpperCase(); cb.hidden = false; onEdit(b); };
+    cb.onclick = () => { obj[f.k] = ''; cb.hidden = true; onEdit(b); };
+    return wrapEl;
+  }
+  if (f.t === 'select') {
+    wrapEl.innerHTML = `<div class="prow"><label for="${id}">${esc(f.label)}</label><select id="${id}">${f.opts.map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></div>`;
+    const se = wrapEl.querySelector('select'); se.value = obj[f.k] || f.opts[0][0];
+    se.onchange = () => { obj[f.k] = se.value; onEdit(b); };
+    return wrapEl;
+  }
   if (f.t === 'text' || f.t === 'area') {
     wrapEl.innerHTML = `<label for="${id}">${esc(f.label)}</label>` + (f.t === 'text'
       ? `<input type="text" id="${id}">` : `<textarea id="${id}" rows="${f.rows || 5}"></textarea>`) + (f.hint ? `<div class="fhint">${esc(f.hint)}</div>` : '');
@@ -714,7 +1490,7 @@ function fieldEl(f, obj, ref, names, b) {
         const a = e.target.closest('button')?.dataset.a; if (!a) return; e.preventDefault();
         if (a === 'up') [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
         if (a === 'down') [arr[i + 1], arr[i]] = [arr[i], arr[i + 1]];
-        if (a === 'dup') { const c = JSON.parse(JSON.stringify(it)); c.id = uid('i'); arr.splice(i + 1, 0, c); openItems.add(c.id); }
+        if (a === 'dup') { const c = reId(it); arr.splice(i + 1, 0, c); openItems.add(c.id); }
         if (a === 'del') arr.splice(i, 1);
         renderAll();
       });
@@ -729,8 +1505,8 @@ function fieldEl(f, obj, ref, names, b) {
 
 function slotEl(f, obj, ref, names, b) {
   const slot = obj[f.k], el = document.createElement('div'); el.className = 'slot';
-  const r = resolveSlot(slot, ref, names, assets, f.k);
-  const auto = names[ref] ? names[ref] + (slot.a && assets[slot.a] ? (extOf(assets[slot.a].name) || (iconLike(f.k) ? '.png' : '.jpg')) : (iconLike(f.k) ? '.png' : '.jpg')) : '';
+  const ek = f.ext || f.k, r = resolveSlot(slot, ref, names, assets, ek);
+  const auto = names[ref] ? names[ref] + (slot.a && assets[slot.a] ? (extOf(assets[slot.a].name) || (iconLike(ek) ? '.png' : '.jpg')) : (iconLike(ek) ? '.png' : '.jpg')) : '';
   const kind = r ? r.kind : 'empty';
   const badge = { new: 'New upload', existing: 'Existing file', empty: 'Empty' }[kind];
   const id = fid(), fnId = fid();
@@ -765,7 +1541,7 @@ function renderPage(box) {
   const mk = (lbl, key, area, hint) => {
     const d = document.createElement('div'); d.className = 'field'; const id = fid();
     d.innerHTML = `<label for="${id}">${lbl}</label>${area ? `<textarea id="${id}" rows="4"></textarea>` : `<input type="text" id="${id}">`}${hint ? `<div class="fhint">${hint}</div>` : ''}`;
-    const i = d.querySelector('input,textarea'); i.value = st[key]; i.addEventListener('input', () => { st[key] = i.value; }); box.appendChild(d);
+    const i = d.querySelector('input,textarea'); i.value = st[key]; i.addEventListener('input', () => { st[key] = i.value; snap(); }); box.appendChild(d);
   };
   mk('Page title', 'title', false, 'Shown in the browser tab.');
   mk('Meta description', 'desc', true, 'Shown by search engines and link previews. About 150 characters.');
@@ -856,12 +1632,13 @@ $('#openProject').addEventListener('change', async e => {
     if (p.app !== 'pdp-builder' || !p.state || !Array.isArray(p.state.blocks)) throw 0;
     for (const k of Object.keys(assets)) { URL.revokeObjectURL(assets[k].url); delete assets[k]; }
     for (const [k, a] of Object.entries(p.assets || {})) { const blob = fromDataURL(a.data); assets[k] = { name: a.name, type: a.type, blob, url: URL.createObjectURL(blob) }; }
-    st = p.state; st.colors = Object.assign(Object.fromEntries(COLOR_KEYS.map(([k, v]) => [k, v])), st.colors || {});
-    skuIn.value = st.sku; selId = st.blocks[0]?.id || null; tab = 'block'; renderAll(); toast('Project opened');
+    st = migrate(p.state); st.colors = Object.assign(Object.fromEntries(COLOR_KEYS.map(([k, v]) => [k, v])), st.colors || {});
+    skuIn.value = st.sku; selId = st.blocks[0]?.id || null; tab = 'block'; hist.past = []; hist.future = []; hist.cur = null; renderAll(); commitSnap(); toast('Project opened');
   } catch (err) { toast('That file is not a PDP Builder project.'); }
 });
 
-renderLib(); renderAll(); fit();
+$('#undoBtn').onclick = undo; $('#redoBtn').onclick = redo;
+renderLib(); renderAll(); fit(); commitSnap();
 </script>
 
 </body>
