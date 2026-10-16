@@ -139,6 +139,8 @@ header.bar {
 .slot .acts { display: flex; gap: 6px; flex-wrap: wrap }
 .slot .fn { width: 100%; border: 1px solid var(--line); border-radius: 5px; padding: 4px 7px; background: var(--surface); font-family: var(--mono); font-size: 11.5px }
 
+details.item.flash { animation: flash 1.2s ease-out }
+@keyframes flash { 0%, 30% { box-shadow: 0 0 0 3px var(--accent, #c27a35) } 100% { box-shadow: 0 0 0 0 transparent } }
 details.item { border: 1px solid var(--line); border-radius: 8px; background: var(--surface) }
 details.item > summary { display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: pointer; list-style: none }
 details.item > summary::-webkit-details-marker { display: none }
@@ -443,6 +445,8 @@ const TYPES = {
     { k: 'sbox', t: 'box1', label: 'Section corners & padding' },
     { k: 'gaps', t: 'gaps', label: 'Spacing' },
     { k: 'valign', t: 'select', label: 'Line up columns at', opts: [['flex-start', 'Top'], ['center', 'Middle'], ['flex-end', 'Bottom']] },
+    { k: 'calign', t: 'select', label: 'Align content in every column', opts: [['', 'Each column decides'], ['left', 'Left'], ['center', 'Center'], ['right', 'Right']], all: 'h', hint: 'Sets the content position of all columns at once. You can still change one column in its own panel.' },
+    { k: 'halign', t: 'select', label: 'Place columns across the line', opts: [['', 'Stretch to fill'], ['flex-start', 'Left'], ['center', 'Center'], ['flex-end', 'Right']], hint: 'Left, Center or Right keep each column at its own width (or 1 ÷ Per line) and move the group.' },
     { k: 'cols', t: 'cols', label: 'Columns' } ],
     make: () => ({ bg: '', valign: 'flex-start', cols: [newCol([newEl('image'), newEl('title'), newEl('text')]), newCol([newEl('image'), newEl('title'), newEl('text')])] }),
     sum: d => d.cols.length + ' columns' },
@@ -505,7 +509,18 @@ TYPES.blank = { label: 'Empty column', as: 'columns', make: () => ({ valign: 'fl
 TYPES.divline = { label: 'Divider', as: 'columns', make: () => ({ valign: 'flex-start', sbox: { pad: ['2', '12', '2', '12'] }, cols: [newCol([newEl('divider')])] }) };
 TYPES.raw = { label: 'Custom HTML', fields: [{ k: 'html', t: 'area', label: 'HTML', rows: 14, hint: 'Exported exactly as written. Imported sections the builder does not recognise land here unchanged.' }],
   make: () => ({ html: '<section>\n  <div class="livara-desc">Your HTML here</div>\n</section>' }), sum: d => ((d.html || '').match(/class="([^"]+)"/) || [, 'HTML'])[1].slice(0, 40) };
-const ORDER = ['blank', 'hero', 'intro', 'text', 'columns', 'video', 'features', 'profile', 'brand', 'image', 'divline', 'moreinfo', 'banner', 'raw'];
+// Cards: a grid of cards; each card = image (top or left) + its own elements.
+function newCard(n) { return { id: uid('d'), img: S(), alt: '', els: [newEl('title', 'Card title ' + (n || '')), newEl('text', 'Short description of this card.'), newEl('button', 'Learn more')] }; }
+TYPES.cards = { label: 'Cards', fields: [
+    { k: 'layout', t: 'cardlayout', label: 'Card layout' },
+    { k: 'calign', t: 'select', label: 'Align content in every card', opts: [['', 'Template (left)'], ['left', 'Left'], ['center', 'Center'], ['right', 'Right']] },
+    { k: 'halign', t: 'select', label: 'Place cards across the line', opts: [['', 'Left'], ['center', 'Center'], ['flex-end', 'Right'], ['stretch', 'Stretch to fill']], hint: 'Matters when the last line has fewer cards than Per row. Stretch makes those cards wider to fill the line.' },
+    { k: 'sbg', t: 'bg', label: 'Section background' },
+    { k: 'sbox', t: 'box1', label: 'Section corners & padding' },
+    { k: 'cards', t: 'cards', label: 'Cards' } ],
+  make: () => ({ layout: 'top', per: '3', imgW: '40', gap: '', cbg: { type: 'color', c1: '#F3F3F3', c2: '#FFFFFF', angle: '135' }, crad: { r: '12' }, cpad: { pad: ['', '', '', ''] }, cards: [newCard(1), newCard(2), newCard(3)] }),
+  sum: d => d.cards.length + ' cards · ' + (d.per || 3) + ' per row' };
+const ORDER = ['blank', 'hero', 'intro', 'text', 'columns', 'cards', 'video', 'features', 'profile', 'brand', 'image', 'divline', 'moreinfo', 'banner', 'raw'];
 const iconLike = k => k === 'icon' || k === 'logo';
 
 /* ---------- Upgrade projects saved before elements existed ---------- */
@@ -558,6 +573,11 @@ function autoNames(st) {
       walk(d.head, heroLogo);
       d.items.forEach(it => { if ((it.bg || {}).type === 'image') m[id + '.' + it.id + '.bg'] = P + 'bg' + (++c.bg); walk(it.els, heroLogo); walk(it.media, heroLogo); });
     }
+    else if (b.type === 'cards') {
+      if ((d.sbg || {}).type === 'image') m[id + '.sbg.bg'] = P + 'bg' + (++c.bg);
+      if ((d.cbg || {}).type === 'image') m[id + '.cbg.bg'] = P + 'bg' + (++c.bg);
+      d.cards.forEach(cd => { m[cd.id] = P + 'img' + (++c.img); walk(cd.els, heroLogo); });
+    }
     else if (b.type === 'columns') {
       if ((d.sbg || {}).type === 'image') m[id + '.sbg.bg'] = P + 'bg' + (++c.bg);
       d.cols.forEach(col => { if ((col.bgx || {}).type === 'image') m[id + '.' + col.id + '.bg'] = P + 'bg' + (++c.bg); walk(col.els, heroLogo); });
@@ -573,7 +593,7 @@ function autoNames(st) {
   // Which keys are uploads: only those get renamed; existing-file slots keep their own names anyway.
   const up = new Set(), slotAt = k => { for (const b of st.blocks) { const d = b.data;
       for (const f of ['desk', 'tab', 'mob']) if (k === b.id + '.' + f) return d[f];
-      if (k === b.id + '.bg') return (d.bg || {}).img; if (k === b.id + '.sbg.bg') return (d.sbg || {}).img; }
+      if (k === b.id + '.bg') return (d.bg || {}).img; if (k === b.id + '.sbg.bg') return (d.sbg || {}).img; if (k === b.id + '.cbg.bg') return (d.cbg || {}).img; }
     return null; };
   const scan = o => { if (!o || typeof o !== 'object') return; if (o.id && o.img && o.img.a) up.add(o.id); Object.values(o).forEach(scan); };
   scan(st.blocks);
@@ -614,11 +634,23 @@ const PDP_CSS = `
       /* PDP Builder: columns and free elements */
       .pdp-columns { padding: 5vw 12vw; }
       .pdp-cols { --cg: 4vw; --per: 6; display: flex; flex-wrap: wrap; column-gap: var(--cg); row-gap: 4vw; align-items: flex-start; }
-      .pdp-col { flex: 1 1 calc((100% - (var(--per) - 1) * var(--cg)) / var(--per)); min-width: 0; display: flex; flex-direction: column; row-gap: var(--eg, 1vw); }
+      .pdp-col { flex: var(--grow, 1) 1 calc((100% - (var(--per) - 1) * var(--cg)) / var(--per)); min-width: 0; display: flex; flex-direction: column; row-gap: var(--eg, 1vw); }
       .pdp-col[style*="--w"] { flex: 0 0 calc(var(--w) - var(--cg)); }
       .pdp-image img { max-width: 100%; }
       .pdp-logo { width: 20vw; max-width: 100%; }
       .pdp-btn-wrap { align-self: stretch; }
+      .pdp-cards-sec { padding: 5vw 12vw; }
+      .pdp-cards { display: grid; grid-template-columns: repeat(var(--per, 3), minmax(0, 1fr)); gap: var(--cgap, 2vw); align-items: stretch; }
+      .pdp-card { display: flex; flex-direction: column; min-width: 0; overflow: hidden; background-color: #F3F3F3; border-radius: 12px; }
+      .pdp-card-img img { display: block; width: 100%; height: auto; }
+      .pdp-card-body { display: flex; flex-direction: column; row-gap: .8vw; padding: 1.6vw; flex: 1 1 auto; min-width: 0; }
+      .pdp-cards-side .pdp-card { flex-direction: row; }
+      .pdp-cards-place { display: flex; flex-wrap: wrap; }
+      .pdp-cards-place > .pdp-card { flex: var(--grow, 0) 0 calc((100% - (var(--per, 3) - 1) * var(--cgap, 2vw)) / var(--per, 3)); }
+      .pdp-cards-side .pdp-card-img { flex: 0 0 var(--iw, 40%); }
+      .pdp-cards-side .pdp-card-img img { height: 100%; object-fit: cover; }
+      @media only screen and (max-width: 1200px) { .pdp-cards { grid-template-columns: repeat(var(--per-t, 2), minmax(0, 1fr)); gap: var(--cgap, 3vw); } .pdp-cards-place > .pdp-card { flex-basis: calc((100% - (var(--per-t, 2) - 1) * var(--cgap, 3vw)) / var(--per-t, 2)); } .pdp-card-body { padding: 3vw; row-gap: 1.5vw; } }
+      @media only screen and (max-width: 768px) { .pdp-cards-sec { padding: 6vw 8vw; } .pdp-cards { grid-template-columns: minmax(0, 1fr); gap: var(--cgap, 5vw); } .pdp-cards-place > .pdp-card { flex-basis: 100%; } .pdp-card-body { padding: 5vw; row-gap: 3vw; } }
       .pdp-divider { display: block; flex: none; max-width: 100%; }
       .pdp-btn.pdp-btn-line { padding: .25em 0 .45em; border: 0; border-radius: 0; background-repeat: no-repeat; background-position: 0 100%; }
       .pdp-btn.pdp-btn-line:hover { box-shadow: none; transform: none; filter: none; background-size: 100% calc(var(--lt, 2px) + 1px) !important; }
@@ -674,7 +706,7 @@ section>*,.pdp-col,.livara-details,.livara-product-img,.livara-banner-descriptio
 const PREVIEW_BASE = `*,*:before,*:after{box-sizing:border-box}html{-webkit-text-size-adjust:100%}body{margin:0}b,strong{font-weight:700}img{vertical-align:middle;border:0}table{border-collapse:collapse;border-spacing:0}ul{margin-top:0;margin-bottom:10px}a{color:#337ab7}.text-center{text-align:center}.w-100{width:100%!important}.h-auto{height:auto!important}.bold{font-weight:bold}.mb-1{margin-bottom:.25rem!important}.mb-3{margin-bottom:1rem!important}.mb-4{margin-bottom:1.5rem!important}`;
 
 function buildHTML(st, assets, opt) {
-  const P = !!(opt && opt.preview), sel = opt && opt.sel, clean = !!(opt && opt.clean), grid = !!(opt && opt.grid);
+  const P = !!(opt && opt.preview), sel = opt && opt.sel, selEl = opt && opt.selEl, clean = !!(opt && opt.clean), grid = !!(opt && opt.grid);
   const names = autoNames(st), files = new Map(), warns = [];
   // Files the page already references on the server. An upload with the same file name is that file: point at it, don't ship a copy.
   const onServer = new Set(), walkS = o => { if (!o || typeof o !== 'object') return; if ('a' in o && 'name' in o && !o.a && String(o.name || '').trim()) onServer.add(String(o.name).trim().toLowerCase()); Object.values(o).forEach(walkS); };
@@ -731,6 +763,8 @@ function buildHTML(st, assets, opt) {
   };
   // Which screens hide this item (none ticked = shown everywhere).
   const hideCls = o => { const h = (o && o.hide) || {}; return ['d', 't', 'm'].filter(k => h[k]).map(k => 'pdp-hide-' + k).join(' '); };
+  // Preview only: tag each element/column/card/row so a click opens its own panel.
+  const oid = (html, k) => P && html ? html.replace(/^(\s*<[a-z]+)/i, `$1 data-oid="${k}"`) : html;
   const addCls = (html, c) => !c || !html ? html : /^<[a-z]+[^>]*?\sclass="/i.test(html) ? html.replace(/class="/, `class="${c} `) : html.replace(/^<([a-z]+)/i, `<$1 class="${c}"`);
   const sec = (b, cls, extra) => { const c = [...(extra || []), ...boxCss(b)], k = [cls, hideCls(b)].filter(Boolean).join(' '); return `<section${k ? ` class="${k}"` : ''}${bid(b)}${c.length ? ` style="${c.join(';')}"` : ''}>`; };
 
@@ -853,11 +887,11 @@ function buildHTML(st, assets, opt) {
       if (a[i].t === 'icon' && a[i + 1] && a[i + 1].t === 'icon') {
         let j = i; while (a[j + 1] && a[j + 1].t === 'icon') j++;
         const run = a.slice(i, j + 1), al = (run[0].style || {}).align;
-        const inner = run.map(el => addCls(renderEl(Object.assign({}, el, { style: Object.assign({}, el.style, { align: '' }) }), {}, true), hideCls(el))).filter(Boolean);
+        const inner = run.map(el => oid(addCls(renderEl(Object.assign({}, el, { style: Object.assign({}, el.style, { align: '' }) }), {}, true), hideCls(el)), el.id)).filter(Boolean);
         if (inner.length) out.push(`<div class="pdp-icons${ctx.stack && j < a.length - 1 ? ' mb-3' : ''}"${al ? ` style="justify-content:${{ left: 'flex-start', center: 'center', right: 'flex-end' }[al]}"` : ''}>${inner.join('')}</div>`);
         i = j; continue;
       }
-      out.push(addCls(renderEl(a[i], ctx, i === a.length - 1), hideCls(a[i])));
+      out.push(oid(addCls(renderEl(a[i], ctx, i === a.length - 1), hideCls(a[i])), a[i].id));
     }
     return out.filter(Boolean).join('\n' + ind);
   };
@@ -906,12 +940,12 @@ function buildHTML(st, assets, opt) {
         else if (okColor(col.bg) || (col.bgx || {}).type) c.push('padding:3vw');
         c.push(...bgCss(col.bgx, b.id + '.' + col.id + '.bg'));
         const cs = c.length ? ` style="${c.join(';')}"` : '';
-        return `        <div class="pdp-col${hideCls(col) ? ' ' + hideCls(col) : ''}"${cs}>
+        return `        <div class="pdp-col${hideCls(col) ? ' ' + hideCls(col) : ''}"${P ? ` data-oid="col${col.id}"` : ''}${cs}>
           ${col.els.length || !P ? renderEls(col.els, { name: 'col' }, '          ') : '<div style="border:2px dashed #c9bfb3;border-radius:8px;padding:5vw 2vw;text-align:center;color:#8a7d70;font:14px/1.4 system-ui,sans-serif">Empty column<br>Add elements in the editor on the right</div>'}
         </div>`;
       }).join('\n');
       out.push(`    ${sec(b, 'pdp-columns', [...(okColor(d.bg) ? ['background-color:' + d.bg] : []), ...bgCss(d.sbg, b.id + '.sbg.bg'), ...boxStyle(d.sbox)])}
-      <div class="pdp-cols"${styleAttr([...(d.valign && d.valign !== 'flex-start' ? ['align-items:' + d.valign] : []), ...gapCss(d.gaps)])}>
+      <div class="pdp-cols"${styleAttr([...(d.valign && d.valign !== 'flex-start' ? ['align-items:' + d.valign] : []), ...(d.halign ? ['justify-content:' + d.halign, '--grow:0'] : []), ...gapCss(d.gaps)])}>
 ${cols}
       </div>
     </section>`);
@@ -931,7 +965,7 @@ ${cols}
         const pbg = bgCss(it.bg, b.id + '.' + it.id + '.bg');
         const cls = ((i % 2 === 1) !== !!d.startRev) ? 'livara-details-column-reverse' : 'livara-details-column';
         const bx = it.box || {};
-        return `      <div class="${cls}"${styleAttr(boxStyle(bx.row))}>
+        return `      <div class="${cls}"${P ? ` data-oid="${it.id}"` : ''}${styleAttr(boxStyle(bx.row))}>
         <div class="livara-details"${styleAttr([...pbg, ...boxStyle(bx.text)])}>
           ${renderEls(it.els, { name: 'feature' }, '          ')}
         </div>
@@ -992,6 +1026,32 @@ ${items}
         </div>
       </div>
     </section>`);
+    } else if (b.type === 'cards') {
+      const per = Math.min(6, Math.max(1, Math.round(+d.per) || 3)), side = d.layout === 'side';
+      const gv = [`--per:${per}`, `--per-t:${Math.min(per, 2)}`], place = d.halign || '';
+      if (place) gv.push(place === 'stretch' ? '--grow:1' : 'justify-content:' + place);
+      if (setv(d.gap)) gv.push(`--cgap:${Math.max(0, +d.gap || 0)}px`);
+      if (side) gv.push(`--iw:${Math.min(80, Math.max(15, +d.imgW || 40))}%`);
+      const cs = [...bgCss(d.cbg, b.id + '.cbg.bg'), ...roundCss(d.crad, 'r')];
+      const pads = ((d.cpad || {}).pad || []).map(v => Math.max(0, +v || 0)), bc = [];
+      if (pads.some(Boolean)) bc.push('padding:' + pads.map(v => v + '%').join(' '));
+      if (d.calign) bc.push('align-items:' + { left: 'flex-start', center: 'center', right: 'flex-end' }[d.calign], 'text-align:' + d.calign);
+      const bodyPad = styleAttr(bc);
+      const cards = d.cards.map(cd => {
+        const f = R(cd.img, cd.id, 'image');
+        const pic = f || P ? `<div class="pdp-card-img"><img src="${src(f, [800, 600])}" alt="${esc(cd.alt || '')}"></div>` : '';
+        return addCls(`        <div class="pdp-card"${P ? ` data-oid="card${cd.id}"` : ''}${styleAttr(cs)}>
+          ${pic}
+          <div class="pdp-card-body"${bodyPad}>
+            ${renderEls(cd.els, { name: 'col' }, '            ')}
+          </div>
+        </div>`.replace(/^ +/, ''), hideCls(cd));
+      }).join('\n        ');
+      out.push(`    ${sec(b, 'pdp-cards-sec', [...bgCss(d.sbg, b.id + '.sbg.bg'), ...boxStyle(d.sbox)])}
+      <div class="pdp-cards${side ? ' pdp-cards-side' : ''}${place ? ' pdp-cards-place' : ''}" style="${gv.join(';')}">
+        ${cards}
+      </div>
+    </section>`);
     } else if (b.type === 'raw') {
       let h = String(d.html || '').trim(); if (!h) continue;
       if (P) h = `<div data-bid="${b.id}">${live ? h.replace(/(src=["'])(?:\.\/)?assets\/img\//g, '$1' + liveBase) : h}</div>`;
@@ -1005,7 +1065,14 @@ ${items}
   }
 
   let css = ORIG_CSS;
-  for (const [k, def] of COLOR_KEYS) { const v = (st.colors && st.colors[k]) || def; if (v.toUpperCase() !== def) css = css.split(def).join(v); }
+  // Page width limits per device (px). Empty = template default (full width).
+  const PW_MQ = { d: '(min-width: 1201px)', t: '(min-width: 769px) and (max-width: 1200px)', m: '(max-width: 768px)' };
+  for (const k of ['d', 't', 'm']) {
+    const w = (st.pw || {})[k] || {}, mn = Math.round(+w.min) || 0, mx = Math.round(+w.max) || 0, c = [];
+    if (mx > 0) c.push(`max-width: ${mx}px`, 'margin-left: auto', 'margin-right: auto');
+    if (mn > 0) c.push(`min-width: ${mn}px`);
+    if (c.length) css += `\n      @media only screen and ${PW_MQ[k]} { body { ${c.join('; ')}; } }`;
+  }
   if (!st.sku || !/^[\w-]+$/.test(st.sku.trim())) warns.unshift('Set a SKU (letters, numbers, - or _) before exporting.');
   if (!(st.desc || '').trim()) warns.push('Page settings: the meta description is empty.');
 
@@ -1013,7 +1080,7 @@ ${items}
   const body = out.length || !P ? out.join('\n\n') : '<div style="display:grid;place-items:center;min-height:70vh;color:#8a7d70;font:16px/1.5 system-ui,sans-serif;text-align:center;padding:40px"><div><div style="font-size:42px">+</div>Blank page<br><span style="font-size:13px">Add a section from the left to start.</span></div></div>';
   if (body.includes('pdp-') || body.includes('--tw:')) css += PDP_CSS;
   if (P) {
-    const hl = sel ? `[data-bid="${sel}"]{outline:3px solid #c27a35!important;outline-offset:-3px}` : '';
+    const hl = (sel ? `[data-bid="${sel}"]{outline:3px solid #c27a35!important;outline-offset:-3px}` : '') + (selEl ? `[data-oid="${selEl}"]{outline:2px solid #ec206e!important;outline-offset:2px}` : '');
     return { html: `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${PREVIEW_BASE}</style><style>${css}</style><style>body{font-family:"GT Walsheim Pro",system-ui,-apple-system,"Segoe UI",sans-serif}${clean ? '' : `[data-bid]{cursor:pointer}[data-bid]:hover{outline:2px dashed rgba(194,122,53,.7);outline-offset:-2px}${hl}`}${grid ? GRID_CSS : ''}</style></head><body>\n${body}\n</body></html>`, files, warns };
   }
   const head = HEAD_TPL.replace('{{TITLE}}', esc(st.title)).replace('{{DESC}}', esc(st.desc)).replace('{{KW}}', esc(st.kw));
@@ -1085,6 +1152,7 @@ const ICONS = {
   title: '<path d="M4 6v12M12 6v12M4 12h8M17 10l3-2v10"/>',
   para: '<path d="M13 4v16M17 4v16M19 4H9.5a4.5 4.5 0 0 0 0 9H13"/>',
   icon: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+  cards: '<rect x="2" y="4" width="9" height="16" rx="2"/><rect x="13" y="4" width="9" height="16" rx="2"/><path d="M2 10h9M13 10h9"/>',
   icons: '<circle cx="5" cy="12" r="2.5"/><circle cx="12" cy="12" r="2.5"/><circle cx="19" cy="12" r="2.5"/>',
   logo: '<path d="M12 2 21 7v10l-9 5-9-5V7z"/>',
   button: '<rect x="2" y="7" width="20" height="10" rx="5"/><path d="M8 12h8"/>', divider: '<path d="M3 12h18"/><path d="M7 7h10M7 17h10" opacity=".35"/>',
@@ -1100,13 +1168,13 @@ const ICONS = {
   plus: '<path d="M12 5v14M5 12h14"/>', grid: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>', check: '<path d="M20 6 9 17l-5-5"/>',
 };
 const ico = (n, cls) => `<svg class="ico${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
-const TYPE_ICON = { divline: 'divider', hero: 'hero', intro: 'intro', text: 'text', columns: 'columns', blank: 'blank', video: 'video', features: 'features', profile: 'profile', brand: 'brand', image: 'image', moreinfo: 'moreinfo', banner: 'banner' };
+const TYPE_ICON = { cards: 'cards', divline: 'divider', hero: 'hero', intro: 'intro', text: 'text', columns: 'columns', blank: 'blank', video: 'video', features: 'features', profile: 'profile', brand: 'brand', image: 'image', moreinfo: 'moreinfo', banner: 'banner' };
 const EL_ICON = { divider: 'divider', headline: 'headline', title: 'title', text: 'para', icon: 'icon', icons: 'icons', image: 'image', logo: 'logo', button: 'button' };
 
 /* ---------- App state ---------- */
 let st = blankState();
 const assets = {};          // key -> {name, type, blob, url}
-let selId = null, tab = 'block', device = 'desktop';
+let selId = null, selEl = null, tab = 'block', device = 'desktop';
 const openItems = new Set();
 const $ = s => document.querySelector(s);
 const DEV = { desktop: 1366, tablet: 834, mobile: 390 };
@@ -1186,7 +1254,7 @@ document.addEventListener('keydown', e => {
 });
 function renderPreview() {
   try { lastScroll = frame.contentWindow ? frame.contentWindow.scrollY : 0; } catch (e) { lastScroll = 0; }
-  frame.srcdoc = buildHTML(st, assets, { preview: true, sel: selId, grid: gridOn, live: st.liveImg !== false, liveBase: st.imgBase || DEFAULT_IMG_BASE }).html;
+  frame.srcdoc = buildHTML(st, assets, { preview: true, sel: selId, selEl, grid: gridOn, live: st.liveImg !== false, liveBase: st.imgBase || DEFAULT_IMG_BASE }).html;
   const dot = $('#liveDot'); dot.classList.remove('pulse'); void dot.offsetWidth; dot.classList.add('pulse');
 }
 frame.addEventListener('load', () => {
@@ -1205,7 +1273,11 @@ frame.addEventListener('load', () => {
   stage.scrollTop = 0; stage.scrollLeft = 0;
   doc.addEventListener('click', e => {
     if (e.target.closest('a')) e.preventDefault();
-    const el = e.target.closest('[data-bid]'); if (el) select(el.dataset.bid, false);
+    const el = e.target.closest('[data-bid]'); if (!el) return;
+    // Open every panel from the section down to the clicked element, then jump to it.
+    const keys = []; for (let n = e.target.closest('[data-oid]'); n && el.contains(n); n = n.parentElement.closest('[data-oid]')) keys.push(n.dataset.oid);
+    keys.forEach(k => openItems.add(k));
+    select(el.dataset.bid, false, keys[0] || null);
   });
 });
 function fit() {
@@ -1282,8 +1354,14 @@ outlineEl.addEventListener('drop', e => {
   if (mv) { const from = st.blocks.findIndex(b => b.id === mv); if (from < 0) return; const [b] = st.blocks.splice(from, 1); st.blocks.splice(from < i ? i - 1 : i, 0, b); renderAll(); }
 });
 
-function select(id, scroll) {
-  selId = id; tab = 'block'; scrollToSel = !!scroll; renderOutline(); renderInspector(); schedulePreview(true);
+function select(id, scroll, eid) {
+  selId = id; selEl = eid || null; tab = 'block'; scrollToSel = !!scroll; renderOutline(); renderInspector(); schedulePreview(true);
+  const det = eid && $('#insp').querySelector(`details[data-key="${eid}"]`);
+  if (det) {
+    let sc = det.parentElement; while (sc && !/(auto|scroll)/.test(getComputedStyle(sc).overflowY)) sc = sc.parentElement;
+    if (sc) sc.scrollTop += det.getBoundingClientRect().top - sc.getBoundingClientRect().top - 60;
+    det.classList.remove('flash'); void det.offsetWidth; det.classList.add('flash');
+  }
 }
 
 /* ---------- Inspector ---------- */
@@ -1369,7 +1447,7 @@ function elsEditor(label, els, b, names) {
   if (!els.length) list.innerHTML = '<p class="fhint" style="margin:0">Empty. Add an element below.</p>';
   els.forEach((el, i) => {
     const def = EL[el.t]; if (!def) return;
-    const det = document.createElement('details'); det.className = 'item el'; det.open = openItems.has(el.id);
+    const det = document.createElement('details'); det.className = 'item el'; det.dataset.key = el.id; det.open = openItems.has(el.id);
     const snip = el.t === 'divider' ? `${(el.dv || {}).w || 100}% · ${(el.dv || {}).th || 2}px` : el.t === 'icons' ? (el.items || []).length + ' icons' : def.text || el.t === 'button' ? el.v.split('\n')[0] : (resolveSlot(el.img, el.id, names, assets, el.t) || { name: 'No image' }).name;
     det.innerHTML = `<summary><span class="etag">${ico(EL_ICON[el.t], 'sm')}${esc(def.label)}</span><span class="tt">${esc(snip || 'Empty')}</span>${+el.w > 0 ? `<span class="psum">${+el.w}%</span>` : ''}
       <button data-a="up" aria-label="Move up" ${i ? '' : 'disabled'}>${ico('up')}</button><button data-a="down" aria-label="Move down" ${i < els.length - 1 ? '' : 'disabled'}>${ico('down')}</button><button data-a="dup" aria-label="Duplicate">${ico('copy')}</button><button data-a="del" aria-label="Delete">${ico('trash')}</button></summary><div class="body"></div>`;
@@ -1706,12 +1784,60 @@ function showOnRow(o, label) {
   });
   return row;
 }
+function cardLayoutEditor(d, b, names) {
+  const box = document.createElement('div'); box.className = 'list'; const pId = fid(), gId = fid();
+  box.innerHTML = `<div class="poscard"><div class="poshead">${ico('cards')}Layout</div>
+    <div class="prow"><span>Style</span><div class="seg seg-full" role="group" aria-label="Card style"><button data-lay="top" aria-pressed="${d.layout !== 'side'}">Image on top</button><button data-lay="side" aria-pressed="${d.layout === 'side'}">Image on left</button></div></div>
+    <div class="prow"><span>Per row</span><div class="seg seg-full" role="group" aria-label="Cards per row">${[1, 2, 3, 4, 5, 6].map(n => `<button data-per="${n}" aria-pressed="${(+d.per || 3) === n}">${n}</button>`).join('')}</div></div>
+    ${d.layout === 'side' ? `<div class="prow"><label for="${pId}">Image</label><div class="pin"><input type="range" id="${pId}" min="15" max="80" step="1" style="flex:1" data-iw><span class="mono" data-iwv></span></div></div>` : ''}
+    <div class="prow"><label for="${gId}">Gap</label><div class="pin"><input type="number" id="${gId}" min="0" placeholder="Auto" style="width:64px" data-gap>px between cards</div></div>
+    <div class="fhint">Tablet shows up to 2 per row, mobile 1 per row.</div></div>
+    <div class="poscard"><div class="poshead">${ico('blank')}Card style (all cards)</div><div data-cs></div></div>`;
+  box.querySelectorAll('[data-lay]').forEach(x => x.onclick = () => { d.layout = x.dataset.lay; renderInspector(); schedulePreview(); });
+  box.querySelectorAll('[data-per]').forEach(x => x.onclick = () => { d.per = x.dataset.per; box.querySelectorAll('[data-per]').forEach(y => y.setAttribute('aria-pressed', y === x)); onEdit(b); });
+  const iw = box.querySelector('[data-iw]'); if (iw) { const v = box.querySelector('[data-iwv]'); iw.value = d.imgW || 40; v.textContent = iw.value + '%'; iw.oninput = () => { d.imgW = iw.value; v.textContent = iw.value + '%'; schedulePreview(); }; }
+  const gp = box.querySelector('[data-gap]'); gp.value = d.gap || ''; gp.oninput = () => { d.gap = gp.value; schedulePreview(); };
+  const cs = box.querySelector('[data-cs]');
+  const bg = bgEditor('Card background', d.cbg || (d.cbg = { type: '' }), b.id + '.cbg.bg', names, b); bg.open = true; cs.appendChild(bg);
+  cs.appendChild(radiusRow(d.crad || (d.crad = {}), 'r'));
+  const pl = document.createElement('div'); pl.innerHTML = '<div class="flabel" style="font-size:12px;margin-top:6px">Padding inside cards</div>'; pl.appendChild(padRow(d.cpad || (d.cpad = {}))); cs.appendChild(pl);
+  return box;
+}
+function cardsEditor(d, b, names) {
+  const wrapEl = document.createElement('div'); wrapEl.className = 'field';
+  wrapEl.innerHTML = `<div class="flabel">Cards</div><div class="list"></div><div><button class="btn sm" data-addcard>${ico('plus', 'sm')} Add card</button></div>`;
+  const list = wrapEl.querySelector('.list');
+  d.cards.forEach((cd, i) => {
+    const key = 'card' + cd.id, det = document.createElement('details'); det.className = 'item'; det.dataset.key = key; det.open = openItems.has(key);
+    det.innerHTML = `<summary><span class="n">${i + 1}</span><span class="tt">${esc(elSum(cd.els))}</span>
+      <button data-a="up" aria-label="Move earlier" ${i ? '' : 'disabled'}>${ico('up')}</button><button data-a="down" aria-label="Move later" ${i < d.cards.length - 1 ? '' : 'disabled'}>${ico('down')}</button><button data-a="dup" aria-label="Duplicate">${ico('copy')}</button><button data-a="del" aria-label="Delete">${ico('trash')}</button></summary><div class="body"></div>`;
+    det.addEventListener('toggle', () => det.open ? openItems.add(key) : openItems.delete(key));
+    det.querySelector('summary').addEventListener('click', e => {
+      const a = e.target.closest('button')?.dataset.a; if (!a) return; e.preventDefault();
+      if (a === 'up') [d.cards[i - 1], d.cards[i]] = [d.cards[i], d.cards[i - 1]];
+      if (a === 'down') [d.cards[i + 1], d.cards[i]] = [d.cards[i], d.cards[i + 1]];
+      if (a === 'dup') { const c = reId(cd); d.cards.splice(i + 1, 0, c); openItems.add('card' + c.id); }
+      if (a === 'del') d.cards.splice(i, 1);
+      renderAll();
+    });
+    const body = det.querySelector('.body');
+    body.appendChild(slotEl({ k: 'img', ext: 'image', label: 'Card image' }, cd, cd.id, names, b));
+    const aId = fid();
+    body.insertAdjacentHTML('beforeend', `<div class="field"><label for="${aId}">Image description (alt text)</label><input type="text" id="${aId}"></div>`);
+    const ai = body.querySelector('#' + aId); ai.value = cd.alt || ''; ai.oninput = () => { cd.alt = ai.value; schedulePreview(); };
+    body.appendChild(elsEditor('Card content', cd.els, b, names));
+    body.appendChild(showOnRow(cd, 'Show card on'));
+    list.appendChild(det);
+  });
+  wrapEl.querySelector('[data-addcard]').onclick = () => { const c = newCard(d.cards.length + 1); d.cards.push(c); openItems.add('card' + c.id); renderAll(); };
+  return wrapEl;
+}
 function colsEditor(d, b, names) {
   const wrapEl = document.createElement('div'); wrapEl.className = 'field';
   wrapEl.innerHTML = `<div class="flabel">Columns</div><div class="list"></div><div><button class="btn sm" data-addcol>+ Add column</button> <span class="fhint">Add as many as you like. Up to 6 sit side by side (change it under Per line), then the next drops to a new line. They stack on mobile.</span></div>`;
   const list = wrapEl.querySelector('.list');
   d.cols.forEach((col, i) => {
-    const key = 'col' + col.id, det = document.createElement('details'); det.className = 'item'; det.open = openItems.has(key);
+    const key = 'col' + col.id, det = document.createElement('details'); det.className = 'item'; det.dataset.key = key; det.open = openItems.has(key);
     det.innerHTML = `<summary><span class="n">${i + 1}</span><span class="tt">Column ${i + 1} · ${esc(elSum(col.els))}</span>
       <button data-a="up" aria-label="Move left" ${i ? '' : 'disabled'}>${ico('up')}</button><button data-a="down" aria-label="Move right" ${i < d.cols.length - 1 ? '' : 'disabled'}>${ico('down')}</button><button data-a="dup" aria-label="Duplicate">${ico('copy')}</button><button data-a="del" aria-label="Delete">${ico('trash')}</button></summary><div class="body"></div>`;
     det.addEventListener('toggle', () => det.open ? openItems.add(key) : openItems.delete(key));
@@ -1811,6 +1937,8 @@ function fieldEl(f, obj, ref, names, b) {
     });
     return wrapEl;
   }
+  if (f.t === 'cardlayout') return cardLayoutEditor(obj, b, names);
+  if (f.t === 'cards') return cardsEditor(obj, b, names);
   if (f.t === 'box1') return boxEditor(f.label, obj[f.k] || (obj[f.k] = {}), ref + '.' + f.k);
   if (f.t === 'boxes') {
     const bx = obj[f.k] || (obj[f.k] = {});
@@ -1842,9 +1970,13 @@ function fieldEl(f, obj, ref, names, b) {
     return wrapEl;
   }
   if (f.t === 'select') {
-    wrapEl.innerHTML = `<div class="prow"><label for="${id}">${esc(f.label)}</label><select id="${id}">${f.opts.map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></div>`;
+    wrapEl.innerHTML = `<div class="prow"><label for="${id}">${esc(f.label)}</label><select id="${id}">${f.opts.map(([v, t]) => `<option value="${v}">${esc(t)}</option>`).join('')}</select></div>${f.hint ? `<div class="fhint">${esc(f.hint)}</div>` : ''}`;
     const se = wrapEl.querySelector('select'); se.value = obj[f.k] || f.opts[0][0];
-    se.onchange = () => { obj[f.k] = se.value; onEdit(b); };
+    se.onchange = () => {
+      obj[f.k] = se.value;
+      if (f.all && se.value) { obj.cols.forEach(c => { c[f.all] = se.value; if (!c.v) c.v = 'top'; }); renderAll(); return; }
+      onEdit(b);
+    };
     return wrapEl;
   }
   if (f.t === 'text' || f.t === 'area') {
@@ -1862,7 +1994,7 @@ function fieldEl(f, obj, ref, names, b) {
     wrapEl.innerHTML = `<div class="flabel">${esc(f.label)}</div><div class="list"></div><div><button class="btn sm">+ ${esc(f.add)}</button></div>`;
     const list = wrapEl.querySelector('.list'), arr = obj[f.k];
     arr.forEach((it, i) => {
-      const det = document.createElement('details'); det.className = 'item'; det.open = openItems.has(it.id);
+      const det = document.createElement('details'); det.className = 'item'; det.dataset.key = it.id; det.open = openItems.has(it.id);
       det.innerHTML = `<summary><span class="n">${i + 1}</span><span class="tt">${esc(f.title(it) || 'Untitled')}</span>
         <button data-a="up" aria-label="Move up" ${i ? '' : 'disabled'}>${ico('up')}</button><button data-a="down" aria-label="Move down" ${i < arr.length - 1 ? '' : 'disabled'}>${ico('down')}</button><button data-a="dup" aria-label="Duplicate">${ico('copy')}</button><button data-a="del" aria-label="Delete">${ico('trash')}</button></summary><div class="body"></div>`;
       det.addEventListener('toggle', () => det.open ? openItems.add(it.id) : openItems.delete(it.id));
@@ -1943,19 +2075,20 @@ function renderPage(box) {
   lc.onchange = () => { st.liveImg = lc.checked; schedulePreview(); };
   lb.oninput = () => { st.imgBase = lb.value.trim(); schedulePreview(); };
   box.appendChild(li);
-  const c = document.createElement('div'); c.className = 'field';
-  c.innerHTML = '<div class="flabel">Brand colours</div><div class="colors"></div><div><button class="btn sm ghost">Reset to LIVARA colours</button></div>';
-  const g = c.querySelector('.colors');
-  COLOR_KEYS.forEach(([k, def, lbl]) => {
-    const row = document.createElement('div'); row.className = 'colorrow'; const id = fid();
-    row.innerHTML = `<input type="color" id="${id}" aria-label="${esc(lbl)}"><label for="${id}">${esc(lbl)}</label><input type="text" aria-label="${esc(lbl)} hex">`;
-    const [pick, , hex] = row.children; pick.value = hex.value = st.colors[k];
-    const set = v => { if (!/^#[0-9a-f]{6}$/i.test(v)) return; st.colors[k] = v.toUpperCase(); pick.value = v; hex.value = v.toUpperCase(); schedulePreview(); };
-    pick.addEventListener('input', () => set(pick.value)); hex.addEventListener('change', () => set(hex.value.trim()));
-    g.appendChild(row);
+  const pw = st.pw || (st.pw = {}), wf = document.createElement('div'); wf.className = 'field';
+  wf.innerHTML = `<div class="flabel">Page width</div>
+    ${[['d', 'desktop', 'Desktop'], ['t', 'tablet', 'Tablet'], ['m', 'mobile', 'Mobile']].map(([k, i, l]) => `<div class="prow"><span>${ico(i, 'sm')} ${l}</span><div class="pin">
+      <input type="number" min="0" placeholder="Default" style="width:80px" aria-label="${l} minimum width" data-k="${k}" data-m="min"> to
+      <input type="number" min="0" placeholder="Default" style="width:80px" aria-label="${l} maximum width" data-k="${k}" data-m="max"> px</div></div>`).join('')}
+    <div class="fhint">Minimum and maximum width of the whole page on each screen. Leave empty for the default (full width). With a maximum, the page is centred.</div>
+    <div><button class="btn sm ghost" data-pwreset>Reset to default</button></div>`;
+  wf.querySelectorAll('input').forEach(i => {
+    const o = () => pw[i.dataset.k] || (pw[i.dataset.k] = {});
+    i.value = (pw[i.dataset.k] || {})[i.dataset.m] || '';
+    i.oninput = () => { o()[i.dataset.m] = i.value; schedulePreview(); snap(); };
   });
-  c.querySelector('button').onclick = () => { st.colors = Object.fromEntries(COLOR_KEYS.map(([k, v]) => [k, v])); renderInspector(); schedulePreview(); };
-  box.appendChild(c);
+  wf.querySelector('[data-pwreset]').onclick = () => { st.pw = {}; renderInspector(); schedulePreview(); snap(); };
+  box.appendChild(wf);
 }
 
 function renderAll() { renderOutline(); renderInspector(); schedulePreview(); }
@@ -2015,6 +2148,7 @@ function runChecks() {
     if (d.head) els(b, d.head);
     if (b.type === 'features') d.items.forEach(it => { els(b, it.els); els(b, it.media); });
     if (b.type === 'columns') d.cols.forEach(c => els(b, c.els));
+    if (b.type === 'cards') d.cards.forEach((cd, i) => { if (!resolveSlot(cd.img, cd.id, names, assets, 'image')) add('warn', `Card ${i + 1} has no image.`, b); els(b, cd.els); });
     if (b.type === 'moreinfo') d.items.forEach(it => {
       if (sample(it.body) || sample(it.specs)) add('warn', `“${it.title}” still has sample text.`, b);
       if (deadLink(it.body)) add('warn', `“${it.title}” has a link with no address.`, b);
