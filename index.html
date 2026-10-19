@@ -229,6 +229,7 @@ details.el > summary .tt { font-weight: 500 }
 .cheat code { color: var(--fg) }
 
 .pvlang { font: inherit; font-size: 12px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--fg); margin-right: 6px }
+.tipbox { font-size: 12.5px; line-height: 1.45; padding: 8px 10px; border-radius: 8px; background: var(--raised); border: 1px solid var(--line); border-left: 3px solid #ec206e }
 .impopts { margin: 10px 0; padding-left: 18px; font-size: 13.5px; line-height: 1.5 } .impopts li { margin-bottom: 6px }
 .trtable { width: 100%; border-collapse: collapse; font-size: 13px }
 .trtable td { border-bottom: 1px solid var(--line); padding: 8px 6px; vertical-align: top; width: 50% }
@@ -623,7 +624,7 @@ const STYLES = { moreinfo: [['title', 'Item headings'], ['text', 'Item text']] }
 TYPES.blank = { label: 'Empty column', as: 'columns', make: () => ({ valign: 'flex-start', cols: [newCol([])] }) };
 // "Divider" card: a slim Columns section holding one divider line.
 TYPES.divline = { label: 'Divider', as: 'columns', make: () => ({ valign: 'flex-start', sbox: { pad: ['2', '12', '2', '12'] }, cols: [newCol([newEl('divider')])] }) };
-TYPES.raw = { label: 'Custom HTML', fields: [{ k: 'html', t: 'area', label: 'HTML', rows: 14, hint: 'Exported exactly as written. Imported sections the builder does not recognise land here unchanged.' }],
+TYPES.raw = { label: 'Custom HTML', fields: [{ k: 'html', t: 'area', label: 'HTML code', rows: 14, hint: 'Exported exactly as written. You rarely need this: edit text, images and repeated items right in the preview.' }],
   make: () => ({ html: '<section>\n  <div class="livara-desc">Your HTML here</div>\n</section>' }), sum: d => ((d.html || '').match(/class="([^"]+)"/) || [, 'HTML'])[1].slice(0, 40) };
 // Cards: a grid of cards; each card = image (top or left) + its own elements.
 function newCard(n) { return { id: uid('d'), img: S(), alt: '', els: [newEl('title', 'Card title ' + (n || '')), newEl('text', 'Short description of this card.'), newEl('button', 'Learn more')] }; }
@@ -830,8 +831,10 @@ function buildHTML(st, assets, opt) {
   // Files the page already references on the server. An upload with the same file name is that file: point at it, don't ship a copy.
   const onServer = new Set(), walkS = o => { if (!o || typeof o !== 'object') return; if ('a' in o && 'name' in o && !o.a && String(o.name || '').trim()) onServer.add(String(o.name).trim().toLowerCase()); Object.values(o).forEach(walkS); };
   walkS(st.blocks);
+  const resolved = new Map(); // slot object -> exported file name (used to embed the builder data in exported pages)
   const R = (slot, ref, key) => {
     let f = resolveSlot(slot, ref, names, assets, key);
+    if (f) resolved.set(slot, f.name);
     if (f && f.kind === 'new' && onServer.has(String(f.asset.name || '').toLowerCase())) f = { name: f.asset.name, kind: 'existing', asset: f.asset, same: true };
     if (f) {
       const prev = files.get(f.name);
@@ -1188,6 +1191,12 @@ ${items}
     </section>`);
     } else if (b.type === 'raw') {
       let h = String(d.html || '').trim(); if (!h) continue;
+      // Files replaced in place (Custom HTML editing): d.files maps the path used in the HTML -> uploaded asset.
+      for (const [p, key] of Object.entries(d.files || {})) {
+        const a = assets[key]; if (!a || !h.includes(p)) continue;
+        files.set('raw:' + p, { name: p.replace(/^assets\/img\//, ''), path: p, kind: 'new', asset: a });
+        if (P) h = h.split(p).join(a.url);
+      }
       if (P) h = `<div data-bid="${b.id}">${live ? h.replace(/(src=["'])(?:\.\/)?assets\/img\//g, '$1' + liveBase).replace(/(src=["'])(?:\.\/)?assets\/(?!img\/)/g, '$1' + liveBase.replace(/img\/?$/, '')) : h}</div>`;
       else if (hideCls(b)) h = `<div class="${hideCls(b)}">${h}</div>`;
       out.push('    ' + h);
@@ -1223,7 +1232,9 @@ ${items}
     return { html: `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${LIB_CSS}</style><style>${PREVIEW_BASE}</style><style>${css}</style><style>html,body{scrollbar-width:auto!important;-ms-overflow-style:auto!important;scrollbar-color:#b9ada0 transparent!important}body{font-family:"GT Walsheim Pro",system-ui,-apple-system,"Segoe UI",sans-serif}${clean ? '' : `[data-bid]{cursor:pointer}[data-bid]:hover{outline:2px dashed rgba(194,122,53,.7);outline-offset:-2px}${hl}`}${grid ? GRID_CSS : ''}</style></head><body>\n${body}\n</body></html>`, files, warns };
   }
   const head = HEAD_TPL.replace('<html lang="en">', `<html lang="${HTML_LANG[(opt && opt.lang) || 'en'] || 'en'}">`).replace('{{TITLE}}', esc(st.title)).replace('{{DESC}}', esc(st.desc)).replace('{{KW}}', esc(st.kw));
-  return { html: `${head}<style>${css}</style>\n  </head>\n\n  <body>\n${body}\n  </body>\n</html>\n`, files, warns };
+  // opt.embed: the builder's own data, so opening this page in the builder restores every section. Inert JSON, ignored by browsers.
+  const embed = opt && opt.embed ? `\n    <script type="application/json" id="pdp-builder-project">${opt.embed}<\/script>` : '';
+  return { html: `${head}<style>${css}</style>\n  </head>\n\n  <body>\n${body}${embed}\n  </body>\n</html>\n`, files, warns, resolved };
 }
 
 /* ---------- Starting content: the 343136 page ---------- */
@@ -1431,9 +1442,12 @@ frame.addEventListener('load', () => {
   if (scrollToSel && selId) { const el = doc.querySelector(`[data-bid="${selId}"]`); if (el) frame.contentWindow.scrollTo(0, el.getBoundingClientRect().top + frame.contentWindow.scrollY); scrollToSel = false; }
   else frame.contentWindow.scrollTo(0, lastScroll);
   stage.scrollTop = 0; stage.scrollLeft = 0;
+  rawEditSetup(doc);
   doc.addEventListener('click', e => {
     if (e.target.closest('a')) e.preventDefault();
+    if (e.target.closest('.rx-bar, [contenteditable="true"]')) return; // editing in place
     const el = e.target.closest('[data-bid]'); if (!el) return;
+    if (rawClick(e, el)) return;
     // Open every panel from the section down to the clicked element, then jump to it.
     const keys = []; for (let n = e.target.closest('[data-oid]'); n && el.contains(n); n = n.parentElement.closest('[data-oid]')) keys.push(n.dataset.oid);
     keys.forEach(k => openItems.add(k));
@@ -1547,6 +1561,10 @@ function renderInspector() {
   for (const [g, lbl] of STYLES[b.type] || []) box.appendChild(styleEditor(b, g, lbl));
   if (TYPES[b.type].fields.some(f => f.fmt || (f.fields || []).some(x => x.fmt))) box.appendChild(cheat());
   if (b.type === 'raw') {
+    const hint = document.createElement('div'); hint.className = 'tipbox';
+    hint.innerHTML = '<b>Edit in the preview:</b> click text to type over it (B, I and Link on the bar), click an image or video to replace it, and hover a repeated item (card, row, list item) to duplicate, move or delete it.';
+    box.insertBefore(hint, box.children[1]);
+    const me = rawMediaEditor(b); if (me) box.insertBefore(me, hint.nextSibling);
     const cv = document.createElement('div'); cv.className = 'field';
     cv.innerHTML = `<div><button class="btn sm" data-conv>${ico('columns', 'sm')} Convert to editable section</button></div><div class="fhint">Turns this HTML into a Columns section with editable titles, text and images. Colours and spacing from the old CSS may change. Undo (⌘/Ctrl Z) brings the HTML back.</div>`;
     cv.querySelector('[data-conv]').onclick = () => convertRaw(b);
@@ -2407,7 +2425,7 @@ function openExport() {
     <div class="fhint" id="srvSum">Checking which images exist on the server…</div>
     <div class="ftable-wrap"><table class="ftable"><thead><tr><th>File</th><th>Status</th><th>Size</th></tr></thead><tbody>
       ${pageLangs(st).map(l => `<tr><td><code>${esc(sku)}_${l}.html</code></td><td>Included</td><td></td></tr>`).join('')}
-      ${list.map(f => `<tr><td><code>assets/img/${esc(f.name)}</code></td><td ${f.kind === 'new' ? '' : `data-srv="${esc(f.name)}"`}>${f.kind === 'new' ? 'New · in the zip' : f.same ? 'Same name as a server file · skipped' : 'Uses server file'}</td><td class="mono">${f.kind === 'new' ? mb(f.asset.blob.size) : ''}</td></tr>`).join('')}
+      ${list.map(f => `<tr><td><code>${esc(f.path || 'assets/img/' + f.name)}</code></td><td ${f.kind === 'new' ? '' : `data-srv="${esc(f.name)}"`}>${f.kind === 'new' ? 'New · in the zip' : f.same ? 'Same name as a server file · skipped' : 'Uses server file'}</td><td class="mono">${f.kind === 'new' ? mb(f.asset.blob.size) : ''}</td></tr>`).join('')}
       ${extraRefs.map(n => `<tr><td><code>assets/img/${esc(n)}</code></td><td data-srv="${esc(n)}">Uses server file</td><td></td></tr>`).join('')}
     </tbody></table></div>`;
   $('#exBody').querySelectorAll('[data-go]').forEach(btn => btn.onclick = () => { $('#modal').hidden = true; select(checks[+btn.dataset.go].bid, true); });
@@ -2441,22 +2459,35 @@ $('#exClose').onclick = () => $('#modal').hidden = true;
 $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') $('#modal').hidden = true; });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { $('#modal').hidden = true; $('#keysModal').hidden = true; if (!$('#trModal').hidden) $('#trClose').click(); $('#impModal').hidden = true; } });
 
+// Builder data embedded in every exported page: uploads become the file names they are exported as (they live on the server after upload).
+function pageData() {
+  const o = buildHTML(st, assets, {}), names = autoNames(st), lookup = new Map(o.resolved);
+  for (const [l, m] of Object.entries(st.trImg || {})) for (const [ref, x] of Object.entries(m || {})) if (x && x.a) {
+    const nm = String(x.name || '').trim() || (names[ref] || 'image') + '_' + l;
+    lookup.set(x, extOf(nm) ? nm : nm + (extOf((assets[x.a] || {}).name) || '.jpg'));
+  }
+  return JSON.stringify({ app: 'pdp-builder', v: 1, fromPage: true, state: st, assets: {} }, function (k, v) {
+    if (v && typeof v === 'object' && !Array.isArray(v) && 'a' in v && 'name' in v && v.a) return { a: null, name: lookup.get(v) || v.name || '' };
+    if (k === 'files' && this && typeof this.html === 'string') return undefined; // Custom HTML replacement uploads are server files after upload
+    return v;
+  }).replace(/</g, '\\u003c');
+}
 $('#exHtml').onclick = async () => {
   const sku = (st.sku || 'page').trim(), done = [];
-  try { for (const l of pageLangs(st)) { await saveFile(`${sku}_${l}.html`, buildHTML(langState(st, l), assets, { lang: l }).html); done.push(`${sku}_${l}.html`); } $('#exStatus').textContent = 'Saved ' + done.join(', '); }
+  try { for (const l of pageLangs(st)) { await saveFile(`${sku}_${l}.html`, buildHTML(langState(st, l), assets, { lang: l, embed: pageData() }).html); done.push(`${sku}_${l}.html`); } $('#exStatus').textContent = 'Saved ' + done.join(', '); }
   catch (e) { $('#exStatus').textContent = (done.length ? 'Saved ' + done.join(', ') + '. ' : '') + saveMsg(e); }
 };
 $('#exZip').onclick = async () => {
-  const sku = (st.sku || 'page').trim(), { html, files } = buildHTML(st, assets, {}), O = st.optimise || {};
+  const emb = pageData(), sku = (st.sku || 'page').trim(), { html, files } = buildHTML(st, assets, { embed: emb }), O = st.optimise || {};
   if (!window.JSZip) { $('#exStatus').textContent = 'The zip tool did not load. Reload the page and try again.'; return; }
   $('#exStatus').textContent = O.on ? 'Optimising images…' : 'Building zip…';
   const zip = new JSZip(); zip.file(sku + '_en.html', html);
-  for (const l of pageLangs(st).slice(1)) { const o = buildHTML(langState(st, l), assets, { lang: l }); zip.file(`${sku}_${l}.html`, o.html); for (const [k, f] of o.files) if (![...files.values()].some(x => x.name === f.name)) files.set(k + '@' + l, f); }
+  for (const l of pageLangs(st).slice(1)) { const o = buildHTML(langState(st, l), assets, { lang: l, embed: emb }); zip.file(`${sku}_${l}.html`, o.html); for (const [k, f] of o.files) if (![...files.values()].some(x => x.name === f.name)) files.set(k + '@' + l, f); }
   let before = 0, after = 0;
   for (const f of files.values()) if (f.kind === 'new') {
     let blob = f.asset.blob; before += blob.size;
     if (O.on) { try { blob = await optimise(blob, f.name, O); } catch (e) { blob = f.asset.blob; } }
-    after += blob.size; zip.file('assets/img/' + f.name, blob);
+    after += blob.size; zip.file(f.path || 'assets/img/' + f.name, blob);
   }
   const zb = await zip.generateAsync({ type: 'blob' });
   const saved = O.on && before ? ` Images ${mb(before)} → ${mb(after)}.` : '';
@@ -2591,7 +2622,7 @@ $('#openProject').addEventListener('change', async e => {
     for (const k of Object.keys(assets)) { URL.revokeObjectURL(assets[k].url); delete assets[k]; }
     for (const [k, a] of Object.entries(p.assets || {})) { const blob = fromDataURL(a.data); assets[k] = { name: a.name, type: a.type, blob, url: URL.createObjectURL(blob) }; }
     st = migrate(p.state); st.colors = Object.assign(Object.fromEntries(COLOR_KEYS.map(([k, v]) => [k, v])), st.colors || {});
-    skuIn.value = st.sku; selId = st.blocks[0]?.id || null; tab = 'block'; hist.past = []; hist.future = []; hist.cur = null; renderAll(); commitSnap(); toast('Project opened');
+    skuIn.value = st.sku; selId = st.blocks[0]?.id || null; tab = 'block'; hist.past = []; hist.future = []; hist.cur = null; renderAll(); commitSnap(); toast(p.fromPage ? 'Page opened with all its builder sections' : 'Project opened');
   } catch (err) { console.error(err); toast('That file is not a PDP Builder project or a PDP page.'); }
 });
 
@@ -2607,6 +2638,152 @@ const setGrid = on => { gridOn = on; gridBtn.setAttribute('aria-pressed', on); t
 gridBtn.setAttribute('aria-pressed', gridOn); gridBtn.onclick = () => setGrid(!gridOn);
 document.addEventListener('keydown', e => { if (e.key.toLowerCase() === 'g' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.target.closest('input, textarea, select, [contenteditable]')) setGrid(!gridOn); });
 $('#undoBtn').onclick = undo; $('#redoBtn').onclick = redo;
+
+/* ---------- Edit Custom HTML in place (any template): text, images/videos, repeated items ---------- */
+// A node is addressed by its element-child index path from the section root, the same in the preview and in a parse of the HTML.
+let rawSel = null; // { bid, path } of the clicked image/video
+const pathOf = (n, root) => { const p = []; for (; n && n !== root; n = n.parentElement) p.unshift([...n.parentElement.children].indexOf(n)); return p; };
+const nodeAt = (root, p) => p.reduce((n, i) => n && n.children[i], root);
+function mutateRaw(b, fn) {
+  const doc = new DOMParser().parseFromString(`<body>${b.data.html}</body>`, 'text/html');
+  if (fn(doc.body) === false) return;
+  b.data.html = doc.body.innerHTML; schedulePreview();
+}
+const BLOCKISH = 'img,video,iframe,picture,svg,div,p,h1,h2,h3,h4,h5,h6,ul,ol,li,table,tr,section,article,header,footer,form,hr';
+const isLeaf = n => n.nodeType === 1 && !n.matches('img,video,iframe,svg,hr,br,table,tr,ul,ol') && n.textContent.trim() && !n.querySelector(BLOCKISH);
+function textLeaf(t, root) {
+  let n = t.nodeType === 3 ? t.parentElement : t;
+  while (n && n !== root && !isLeaf(n)) n = n.parentElement;
+  if (!n || n === root) return null;
+  while (n.parentElement && n.parentElement !== root && isLeaf(n.parentElement)) n = n.parentElement; // widest text block, not just the <b> inside it
+  return n;
+}
+// Repeated item: an element whose parent has 2+ children of the same kind (same class, or li / tr).
+const itemKey = n => (typeof n.className === 'string' && n.className.trim()) || (/^(LI|TR)$/.test(n.tagName) ? n.tagName : '');
+function repItem(t, root) {
+  for (let n = t.nodeType === 3 ? t.parentElement : t; n && n !== root; n = n.parentElement) {
+    const k = itemKey(n); if (!k || !n.parentElement) continue;
+    if ([...n.parentElement.children].filter(c => itemKey(c) === k).length >= 2) return n;
+  }
+  return null;
+}
+function selectQuiet(id) { // select without reloading the preview, so in-place editing keeps going
+  selId = id; selEl = null; tab = 'block'; renderOutline(); renderInspector();
+  try { frame.contentDocument.querySelectorAll('body > [data-bid]').forEach(w => w.style.setProperty('outline', w.dataset.bid === id ? '3px solid #c27a35' : 'none', 'important')); } catch (e) {}
+}
+function rawEditSetup(doc) {
+  const raws = [...doc.querySelectorAll('body > [data-bid]')].filter(w => (findBlock(w.dataset.bid) || {}).type === 'raw');
+  if (!raws.length) return;
+  const sty = doc.createElement('style');
+  sty.textContent = `body>[data-bid] .rx-hl{outline:2px dashed #ec206e!important;outline-offset:2px;cursor:text}
+    body>[data-bid] img:hover,body>[data-bid] video:hover{outline:2px dashed #ec206e!important;outline-offset:-2px;cursor:pointer}
+    [contenteditable="true"]{outline:2px solid #ec206e!important;outline-offset:3px;background:rgba(236,32,110,.05);cursor:text}
+    .rx-bar{position:absolute;z-index:2147483646;display:flex;gap:2px;padding:3px;background:#2a211a;border-radius:7px;box-shadow:0 4px 14px rgba(0,0,0,.25);font:600 12px/1 system-ui,sans-serif}
+    .rx-bar button{all:unset;color:#fff;padding:5px 8px;border-radius:5px;cursor:pointer}.rx-bar button:hover{background:rgba(255,255,255,.18)}
+    .rx-item{outline:2px dashed #c27a35!important;outline-offset:2px}`;
+  doc.head.appendChild(sty);
+  // Hover toolbar on repeated items: duplicate, move, delete.
+  const bar = doc.createElement('div'); bar.className = 'rx-bar'; bar.hidden = true;
+  bar.innerHTML = '<button data-x="up" title="Move earlier">↑</button><button data-x="down" title="Move later">↓</button><button data-x="dup" title="Duplicate">⧉ Duplicate</button><button data-x="del" title="Delete">✕</button>';
+  doc.body.appendChild(bar);
+  let cur = null, curW = null, editing = null;
+  const hideBar = () => { bar.hidden = true; cur && cur.classList.remove('rx-item'); cur = null; };
+  raws.forEach(w => {
+    w.addEventListener('mousemove', e => {
+      if (editing) return;
+      const it = repItem(e.target, w); doc.querySelectorAll('.rx-hl').forEach(x => x !== e.target && x.classList.remove('rx-hl'));
+      const lf = textLeaf(e.target, w); if (lf) lf.classList.add('rx-hl');
+      if (it === cur) return; hideBar(); if (!it) return;
+      cur = it; curW = w; it.classList.add('rx-item');
+      const r = it.getBoundingClientRect(), win = doc.defaultView;
+      bar.hidden = false; bar.style.top = Math.max(0, r.top + win.scrollY - 34) + 'px'; bar.style.left = Math.max(4, r.right + win.scrollX - bar.offsetWidth) + 'px';
+    });
+    w.addEventListener('mouseleave', e => { if (!bar.contains(e.relatedTarget)) { hideBar(); doc.querySelectorAll('.rx-hl').forEach(x => x.classList.remove('rx-hl')); } });
+  });
+  bar.addEventListener('mouseleave', e => { if (!curW || !curW.contains(e.relatedTarget)) hideBar(); });
+  bar.addEventListener('click', e => {
+    e.preventDefault(); e.stopPropagation();
+    const x = e.target.closest('[data-x]'); if (!x || !cur) return;
+    const b = findBlock(curW.dataset.bid), p = pathOf(cur, curW), k = itemKey(cur), act = x.dataset.x;
+    lastScroll = doc.defaultView.scrollY; commitSnap();
+    mutateRaw(b, root => {
+      const n = nodeAt(root, p); if (!n) return false;
+      const sib = dir => { let s = dir < 0 ? n.previousElementSibling : n.nextElementSibling; while (s && itemKey(s) !== k) s = dir < 0 ? s.previousElementSibling : s.nextElementSibling; return s; };
+      if (act === 'dup') n.after(n.cloneNode(true), ...[]);
+      if (act === 'del') n.remove();
+      if (act === 'up') { const s = sib(-1); if (!s) return false; s.before(n); }
+      if (act === 'down') { const s = sib(1); if (!s) return false; s.after(n); }
+    });
+    toast({ dup: 'Duplicated', del: 'Deleted · ⌘/Ctrl Z to undo', up: 'Moved', down: 'Moved' }[act]);
+  });
+  // Inline text editing: contenteditable on the clicked text block; saved back to the section HTML when you click away.
+  doc.addEventListener('rx-edit', e => {
+    const { leaf, w } = e.detail; editing = leaf; hideBar();
+    const before = leaf.innerHTML, b = findBlock(w.dataset.bid), p = pathOf(leaf, w);
+    leaf.classList.remove('rx-hl'); leaf.contentEditable = 'true'; leaf.focus();
+    const tb = doc.createElement('div'); tb.className = 'rx-bar';
+    tb.innerHTML = '<button data-c="bold"><b>B</b></button><button data-c="italic"><i>I</i></button><button data-c="link">Link</button><button data-c="done">Done</button>';
+    doc.body.appendChild(tb);
+    const r = leaf.getBoundingClientRect(), win = doc.defaultView; tb.style.top = Math.max(0, r.top + win.scrollY - 36) + 'px'; tb.style.left = Math.max(4, r.left + win.scrollX) + 'px';
+    tb.addEventListener('mousedown', ev => ev.preventDefault()); // keep the text selection
+    tb.addEventListener('click', ev => {
+      ev.stopPropagation(); const c = ev.target.closest('[data-c]'); if (!c) return;
+      if (c.dataset.c === 'done') return leaf.blur();
+      if (c.dataset.c === 'link') { const u = win.prompt('Link address (leave empty to remove the link)', 'https://'); if (u === null) return; doc.execCommand(u.trim() && u.trim() !== 'https://' ? 'createLink' : 'unlink', false, u.trim()); return; }
+      doc.execCommand(c.dataset.c);
+    });
+    leaf.addEventListener('keydown', ev => { if (ev.key === 'Escape') { leaf.innerHTML = before; leaf.blur(); } });
+    leaf.addEventListener('blur', () => {
+      tb.remove(); leaf.removeAttribute('contenteditable'); editing = null;
+      const now = leaf.innerHTML.replace(/\s?\brx-(hl|item)\b/g, '').replace(/ class=""/g, ''); if (now === before) return;
+      lastScroll = win.scrollY;
+      mutateRaw(b, root => { const n = nodeAt(root, p); if (!n) return false; n.innerHTML = now; });
+    }, { once: true });
+  });
+}
+// Called from the preview click handler. Returns true when the click was handled as an in-place edit.
+function rawClick(e, w) {
+  const b = findBlock(w.dataset.bid); if (!b || b.type !== 'raw') return false;
+  if (pvLangOn() !== 'en') { toast('Switch the preview to English to edit. Translations are in Page settings → Translate texts.'); selectQuiet(b.id); return true; }
+  const media = e.target.closest('img, video');
+  if (media && w.contains(media)) { rawSel = { bid: b.id, path: pathOf(media, w) }; selectQuiet(b.id); return true; }
+  rawSel = null;
+  const leaf = textLeaf(e.target, w);
+  selectQuiet(b.id);
+  if (leaf) leaf.ownerDocument.dispatchEvent(new CustomEvent('rx-edit', { detail: { leaf, w } }));
+  return true;
+}
+// Inspector panel for the clicked image or video of a Custom HTML section.
+function rawMediaEditor(b) {
+  if (!rawSel || rawSel.bid !== b.id) return null;
+  const doc = new DOMParser().parseFromString(`<body>${b.data.html}</body>`, 'text/html');
+  const m = nodeAt(doc.body, rawSel.path); if (!m) return null;
+  const tgt = m.tagName === 'VIDEO' ? (m.querySelector('source[src]') || m) : m, isVid = m.tagName === 'VIDEO';
+  const src = tgt.getAttribute('src') || '', dir = (src.match(/^(.*\/)/) || [, 'assets/img/'])[1], name = src.slice(dir.length);
+  const files = b.data.files || (b.data.files = {}), up = files[src] && assets[files[src]];
+  const live = (st.imgBase || DEFAULT_IMG_BASE).replace(/img\/?$/, '') + src.replace(/^(\.\/)?assets\//, '');
+  const box = document.createElement('div'); box.className = 'field'; const fId = fid(), nId = fid(), aId = fid();
+  box.innerHTML = `<div class="flabel">Selected ${isVid ? 'video' : 'image'}</div>
+    <div class="slot"><div class="thumb">${up ? (isVid ? '🎬' : `<img src="${up.url}" alt="">`) : (isVid ? '🎬' : `<img src="${esc(/^https?:/.test(src) ? src : live)}" alt="" onerror="this.replaceWith('On server')">`)}</div>
+    <div class="meta"><div class="top"><span class="fl">${isVid ? 'Video' : 'Image'}</span><span class="badge ${up ? 'new' : 'existing'}">${up ? 'New upload' : 'Server file'}</span></div>
+      <code>${esc(src)}</code>
+      <div class="acts"><label class="btn sm" for="${fId}">${up ? 'Replace again' : 'Replace'}</label><input type="file" id="${fId}" accept="${isVid ? 'video/*' : 'image/*'}" hidden></div>
+      <label for="${nId}" style="font-size:11px;color:var(--muted)">File name (or paste a server link)</label><input class="fn" id="${nId}" type="text">
+      ${isVid ? '' : `<label for="${aId}" style="font-size:11px;color:var(--muted)">Description (alt text)</label><input class="fn" id="${aId}" type="text">`}
+      <div class="fhint">A replacement keeps the file name, so uploading the zip replaces that file on the server. Change the name first to add it as a new file instead.</div></div></div>`;
+  const nm = box.querySelector('#' + nId); nm.value = name;
+  const setSrc = v => mutateRaw(b, root => { const n = nodeAt(root, rawSel.path); if (!n) return false; const tg = n.tagName === 'VIDEO' ? (n.querySelector('source[src]') || n) : n; tg.setAttribute('src', v); });
+  nm.onchange = () => { const v = nm.value.trim(), base = decodeURIComponent(v.split(/[?#]/)[0].split(/[\\/]/).pop()); if (!base) return; setSrc(dir + base); setTimeout(renderInspector, 0); };
+  box.querySelector('input[type=file]').onchange = e => {
+    const file = e.target.files[0]; if (!file) return;
+    const key = uid('a'); assets[key] = { name: file.name, type: file.type, blob: file, url: URL.createObjectURL(file) };
+    const n2 = nm.value.trim() || name, p = dir + n2; files[p] = key; if (p !== src) setSrc(p); else schedulePreview();
+    toast(`${n2} will be in the zip`); setTimeout(renderInspector, 0);
+  };
+  const al = box.querySelector('#' + aId);
+  if (al) { al.value = m.getAttribute('alt') || ''; al.onchange = () => mutateRaw(b, root => { const n = nodeAt(root, rawSel.path); if (!n) return false; n.setAttribute('alt', al.value); }); }
+  return box;
+}
 
 /* ---------- Custom HTML -> Columns section ---------- */
 // Bootstrap visibility (d-none, d-sm-block, d-lg-none…) at our three breakpoints: desktop ~lg, tablet ~md, mobile ~xs.
