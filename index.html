@@ -1180,7 +1180,7 @@ ${items}
     </section>`);
     } else if (b.type === 'raw') {
       let h = String(d.html || '').trim(); if (!h) continue;
-      if (P) h = `<div data-bid="${b.id}">${live ? h.replace(/(src=["'])(?:\.\/)?assets\/img\//g, '$1' + liveBase) : h}</div>`;
+      if (P) h = `<div data-bid="${b.id}">${live ? h.replace(/(src=["'])(?:\.\/)?assets\/img\//g, '$1' + liveBase).replace(/(src=["'])(?:\.\/)?assets\/(?!img\/)/g, '$1' + liveBase.replace(/img\/?$/, '')) : h}</div>`;
       else if (hideCls(b)) h = `<div class="${hideCls(b)}">${h}</div>`;
       out.push('    ' + h);
     } else if (b.type === 'banner') {
@@ -1207,7 +1207,8 @@ ${items}
   const body = out.length || !P ? out.join('\n\n') : '<div style="display:grid;place-items:center;min-height:70vh;color:#8a7d70;font:16px/1.5 system-ui,sans-serif;text-align:center;padding:40px"><div><div style="font-size:42px">+</div>Blank page<br><span style="font-size:13px">Add a section from the left to start.</span></div></div>';
   if (devT.length) css += `\n      @media only screen and (max-width: 1200px) { ${devT.join(' ')} }`;
   if (devM.length) css += `\n      @media only screen and (max-width: 768px) { ${devM.join(' ')} }`;
-  if (st.pageCss) css = (/class="[^"]*\b(livara-|more-info)/.test(body) ? ORIG_CSS + '\n' : '') + st.pageCss + css;
+  // Builder (LIVARA) styles only when LIVARA sections are used and the page's own CSS doesn't already style them.
+  if (st.pageCss) css = (/class="[^"]*\b(livara-|more-info)/.test(body) && !/\.livara-banner|\.more-info/.test(st.pageCss) ? ORIG_CSS + '\n' : '') + st.pageCss + css;
   if (body.includes('pdp-') || body.includes('--tw:')) css += PDP_CSS;
   if (P) {
     const hl = (sel ? `[data-bid="${sel}"]{outline:3px solid #c27a35!important;outline-offset:-3px}` : '') + (selEl ? `[data-oid="${selEl}"]{outline:2px solid #ec206e!important;outline-offset:2px}` : '');
@@ -1415,7 +1416,7 @@ frame.addEventListener('load', () => {
   const base = st.imgBase || DEFAULT_IMG_BASE;
   doc.querySelectorAll('img').forEach(img => {
     if (!img.getAttribute('src') || !img.getAttribute('src').startsWith(base)) return;
-    const fall = () => { img.onerror = null; img.src = phSVG(decodeURI(img.getAttribute('src').slice(base.length)) + ' (not found)', [1200, 700]); };
+    const fall = () => { img.onerror = null; img.src = phSVG(decodeURI(img.getAttribute('src').slice(base.length)) + ' (not found)', [480, 280]); }; // small: full-width images still stretch, icons stay icon-sized
     if (img.complete && !img.naturalWidth) fall(); else img.onerror = fall;
   });
   // Scroll only inside the preview. scrollIntoView would also scroll the builder's own (non-scrollable) panel and hide the top.
@@ -2255,7 +2256,7 @@ function renderPage(box) {
   lf.querySelector('[data-tr]').onclick = () => openTranslate((st.langs || [])[0]);
   box.appendChild(lf);
   if (st.pageCss != null) {
-    mk('Page CSS (from the imported page)', 'pageCss', true, 'This page was imported from a different template, so it keeps its own styles. They are exported as written. LIVARA styles are added only if you add LIVARA sections.');
+    mk('Page CSS (from the imported page)', 'pageCss', true, 'The styles from the imported page. They are kept and exported as written. The builder adds its own template styles only for sections they don\'t cover.');
     const ta = box.lastElementChild.querySelector('textarea'); ta.rows = 8; ta.classList.add('mono'); ta.addEventListener('input', () => schedulePreview());
   }
   const li = document.createElement('div'); li.className = 'field'; const lid = fid(), bid = fid();
@@ -2491,7 +2492,7 @@ function importPdp(html, fname) {
   const push = (type, data) => blocks.push({ id: uid(), type, data });
   // Not the LIVARA template (e.g. older Bootstrap pages): keep its CSS and every section as written.
   const ownCss = [...doc.querySelectorAll('style')].map(s => s.textContent).join('\n');
-  const foreign = !doc.querySelector('[class*="livara-"], .more-info');
+  const foreign = !doc.querySelector('[class*="livara-"], .more-info .info-content-item');
   const secs = [...doc.body.children].filter(n => n.nodeType === 1 && !n.matches('script, style, link, noscript'));
   secs.forEach((sec, idx) => {
     const q = s => sec.matches(s) ? sec : sec.querySelector(s);
@@ -2542,7 +2543,7 @@ function importPdp(html, fname) {
   st.kw = (doc.querySelector('meta[name="keywords"]') || { getAttribute: () => '' }).getAttribute('content') || '';
   st.sku = ((fname || '').match(/(\d{4,})/) || html.match(/assets\/img\/(\d{4,})_PDP_/) || [])[1] || '';
   st.blocks = blocks;
-  if (foreign && ownCss.trim()) st.pageCss = ownCss;
+  if (ownCss.trim()) st.pageCss = ownCss; // every imported page keeps its own styles
   for (const k of Object.keys(assets)) if (!JSON.stringify(ns).includes(k)) { /* keep uploads for undo */ }
   skuIn.value = st.sku; selId = st.blocks[0]?.id || null; tab = 'block'; renderAll(); commitSnap();
   const raw = blocks.filter(b => b.type === 'raw').length;
@@ -2598,6 +2599,9 @@ const BP = ['xs', 'sm', 'md', 'lg', 'xl'], DEV_BP = { d: 'lg', t: 'md', m: 'xs' 
 function bsVisible(node, root, dev) {
   for (let n = node; n && n !== root.parentNode; n = n.parentElement) {
     let vis = true; const c = n.classList || [];
+    // Amway template classes: .desktop / .tablet / .mobile show on that device only.
+    const tpl = ['desktop', 'tablet', 'mobile'].filter(k => c.contains && c.contains(k));
+    if (tpl.length && !tpl.includes({ d: 'desktop', t: 'tablet', m: 'mobile' }[dev])) return false;
     for (const bp of BP.slice(0, BP.indexOf(DEV_BP[dev]) + 1)) {
       const p = bp === 'xs' ? 'd-' : `d-${bp}-`;
       if (c.contains(p + 'none')) vis = false; else if ([...c].some(x => x.startsWith(p) && !x.slice(p.length).includes('-') && x !== p + 'none' && /^(block|flex|inline|inline-block|grid|table|table-cell)$/.test(x.slice(p.length)))) vis = true;
@@ -2620,7 +2624,8 @@ function htmlToEls(root, top) {
     if (n.tagName === 'TABLE') { const v = [...n.querySelectorAll('tr')].map(tr => [...tr.children].map(td => td.textContent.replace(/\s+/g, ' ').trim()).filter(Boolean).join(' – ')).filter(Boolean).join('\n'); if (v) add(n, newEl('text', v)); return; }
     if (blockKid(n)) return [...n.children].forEach(walk);
     const v = md(n); if (!v) return;
-    const head = /^H[1-6]$/.test(n.tagName) || (/\b(xxl|xl|lg|font-lg|font-xlg)\b/.test(n.className || '') && v.length < 120 && !v.includes('\n'));
+    const cls = typeof n.className === 'string' ? n.className : '';
+    const head = /^H[1-6]$/.test(n.tagName) || (v.length < 120 && (/\b(xxl|xl|lg|font-lg|font-xlg|font-bold|bold)\b/.test(cls) || /title|slogan|heading/i.test(cls)) && (!v.includes('\n') || /title|slogan/i.test(cls)));
     add(n, newEl(head ? 'title' : 'text', head ? v.replace(/^\*\*([\s\S]*)\*\*$/, '$1') : v));
   };
   walk(root);
@@ -2630,14 +2635,23 @@ function convertRaw(b) {
   const doc = new DOMParser().parseFromString(`<body>${b.data.html}</body>`, 'text/html');
   const tw = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT); while (tw.nextNode()) tw.currentNode.nodeValue = tw.currentNode.nodeValue.replace(/\s+/g, ' ');
   const top = doc.body.firstElementChild || doc.body;
+  if (top.querySelector('video, iframe, form, script')) { toast('This section has a video, embed or form, so it stays as Custom HTML'); return; }
   const fileOf = img => S(decodeURIComponent((img.getAttribute('src') || '').split(/[?#]/)[0].split('/').pop()));
   // Banner pattern: full-width images straight inside the section (one per device) + overlay content -> Hero banner.
-  const direct = [...top.children].filter(n => n.tagName === 'IMG');
+  const imgWrap = [...top.children].find(n => n.tagName !== 'IMG' && n.children.length && [...n.children].every(c => c.tagName === 'IMG'));
+  // Also per-device banner images one level down (img.desktop / .tablet / .mobile, or d-* classes) next to overlay text.
+  const devImgs = [...top.querySelectorAll(':scope > * > img')].filter(i => /\b(desktop|tablet|mobile|d-(sm|md|lg|xl)?-?(none|block))\b/.test(i.className));
+  const direct = [...new Set([...top.children].filter(n => n.tagName === 'IMG').concat(imgWrap ? [...imgWrap.children] : [], devImgs.length >= 2 ? devImgs : []))];
   if (direct.length) {
     const pick = dev => direct.find(i => bsVisible(i, top, dev));
     const d = pick('d') || direct[0], tb = pick('t'), mb = pick('m');
-    const rest = top.cloneNode(true); [...rest.children].filter(n => n.tagName === 'IMG').forEach(n => n.remove());
+    direct.forEach(i => i.setAttribute('data-ban', '')); if (imgWrap) imgWrap.setAttribute('data-ban', '');
+    const rest = top.cloneNode(true); rest.querySelectorAll('[data-ban]').forEach(n => n.remove());
     const els = htmlToEls(rest, rest).map(e => e.t === 'image' ? Object.assign(e, { t: 'logo' }) : e);
+    if (!els.length) { // images only -> Full-width image
+      commitSnap(); b.type = 'image'; b.data = { desk: fileOf(d), tab: tb && tb !== d ? fileOf(tb) : S(), mob: mb && mb !== (tb || d) ? fileOf(mb) : S(), alt: d.getAttribute('alt') || '' };
+      renderAll(); toast('Converted to Full-width image · ⌘/Ctrl Z to undo'); return;
+    }
     const hd = TYPES.hero.make();
     Object.assign(hd, { desk: fileOf(d), tab: tb && tb !== d ? fileOf(tb) : S(), mob: mb && mb !== (tb || d) ? fileOf(mb) : S(), els });
     commitSnap(); b.type = 'hero'; b.data = hd; renderAll(); toast('Converted to Hero banner · ⌘/Ctrl Z to undo'); return;
@@ -2645,10 +2659,28 @@ function convertRaw(b) {
   // Top-level Bootstrap rows become columns; nested rows stay inside their column.
   const rows = [...top.querySelectorAll('.row')].filter(rw => ![...top.querySelectorAll('.row')].some(o => o !== rw && o.contains(rw)));
   const colsOf = rw => [...rw.children].filter(c => /\bcol(-|$|\s)/.test(c.className) || /\bcol-/.test(c.className));
+  // More Information pattern (title + repeated items with a .title each) -> More Information section.
+  const infoItems = [...top.querySelectorAll('[class*="info-content-item"]')];
+  if (infoItems.length) {
+    const md = n => rteToMd(n).split('\n').map(l => l.trim()).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+    const head = top.querySelector('[class*="info-title"]');
+    const items = infoItems.map(it => { const ttl = it.querySelector('.title'), c = it.cloneNode(true); c.querySelectorAll('.title').forEach(x => x.remove());
+      return { id: uid('i'), title: ttl ? md(ttl).replace(/^\*\*([\s\S]*)\*\*$/, '$1') : '', body: md(c), specs: '' }; });
+    commitSnap(); b.type = 'moreinfo'; b.data = { title: head ? md(head).replace(/^\*\*([\s\S]*)\*\*$/, '$1') : 'MORE INFORMATION', items };
+    renderAll(); toast('Converted to More Information · ⌘/Ctrl Z to undo'); return;
+  }
   let groups = rows.map(colsOf).filter(g => g.length);
-  // Content outside the rows would be lost: then keep everything in one column instead.
-  if (groups.length) { const rest = top.cloneNode(true); rest.querySelectorAll('.row').forEach(rw => rw.remove()); if (htmlToEls(rest, rest).length) groups = []; }
+  if (!groups.length) {
+    // No Bootstrap rows: repeated siblings with the same class (cards, feature items…) become one column each.
+    const rep = el => { const m = {}; [...el.children].forEach(c => { const k = typeof c.className === 'string' ? c.className.trim() : ''; if (k) (m[k] = m[k] || []).push(c); }); return Object.values(m).find(a => a.length >= 2) || null; };
+    const cands = [...top.querySelectorAll('*')].map(el => ({ el, items: rep(el) })).filter(x => x.items && x.items.every(i => htmlToEls(i, top).length));
+    groups = cands.filter(x => !cands.some(o => o !== x && x.items.some(i => i.contains(o.el)))).map(x => x.items);
+  }
+  // Content outside the groups (a heading, an intro line) goes in a full-width first column.
+  let lead = [];
+  if (groups.length) { groups.flat().forEach(c => c.setAttribute('data-grp', '')); const rest = top.cloneNode(true); rest.querySelectorAll('[data-grp]').forEach(n => n.remove()); lead = htmlToEls(rest, rest); }
   const cols = [];
+  if (lead.length) { const lc = newCol(lead); lc.w = '100'; if (top.matches('.text-center') || top.querySelector('.text-center')) lc.h = 'center'; cols.push(lc); }
   if (groups.length) groups.flat().forEach(c => { const els = htmlToEls(c, top); if (!els.length) return; const col = newCol(els); if (/text-center/.test(c.className) || c.closest('.text-center')) col.h = 'center'; const h = { d: !bsVisible(c, top, 'd'), t: !bsVisible(c, top, 't'), m: !bsVisible(c, top, 'm') }; if (h.d || h.t || h.m) col.hide = h; cols.push(col); });
   if (!cols.length) { const col = newCol(htmlToEls(top, top)); if (top.closest && (top.matches('.text-center') || top.querySelector(':scope > .text-center, :scope > .container.text-center, :scope > div > .text-center'))) col.h = 'center'; cols.push(col); }
   if (!cols.some(c => c.els.length)) { toast('Nothing to convert in this HTML'); return; }
