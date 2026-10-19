@@ -229,6 +229,7 @@ details.el > summary .tt { font-weight: 500 }
 .cheat code { color: var(--fg) }
 
 .pvlang { font: inherit; font-size: 12px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--fg); margin-right: 6px }
+.impopts { margin: 10px 0; padding-left: 18px; font-size: 13.5px; line-height: 1.5 } .impopts li { margin-bottom: 6px }
 .trtable { width: 100%; border-collapse: collapse; font-size: 13px }
 .trtable td { border-bottom: 1px solid var(--line); padding: 8px 6px; vertical-align: top; width: 50% }
 .trtable .src { white-space: pre-wrap; color: var(--muted); overflow-wrap: anywhere; max-height: 160px; overflow: auto }
@@ -393,6 +394,13 @@ details.item[open] > .body { animation: rise .2s ease-out }
     <h3 id="trTitle">Translate</h3>
     <div id="trBody"></div>
     <div class="acts"><button class="btn primary" id="trClose">Done</button></div>
+  </div>
+</div>
+<div class="modal" id="impModal" hidden>
+  <div class="dialog" role="dialog" aria-labelledby="impTitle" style="width:min(520px,100%)">
+    <h3 id="impTitle">How should this page come in?</h3>
+    <div id="impBody"></div>
+    <div class="acts"><button class="btn" id="impKeep">Keep exactly</button><button class="btn primary" id="impEdit">Make editable</button></div>
   </div>
 </div>
 <div class="toast" id="toast" hidden></div>
@@ -2431,7 +2439,7 @@ function checkServer() {
 $('#exportBtn').onclick = openExport;
 $('#exClose').onclick = () => $('#modal').hidden = true;
 $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') $('#modal').hidden = true; });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { $('#modal').hidden = true; $('#keysModal').hidden = true; if (!$('#trModal').hidden) $('#trClose').click(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { $('#modal').hidden = true; $('#keysModal').hidden = true; if (!$('#trModal').hidden) $('#trClose').click(); $('#impModal').hidden = true; } });
 
 $('#exHtml').onclick = async () => {
   const sku = (st.sku || 'page').trim(), done = [];
@@ -2548,6 +2556,13 @@ function importPdp(html, fname) {
   skuIn.value = st.sku; selId = st.blocks[0]?.id || null; tab = 'block'; renderAll(); commitSnap();
   const raw = blocks.filter(b => b.type === 'raw').length;
   toast(`Imported ${blocks.length} section${blocks.length === 1 ? '' : 's'}${raw ? ` (${raw} as Custom HTML)` : ''}. Undo brings back your previous page.`);
+  if (raw) {
+    $('#impBody').innerHTML = `<p style="margin:0"><b>${raw} of ${blocks.length} section${blocks.length === 1 ? '' : 's'}</b> came in as Custom HTML, exactly as written.</p>
+      <ul class="impopts"><li><b>Keep exactly</b> – looks and exports exactly like the original. Edit them as HTML.</li>
+      <li><b>Make editable</b> – turns banners, repeated items, columns and More Information into builder sections you can edit. Old colours and some styling may change; sections with a video, embed or form stay as HTML.</li></ul>
+      <p class="fhint" style="margin:0">You can undo (⌘/Ctrl Z) to get the exact version back, or convert sections one by one later.</p>`;
+    $('#impModal').hidden = false; $('#impEdit').focus();
+  }
 }
 
 /* ---------- Project save / open (keeps uploads inside the .json) ---------- */
@@ -2631,11 +2646,12 @@ function htmlToEls(root, top) {
   walk(root);
   return els;
 }
-function convertRaw(b) {
+// quiet: used by "Make editable" on import (no undo step, render or toast per section). Returns true when converted.
+function convertRaw(b, quiet) {
   const doc = new DOMParser().parseFromString(`<body>${b.data.html}</body>`, 'text/html');
   const tw = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT); while (tw.nextNode()) tw.currentNode.nodeValue = tw.currentNode.nodeValue.replace(/\s+/g, ' ');
   const top = doc.body.firstElementChild || doc.body;
-  if (top.querySelector('video, iframe, form, script')) { toast('This section has a video, embed or form, so it stays as Custom HTML'); return; }
+  if (top.querySelector('video, iframe, form, script')) { quiet || toast('This section has a video, embed or form, so it stays as Custom HTML'); return false; }
   const fileOf = img => S(decodeURIComponent((img.getAttribute('src') || '').split(/[?#]/)[0].split('/').pop()));
   // Banner pattern: full-width images straight inside the section (one per device) + overlay content -> Hero banner.
   const imgWrap = [...top.children].find(n => n.tagName !== 'IMG' && n.children.length && [...n.children].every(c => c.tagName === 'IMG'));
@@ -2649,12 +2665,12 @@ function convertRaw(b) {
     const rest = top.cloneNode(true); rest.querySelectorAll('[data-ban]').forEach(n => n.remove());
     const els = htmlToEls(rest, rest).map(e => e.t === 'image' ? Object.assign(e, { t: 'logo' }) : e);
     if (!els.length) { // images only -> Full-width image
-      commitSnap(); b.type = 'image'; b.data = { desk: fileOf(d), tab: tb && tb !== d ? fileOf(tb) : S(), mob: mb && mb !== (tb || d) ? fileOf(mb) : S(), alt: d.getAttribute('alt') || '' };
-      renderAll(); toast('Converted to Full-width image · ⌘/Ctrl Z to undo'); return;
+      quiet || commitSnap(); b.type = 'image'; b.data = { desk: fileOf(d), tab: tb && tb !== d ? fileOf(tb) : S(), mob: mb && mb !== (tb || d) ? fileOf(mb) : S(), alt: d.getAttribute('alt') || '' };
+      if (!quiet) { renderAll(); toast('Converted to Full-width image · ⌘/Ctrl Z to undo'); } return true;
     }
     const hd = TYPES.hero.make();
     Object.assign(hd, { desk: fileOf(d), tab: tb && tb !== d ? fileOf(tb) : S(), mob: mb && mb !== (tb || d) ? fileOf(mb) : S(), els });
-    commitSnap(); b.type = 'hero'; b.data = hd; renderAll(); toast('Converted to Hero banner · ⌘/Ctrl Z to undo'); return;
+    quiet || commitSnap(); b.type = 'hero'; b.data = hd; if (!quiet) { renderAll(); toast('Converted to Hero banner · ⌘/Ctrl Z to undo'); } return true;
   }
   // Top-level Bootstrap rows become columns; nested rows stay inside their column.
   const rows = [...top.querySelectorAll('.row')].filter(rw => ![...top.querySelectorAll('.row')].some(o => o !== rw && o.contains(rw)));
@@ -2666,8 +2682,8 @@ function convertRaw(b) {
     const head = top.querySelector('[class*="info-title"]');
     const items = infoItems.map(it => { const ttl = it.querySelector('.title'), c = it.cloneNode(true); c.querySelectorAll('.title').forEach(x => x.remove());
       return { id: uid('i'), title: ttl ? md(ttl).replace(/^\*\*([\s\S]*)\*\*$/, '$1') : '', body: md(c), specs: '' }; });
-    commitSnap(); b.type = 'moreinfo'; b.data = { title: head ? md(head).replace(/^\*\*([\s\S]*)\*\*$/, '$1') : 'MORE INFORMATION', items };
-    renderAll(); toast('Converted to More Information · ⌘/Ctrl Z to undo'); return;
+    quiet || commitSnap(); b.type = 'moreinfo'; b.data = { title: head ? md(head).replace(/^\*\*([\s\S]*)\*\*$/, '$1') : 'MORE INFORMATION', items };
+    if (!quiet) { renderAll(); toast('Converted to More Information · ⌘/Ctrl Z to undo'); } return true;
   }
   let groups = rows.map(colsOf).filter(g => g.length);
   if (!groups.length) {
@@ -2683,17 +2699,27 @@ function convertRaw(b) {
   if (lead.length) { const lc = newCol(lead); lc.w = '100'; if (top.matches('.text-center') || top.querySelector('.text-center')) lc.h = 'center'; cols.push(lc); }
   if (groups.length) groups.flat().forEach(c => { const els = htmlToEls(c, top); if (!els.length) return; const col = newCol(els); if (/text-center/.test(c.className) || c.closest('.text-center')) col.h = 'center'; const h = { d: !bsVisible(c, top, 'd'), t: !bsVisible(c, top, 't'), m: !bsVisible(c, top, 'm') }; if (h.d || h.t || h.m) col.hide = h; cols.push(col); });
   if (!cols.length) { const col = newCol(htmlToEls(top, top)); if (top.closest && (top.matches('.text-center') || top.querySelector(':scope > .text-center, :scope > .container.text-center, :scope > div > .text-center'))) col.h = 'center'; cols.push(col); }
-  if (!cols.some(c => c.els.length)) { toast('Nothing to convert in this HTML'); return; }
+  if (!cols.some(c => c.els.length)) { quiet || toast('Nothing to convert in this HTML'); return false; }
   const per = Math.max(1, ...groups.map(g => g.length).concat([1]));
   const data = { bg: '', valign: groups.length ? 'center' : 'flex-start', cols, gaps: per > 1 ? { per: String(Math.min(6, per)) } : {}, halign: per > 2 && groups.some(g => g.length < per) ? 'center' : '' };
   const bgc = rgbHex(top.style && (top.style.backgroundColor || top.style.background));
   if (bgc) data.sbg = { type: 'color', c1: bgc };
   const h = { d: !bsVisible(top, top, 'd'), t: !bsVisible(top, top, 't'), m: !bsVisible(top, top, 'm') };
-  commitSnap();
+  quiet || commitSnap();
   b.type = 'columns'; b.data = data; if (h.d || h.t || h.m) b.hide = h;
   cols.forEach(c => openItems.add('col' + c.id));
-  renderAll(); toast('Converted to Columns · ⌘/Ctrl Z to undo');
+  if (!quiet) { renderAll(); toast('Converted to Columns · ⌘/Ctrl Z to undo'); } return true;
 }
+
+/* ---------- Import choice: keep exactly or make editable ---------- */
+$('#impKeep').onclick = () => { $('#impModal').hidden = true; };
+$('#impEdit').onclick = () => {
+  $('#impModal').hidden = true;
+  const raws = st.blocks.filter(b => b.type === 'raw'); commitSnap(); // undo -> the exact version
+  let ok = 0; raws.forEach(b => { try { if (convertRaw(b, true)) ok++; } catch (e) { /* leave that section as HTML */ } });
+  renderAll(); commitSnap();
+  toast(`Made ${ok} of ${raws.length} section${raws.length === 1 ? '' : 's'} editable${ok < raws.length ? ` · ${raws.length - ok} kept as HTML` : ''} · ⌘/Ctrl Z for the exact version`);
+};
 
 /* ---------- Translate dialog ---------- */
 function openTranslate(lang, keepScroll) {
@@ -2746,7 +2772,7 @@ function findHolder(o, key) {
 function onKey(e) {
   const mod = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
   const typing = e.target.closest && e.target.closest('input, textarea, select, [contenteditable]');
-  const modalOpen = !$('#modal').hidden || !$('#keysModal').hidden || !$('#trModal').hidden;
+  const modalOpen = !$('#modal').hidden || !$('#keysModal').hidden || !$('#trModal').hidden || !$('#impModal').hidden;
   if (mod && !e.altKey && k === 's') { e.preventDefault(); $('#saveProject').click(); return; }
   if (mod && !e.altKey && k === 'o') { e.preventDefault(); $('#openProject').click(); return; }
   if (mod && !e.altKey && k === 'e') { e.preventDefault(); $('#exportBtn').click(); return; }
