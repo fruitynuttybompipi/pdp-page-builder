@@ -882,6 +882,8 @@ function buildHTML(st, assets, opt) {
     const x = b.box || {}, c = [], n = v => String(v || '').trim();
     if (+n(x.w) > 0) c.push(`width:${+n(x.w)}${x.wu === 'px' ? 'px' : '%'}`, 'max-width:100%', 'margin-left:auto', 'margin-right:auto');
     if (+n(x.h) > 0) c.push(`height:${+n(x.h)}${x.hu === 'vh' ? 'vh' : 'px'}`, 'overflow:hidden');
+    if (x.full) c.push('padding-left:0!important', 'padding-right:0!important'); // edge to edge: drop the template's side padding
+    if (x.full && x.flush) c.push('padding-top:0!important', 'padding-bottom:0!important');
     return c;
   };
   // Which screens hide this item (none ticked = shown everywhere).
@@ -1580,10 +1582,12 @@ function panel(key, title, sumText) {
 }
 function sizeEditor(b) {
   const x = b.box || (b.box = { w: '', wu: '%', h: '', hu: 'px' });
-  const sum = () => `${+x.w > 0 ? x.w + x.wu : 'Auto'} × ${+x.h > 0 ? x.h + x.hu : 'Auto'}`;
+  const canFull = ['columns', 'cards', 'features'].includes(b.type);
+  const canFlush = ['columns', 'features'].includes(b.type);
+  const sum = () => `${x.full && canFull ? (x.flush && canFlush ? 'Full width, no top/bottom space · ' : 'Full width · ') : ''}${+x.w > 0 ? x.w + x.wu : 'Auto'} × ${+x.h > 0 ? x.h + x.hu : 'Auto'}`;
   const det = panel('box' + b.id, 'Section size', sum()), body = det.querySelector('.body');
   const wId = fid(), hId = fid();
-  body.innerHTML = `<div class="prow"><label for="${wId}">Width</label><div class="pin"><input type="number" min="1" id="${wId}" placeholder="Auto"><select aria-label="Width unit"><option value="%">%</option><option value="px">px</option></select></div></div>
+  body.innerHTML = `${canFull ? '<label class="check"><input type="checkbox" data-full> <b>Full width</b> &nbsp;<span class="fhint">edge to edge, no side padding</span></label>' : ''}${canFlush ? '<label class="check" data-flushrow style="margin-left:22px"><input type="checkbox" data-flush> No space on top and bottom</label>' : ''}<div class="prow"><label for="${wId}">Width</label><div class="pin"><input type="number" min="1" id="${wId}" placeholder="Auto"><select aria-label="Width unit"><option value="%">%</option><option value="px">px</option></select></div></div>
     <div class="prow"><label for="${hId}">Height</label><div class="pin"><input type="number" min="1" id="${hId}" placeholder="Auto"><select aria-label="Height unit"><option value="px">px</option><option value="vh">% of screen</option></select></div></div>
     <div class="fhint">Leave empty for automatic. A narrower section is centred. A fixed height cuts off anything taller.</div>
     <div><button class="btn sm ghost">Reset to auto</button></div>`;
@@ -1592,6 +1596,11 @@ function sizeEditor(b) {
   const upd = () => { x.w = wi.value; x.wu = ws.value; x.h = hi.value; x.hu = hs.value; det.querySelector('.psum').textContent = sum(); schedulePreview(); };
   [wi, ws, hi, hs].forEach(i => i.addEventListener('input', upd));
   body.querySelector('button').onclick = () => { wi.value = hi.value = ''; upd(); };
+  const fb = body.querySelector('[data-full]'), fl = body.querySelector('[data-flush]'), flRow = body.querySelector('[data-flushrow]');
+  const showFl = () => { if (flRow) flRow.hidden = !x.full; };
+  if (fb) { fb.checked = !!x.full; fb.onchange = () => { x.full = fb.checked; showFl(); upd(); }; }
+  if (fl) { fl.checked = !!x.flush; fl.onchange = () => { x.flush = fl.checked; upd(); }; }
+  showFl();
   return det;
 }
 const styleSum = s => [s.align && s.align[0].toUpperCase() + s.align.slice(1), s.weight && s.weight[0].toUpperCase() + s.weight.slice(1), s.italic && 'Italic', s.size && s.size.toUpperCase(), s.color].filter(Boolean).join(' · ') || 'Default style';
@@ -2904,7 +2913,7 @@ $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 // GitHub Pages sends the upload time as Last-Modified (document.lastModified). Without that header the browser reports "now",
 // so then the time this file was built is shown instead.
 (() => {
-  const built = new Date('2026-10-19T07:34:13Z'), lm = new Date(document.lastModified);
+  const built = new Date('2026-10-21T08:37:25Z'), lm = new Date(document.lastModified);
   const d = !isNaN(lm) && Math.abs(Date.now() - lm) > 10000 ? lm : built;
   if (isNaN(d)) return;
   const p = n => String(n).padStart(2, '0'), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
