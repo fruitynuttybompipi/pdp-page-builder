@@ -230,6 +230,8 @@ details.el > summary .tt { font-weight: 500 }
 .cheat code { color: var(--fg) }
 
 .pvlang { font: inherit; font-size: 12px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--fg); margin-right: 6px }
+.insp.simple .adv { display: none !important }
+.modebar { display: flex; flex-direction: column; gap: 4px }
 .tipbox { font-size: 12.5px; line-height: 1.45; padding: 8px 10px; border-radius: 8px; background: var(--raised); border: 1px solid var(--line); border-left: 3px solid #ec206e }
 .impopts { margin: 10px 0; padding-left: 18px; font-size: 13.5px; line-height: 1.5 } .impopts li { margin-bottom: 6px }
 .trtable { width: 100%; border-collapse: collapse; font-size: 13px }
@@ -264,7 +266,7 @@ kbd { display: inline-block; min-width: 22px; padding: 2px 6px; border: 1px soli
 .dialog .acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end }
 .status { font-size: 12.5px; color: var(--muted); min-height: 1.2em }
 
-.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: 13px; z-index: 30 }
+.toast { position: fixed; left: 50%; top: 66px; transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: 13px; z-index: 30 }
 
 @media (max-width: 1100px) { .work { grid-template-columns: 230px minmax(0, 1fr) 320px } }
 @media (max-width: 1100px) { .footbar { width: 230px } }
@@ -284,8 +286,8 @@ kbd { display: inline-block; min-width: 22px; padding: 2px 6px; border: 1px soli
 @keyframes pop { 0% { transform: scale(.96); opacity: 0 } 100% { transform: none; opacity: 1 } }
 @keyframes flash { 0% { box-shadow: 0 0 0 3px var(--accent) } 100% { box-shadow: 0 0 0 0 transparent } }
 @keyframes ping { 0% { transform: scale(1); opacity: .9 } 100% { transform: scale(2.6); opacity: 0 } }
-@keyframes slideUp { from { opacity: 0; transform: translate(-50%, 12px) } }
-@keyframes slideDown { to { opacity: 0; transform: translate(-50%, 12px) } }
+@keyframes slideUp { from { opacity: 0; transform: translate(-50%, -12px) } }
+@keyframes slideDown { to { opacity: 0; transform: translate(-50%, -12px) } }
 @keyframes glow { 50% { opacity: .35 } }
 .btn, .chip, .row, .seg button, .tabs button, .tbar button, .grid9 button, details.item > summary button, .slot, .thumb img { transition: background-color .18s, border-color .18s, color .18s, transform .18s, box-shadow .18s, opacity .18s }
 .btn:active, .chip:active, .tbar button:active, .grid9 button:active { transform: scale(.96) }
@@ -589,7 +591,7 @@ const TYPES = {
     make: () => ({ startRev: false, items: [TYPES.features.fields.find(f => f.k === 'items').make()] }), sum: d => d.items.length + ' rows' },
   profile: { label: 'Brand profile', fields: [{ k: 'els', t: 'els', label: 'Elements' }],
     make: () => ({ els: [newEl('title', 'BRAND: Who We Are'), newEl('text', 'About the brand.')] }), sum: d => elSum(d.els) },
-  brand: { label: 'Brand strip', fields: [{ k: 'els', t: 'els', label: 'Elements', ctx: 'brand' }],
+  brand: { label: 'Brand strip', fields: [{ k: 'els', t: 'logocount', label: 'Number of logos' }, { k: 'els', t: 'els', label: 'Elements', ctx: 'brand' }],
     make: () => ({ els: [newEl('logo'), newEl('text', 'Tagline', { style: { size: 'lg' } }), newEl('text', '*Exclusively available through Amway Malaysia.*', { style: { weight: 'bold', size: 'xs' } })] }),
     sum: d => elSum(d.els) },
   image: { label: 'Full-width image', fields: [
@@ -608,7 +610,7 @@ const TYPES = {
         { k: 'body', t: 'area', label: 'Text', fmt: true },
         { k: 'specs', t: 'area', label: 'Spec table', hint: 'One row per line: Label | Value. Leave empty for no table.', rows: 4 } ] } ],
     // Starts with the usual PDP items, filled with sample text to replace.
-    make: () => ({ title: 'MORE INFORMATION', items: [
+    make: () => ({ sbg: { type: 'color', c1: '#FFFFFF' }, title: 'MORE INFORMATION', items: [
       { id: uid('i'), title: 'HOW TO USE', body: '- Shake well before use.\n- Apply an appropriate amount to clean, dry skin and massage gently until absorbed.\n- Use morning and evening for best results.', specs: '' },
       { id: uid('i'), title: 'TARGETED CONSUMER', body: '- Adults looking for a simple, effective daily routine.\n- Suitable for all skin types, including sensitive skin.', specs: '' },
       { id: uid('i'), title: 'ADVISORIES AND PRECAUTIONS', body: 'For external use only.\n- Avoid contact with eyes. If contact occurs, rinse thoroughly with water.\n- Discontinue use if irritation occurs.\n- Keep out of reach of children.', specs: '' },
@@ -643,7 +645,7 @@ TYPES.cards = { label: 'Cards', fields: [
   make: () => ({ layout: 'top', per: '3', imgW: '40', gap: '', cbg: { type: 'color', c1: '#F3F3F3', c2: '#FFFFFF', angle: '135' }, crad: { r: '12' }, cpad: { pad: ['', '', '', ''] }, cards: [newCard(1), newCard(2), newCard(3)] }),
   sum: d => d.cards.length + ' cards · ' + (d.per || 3) + ' per row' };
 TYPES.imgtext = { label: 'Image + text', as: 'columns', make: () => ({ valign: 'flex-start', cols: [newCol([newEl('item')])] }) };
-const ORDER = ['blank', 'hero', 'intro', 'text', 'columns', 'cards', 'video', 'features', 'imgtext', 'profile', 'brand', 'image', 'divline', 'moreinfo', 'banner', 'raw'];
+const ORDER = ['blank', 'hero', 'intro', 'columns', 'cards', 'video', 'features', 'imgtext', 'brand', 'image', 'divline', 'moreinfo', 'banner', 'raw'];
 const iconLike = k => k === 'icon' || k === 'logo';
 
 /* ---------- Upgrade projects saved before elements existed ---------- */
@@ -792,6 +794,10 @@ const PDP_CSS = `
       .pdp-item-fit .pdp-item-img { position: relative; min-height: 120px; }
       .pdp-item-fit .pdp-item-img img { position: absolute; inset: 0; width: 100%; height: 100% !important; object-fit: var(--fit, cover); object-position: var(--fpos, center); }
       @media only screen and (max-width: 768px) { .pdp-item { column-gap: 4vw; } }
+      .pdp-logos { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 3vw; width: 100%; }
+      .pdp-logos > * { flex: 0 1 calc((100% - (var(--n, 2) - 1) * 3vw) / var(--n, 2)); max-width: 18vw; margin: 0 !important; }
+      .pdp-logos img { width: 100% !important; height: auto; }
+      @media only screen and (max-width: 768px) { .pdp-logos > * { max-width: 40vw; } }
       .pdp-video { width: 100%; max-width: 100%; }
       .pdp-video iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; }
       .pdp-video video { display: block; width: 100%; height: auto; }
@@ -922,7 +928,8 @@ function buildHTML(st, assets, opt) {
     if (+n(x.w) > 0) c.push(`width:${+n(x.w)}${x.wu === 'px' ? 'px' : '%'}`, 'max-width:100%', 'margin-left:auto', 'margin-right:auto');
     if (+n(x.h) > 0) c.push(`height:${+n(x.h)}${x.hu === 'vh' ? 'vh' : 'px'}`, 'overflow:hidden');
     if (x.full) c.push('padding-left:0!important', 'padding-right:0!important'); // edge to edge: drop the template's side padding
-    if (x.full && x.flush) c.push('padding-top:0!important', 'padding-bottom:0!important');
+    const vs = x.vs != null && n(x.vs) !== '' ? Math.max(0, +n(x.vs) || 0) : x.flush ? 0 : null; // full width: space on top and bottom (px), empty = template's own
+    if (x.full && vs != null) c.push(`padding-top:${vs}px!important`, `padding-bottom:${vs}px!important`);
     return c;
   };
   // Which screens hide this item (none ticked = shown everywhere).
@@ -1088,6 +1095,12 @@ function buildHTML(st, assets, opt) {
   const renderEls = (els, ctx, ind) => {
     const out = [], a = els || [];
     for (let i = 0; i < a.length; i++) {
+      if (a[i].t === 'logo' && a[i + 1] && a[i + 1].t === 'logo') { // 2+ logos in a row sit side by side
+        let j = i; while (a[j + 1] && a[j + 1].t === 'logo') j++;
+        const run = a.slice(i, j + 1), inner = run.map(el => oid(addSty(addCls(renderEl(el, ctx, true), elCls(el)), spCss(el)), el.id)).filter(Boolean);
+        if (inner.length) out.push(`<div class="pdp-logos${ctx.stack && j < a.length - 1 ? ' mb-3' : ''}" style="--n:${run.length}">${inner.join('')}</div>`);
+        i = j; continue;
+      }
       if (a[i].t === 'icon' && a[i + 1] && a[i + 1].t === 'icon') {
         let j = i; while (a[j + 1] && a[j + 1].t === 'icon') j++;
         const run = a.slice(i, j + 1), al = (run[0].style || {}).align;
@@ -1300,6 +1313,8 @@ ${items}
   // Builder (LIVARA) styles only when LIVARA sections are used and the page's own CSS doesn't already style them.
   if (st.pageCss) css = (/class="[^"]*\b(livara-|more-info)/.test(body) && !/\.livara-banner|\.more-info/.test(st.pageCss) ? ORIG_CSS + '\n' : '') + st.pageCss + css;
   if (body.includes('pdp-') || body.includes('--tw:')) css += PDP_CSS;
+  // desktop More Information: bottom space same as top (original CSS has top padding only)
+  if (body.includes('class="more-info"')) css += `\n      @media only screen and (min-width: 1201px) { .more-info .info-body { padding-bottom: 5vw; } }`;
   if (/--al[DTM]:/.test(body)) css += `
       [style*="--alD:"] { text-align: var(--alD) !important; }
       @media only screen and (max-width: 1200px) { [style*="--alT:"] { text-align: var(--alT) !important; } }
@@ -1624,9 +1639,11 @@ function setTab(t) { tab = t; $('#tabBlock').setAttribute('aria-selected', t ===
 $('#tabBlock').onclick = () => setTab('block'); $('#tabPage').onclick = () => setTab('page');
 
 let lastInsp = null;
+// Simple mode hides the advanced controls (marked .adv) so first-time users see only the essentials.
+let simpleMode = true; try { simpleMode = localStorage.getItem('pdpSimple') !== '0'; } catch (e) {}
 function renderInspector() {
   $('#tabBlock').setAttribute('aria-selected', tab === 'block'); $('#tabPage').setAttribute('aria-selected', tab === 'page');
-  const box = $('#insp'); box.innerHTML = '';
+  const box = $('#insp'); box.innerHTML = ''; box.classList.toggle('simple', simpleMode && tab !== 'page');
   const key = tab + selId; box.classList.toggle('enter', key !== lastInsp); lastInsp = key;
   if (tab === 'page') return renderPage(box);
   const b = findBlock(selId);
@@ -1634,6 +1651,10 @@ function renderInspector() {
   const head = document.createElement('div'); head.className = 'blockhead';
   head.innerHTML = `<h3><span class="hico">${ico(TYPE_ICON[b.type])}</span>${esc(TYPES[b.type].label)}</h3><span class="mono" style="color:var(--muted)">#${st.blocks.indexOf(b) + 1}</span>`;
   box.appendChild(head);
+  const mode = document.createElement('div'); mode.className = 'modebar';
+  mode.innerHTML = `<div class="seg seg-full" role="group" aria-label="How many options"><button data-m="1" aria-pressed="${simpleMode}">Simple</button><button data-m="0" aria-pressed="${!simpleMode}">All options</button></div>${simpleMode ? '<div class="fhint">Main options only. Choose <b>All options</b> for sizes, spacing, backgrounds, corners and per-device settings.</div>' : ''}`;
+  mode.querySelectorAll('[data-m]').forEach(x => x.onclick = () => { simpleMode = x.dataset.m === '1'; try { localStorage.setItem('pdpSimple', simpleMode ? '1' : '0'); } catch (e) {} renderInspector(); });
+  box.appendChild(mode);
   const names = autoNames(st);
   box.appendChild(showOnRow(b, 'Show this section on'));
   box.appendChild(sizeEditor(b));
@@ -1660,23 +1681,24 @@ function panel(key, title, sumText) {
 function sizeEditor(b) {
   const x = b.box || (b.box = { w: '', wu: '%', h: '', hu: 'px' });
   const canFull = ['columns', 'cards', 'features'].includes(b.type);
-  const canFlush = ['columns', 'features'].includes(b.type);
-  const sum = () => `${x.full && canFull ? (x.flush && canFlush ? 'Full width, no top/bottom space · ' : 'Full width · ') : ''}${+x.w > 0 ? x.w + x.wu : 'Auto'} × ${+x.h > 0 ? x.h + x.hu : 'Auto'}`;
+  const canFlush = canFull;
+  if (x.vs == null && x.flush) x.vs = '0'; // older projects: "No space on top and bottom" ticked
+  const sum = () => `${x.full && canFull ? (String(x.vs ?? '') !== '' ? `Full width, ${+x.vs || 0}px top/bottom · ` : 'Full width · ') : ''}${+x.w > 0 ? x.w + x.wu : 'Auto'} × ${+x.h > 0 ? x.h + x.hu : 'Auto'}`;
   const det = panel('box' + b.id, 'Section size', sum()), body = det.querySelector('.body');
-  const wId = fid(), hId = fid();
-  body.innerHTML = `${canFull ? '<label class="check"><input type="checkbox" data-full> <b>Full width</b> &nbsp;<span class="fhint">edge to edge, no side padding</span></label>' : ''}${canFlush ? '<label class="check" data-flushrow style="margin-left:22px"><input type="checkbox" data-flush> No space on top and bottom</label>' : ''}<div class="prow"><label for="${wId}">Width</label><div class="pin"><input type="number" min="1" id="${wId}" placeholder="Auto"><select aria-label="Width unit"><option value="%">%</option><option value="px">px</option></select></div></div>
+  const wId = fid(), hId = fid(), vId = fid();
+  body.innerHTML = `${canFull ? '<label class="check"><input type="checkbox" data-full> <b>Full width</b> &nbsp;<span class="fhint">edge to edge, no side padding</span></label>' : ''}${canFlush ? `<div data-flushrow><div class="prow"><label for="${vId}">Top &amp; bottom space</label><div class="pin"><input type="number" min="0" id="${vId}" data-flush placeholder="Template"><span class="fhint">&nbsp;px</span></div></div><div class="fhint">0 = no space. Leave empty to use the template's own space.</div></div>` : ''}<div class="prow"><label for="${wId}">Width</label><div class="pin"><input type="number" min="1" id="${wId}" placeholder="Auto"><select aria-label="Width unit"><option value="%">%</option><option value="px">px</option></select></div></div>
     <div class="prow"><label for="${hId}">Height</label><div class="pin"><input type="number" min="1" id="${hId}" placeholder="Auto"><select aria-label="Height unit"><option value="px">px</option><option value="vh">% of screen</option></select></div></div>
     <div class="fhint">Leave empty for automatic. A narrower section is centred. A fixed height cuts off anything taller.</div>
     <div><button class="btn sm ghost">Reset to auto</button></div>`;
-  const [wi, ws] = body.querySelectorAll('.pin')[0].children, [hi, hs] = body.querySelectorAll('.pin')[1].children;
+  const [wi, ws] = body.querySelector('#' + wId).parentElement.children, [hi, hs] = body.querySelector('#' + hId).parentElement.children;
   wi.value = x.w; ws.value = x.wu; hi.value = x.h; hs.value = x.hu;
   const upd = () => { x.w = wi.value; x.wu = ws.value; x.h = hi.value; x.hu = hs.value; det.querySelector('.psum').textContent = sum(); schedulePreview(); };
   [wi, ws, hi, hs].forEach(i => i.addEventListener('input', upd));
   body.querySelector('button').onclick = () => { wi.value = hi.value = ''; upd(); };
   const fb = body.querySelector('[data-full]'), fl = body.querySelector('[data-flush]'), flRow = body.querySelector('[data-flushrow]');
   const showFl = () => { if (flRow) flRow.hidden = !x.full; };
-  if (fb) { fb.checked = !!x.full; fb.onchange = () => { x.full = fb.checked; showFl(); upd(); }; }
-  if (fl) { fl.checked = !!x.flush; fl.onchange = () => { x.flush = fl.checked; upd(); }; }
+  if (fb) { fb.checked = !!x.full; fb.onchange = () => { x.full = fb.checked; if (x.full) { x.vs = '0'; if (fl) fl.value = '0'; } showFl(); upd(); }; } // full width starts with no top/bottom space
+  if (fl) { fl.value = x.vs ?? ''; fl.oninput = () => { x.vs = fl.value; delete x.flush; upd(); }; }
   showFl();
   return det;
 }
@@ -1687,7 +1709,7 @@ function styleRows(s, onChange, withFont) {
   const box = document.createElement('div'); box.className = 'list';
   const wId = fid(), zId = fid(), cId = fid();
   box.innerHTML = alignSeg(s.align) + (withFont ? `
-    ${[['alignT', 'Tablet align'], ['alignM', 'Mobile align']].map(([k, l]) => `<div class="prow"><span>${l}</span><div class="seg" role="group" aria-label="${l}" data-dev="${k}">${[['', 'Same'], ['left', 'Left'], ['center', 'Center'], ['right', 'Right']].map(([v, tx]) => `<button data-v="${v}" aria-pressed="${(s[k] || '') === v}">${tx}</button>`).join('')}</div></div>`).join('')}
+    ${[['alignT', 'Tablet align'], ['alignM', 'Mobile align']].map(([k, l]) => `<div class="prow adv"><span>${l}</span><div class="seg" role="group" aria-label="${l}" data-dev="${k}">${[['', 'Same'], ['left', 'Left'], ['center', 'Center'], ['right', 'Right']].map(([v, tx]) => `<button data-v="${v}" aria-pressed="${(s[k] || '') === v}">${tx}</button>`).join('')}</div></div>`).join('')}
     <div class="prow"><label for="${wId}">Weight</label><div class="pin"><select id="${wId}"><option value="">Default</option><option value="bold">Bold</option><option value="regular">Regular</option></select><label class="check"><input type="checkbox" data-ital> <i>Italic</i></label></div></div>
     <div class="prow"><label for="${zId}">Size</label><select id="${zId}"><option value="">Default</option><option value="xs">XS</option><option value="sm">S</option><option value="md">M</option><option value="lg">L</option><option value="xlg">XL</option></select></div>
     <div class="prow"><label for="${cId}">Colour</label><div class="pin"><input type="color" id="${cId}"><button class="btn sm ghost" data-c>Default</button></div></div>` : '');
@@ -1723,7 +1745,7 @@ function elsEditor(label, els, b, names) {
     const det = document.createElement('details'); det.className = 'item el'; det.dataset.key = el.id; det.open = openItems.has(el.id);
     const snip = el.t === 'item' ? (el.v || 'Image + text') : el.t === 'video' ? (el.vsrc === 'file' ? ((resolveSlot(el.img, el.id, names, assets, 'video') || { name: 'No file yet' }).name) : (el.url || 'No link yet')) : el.t === 'divider' ? `${(el.dv || {}).w || 100}% · ${(el.dv || {}).th || 2}px` : el.t === 'icons' ? (el.items || []).length + ' icons' : def.text || el.t === 'button' ? el.v.split('\n')[0] : (resolveSlot(el.img, el.id, names, assets, el.t) || { name: 'No image' }).name;
     det.innerHTML = `<summary><span class="etag">${ico(EL_ICON[el.t], 'sm')}${esc(def.label)}</span><span class="tt">${esc(snip || 'Empty')}</span>${+el.w > 0 ? `<span class="psum">${+el.w}%</span>` : ''}
-      <button data-a="top" aria-label="Send to top" title="Send to top" ${i ? '' : 'disabled'}>${ico('totop')}</button><button data-a="up" aria-label="Move up" title="Move up" ${i ? '' : 'disabled'}>${ico('up')}</button><button data-a="down" aria-label="Move down" title="Move down" ${i < els.length - 1 ? '' : 'disabled'}>${ico('down')}</button><button data-a="bottom" aria-label="Send to bottom" title="Send to bottom" ${i < els.length - 1 ? '' : 'disabled'}>${ico('tobottom')}</button><button data-a="dup" aria-label="Duplicate">${ico('copy')}</button><button data-a="del" aria-label="Delete">${ico('trash')}</button></summary><div class="body"></div>`;
+      <button class="adv" data-a="top" aria-label="Send to top" title="Send to top" ${i ? '' : 'disabled'}>${ico('totop')}</button><button data-a="up" aria-label="Move up" title="Move up" ${i ? '' : 'disabled'}>${ico('up')}</button><button data-a="down" aria-label="Move down" title="Move down" ${i < els.length - 1 ? '' : 'disabled'}>${ico('down')}</button><button class="adv" data-a="bottom" aria-label="Send to bottom" title="Send to bottom" ${i < els.length - 1 ? '' : 'disabled'}>${ico('tobottom')}</button><button data-a="dup" aria-label="Duplicate">${ico('copy')}</button><button data-a="del" aria-label="Delete">${ico('trash')}</button></summary><div class="body"></div>`;
     det.addEventListener('toggle', () => det.open ? openItems.add(el.id) : openItems.delete(el.id));
     det.querySelector('summary').addEventListener('click', e => {
       const a = e.target.closest('button')?.dataset.a; if (!a) return; e.preventDefault();
@@ -2226,11 +2248,11 @@ function colsEditor(d, b, names) {
     const body = det.querySelector('.body');
     const wId = fid(), hId = fid();
     body.insertAdjacentHTML('beforeend', `<div class="prow"><label for="${wId}">Width</label><div class="pin"><input type="number" min="5" max="100" id="${wId}" placeholder="Auto"><span class="fhint">% of the row</span></div></div>
-      <div class="prow"><label for="${hId}">Height</label><div class="pin"><input type="number" min="1" id="${hId}" placeholder="Auto"><span class="fhint">px, at least</span></div></div>`);
+      <div class="prow adv"><label for="${hId}">Height</label><div class="pin"><input type="number" min="1" id="${hId}" placeholder="Auto"><span class="fhint">px, at least</span></div></div>`);
     const wi = body.querySelector('#' + wId), hi = body.querySelector('#' + hId);
     wi.value = col.w || ''; hi.value = col.mh || '';
     body.appendChild(showOnRow(col, 'Show column on'));
-    body.appendChild(radiusRow(col, 'r'));
+    body.appendChild(radiusRow(col, 'r')).classList.add('adv');
     wi.oninput = () => { col.w = wi.value; schedulePreview(); };
     hi.oninput = () => { col.mh = hi.value; schedulePreview(); };
     body.appendChild(fieldEl({ k: 'bgx', t: 'bg', label: 'Column background' }, col, b.id + '.' + col.id, names, b));
@@ -2251,7 +2273,7 @@ function posControls(p, opt) {
   p.pad = p.pad || ['', '', '', ''];
   const el = document.createElement('div'); el.className = 'list';
   el.innerHTML = `<div class="posrow"><div class="grid9" role="group" aria-label="${opt.label || 'Place content'}">${['top', 'middle', 'bottom'].map(v => ['left', 'center', 'right'].map(h => `<button data-h="${h}" data-v="${v}" aria-label="${v} ${h}" aria-pressed="${p.h === h && p.v === v}"><i></i></button>`).join('')).join('')}</div>
-    <div class="pads">${['Top', 'Right', 'Bottom', 'Left'].map((t, i) => `<label>${t}<span class="pin"><input type="number" min="0" max="45" data-i="${i}" placeholder="0" value="${esc(p.pad[i])}">%</span></label>`).join('')}</div></div>
+    <div class="pads adv">${['Top', 'Right', 'Bottom', 'Left'].map((t, i) => `<label>${t}<span class="pin"><input type="number" min="0" max="45" data-i="${i}" placeholder="0" value="${esc(p.pad[i])}">%</span></label>`).join('')}</div></div>
     ${opt.reset ? '<div><button class="btn sm ghost" data-reset>Reset position</button></div>' : ''}
     <div class="fhint">${opt.hint || 'Padding is a % of the width, so it scales with the screen.'}</div>`;
   el.querySelectorAll('.grid9 button').forEach(btn => btn.onclick = () => { p.h = btn.dataset.h; p.v = btn.dataset.v; el.querySelectorAll('.grid9 button').forEach(x => x.setAttribute('aria-pressed', x === btn)); schedulePreview(); });
@@ -2308,6 +2330,17 @@ function fieldEl(f, obj, ref, names, b) {
       const k = rg.dataset.g, nb = wrapEl.querySelector(`[data-gn="${k}"]`); rg.value = g[k] || 0; nb.value = g[k] ?? '';
       rg.oninput = () => { g[k] = rg.value; nb.value = rg.value; schedulePreview(); };
       nb.oninput = () => { g[k] = nb.value; rg.value = nb.value || 0; schedulePreview(); };
+    });
+    return wrapEl;
+  }
+  if (f.t === 'logocount') { // 1-6 logos side by side, kept together at the first logo's place
+    const els = obj[f.k], n = els.filter(e => e.t === 'logo').length;
+    wrapEl.innerHTML = `<div class="prow"><span>${esc(f.label)}</span><div class="seg seg-full" role="group" aria-label="${esc(f.label)}">${[1, 2, 3, 4, 5, 6].map(k => `<button data-n="${k}" aria-pressed="${n === k}">${k}</button>`).join('')}</div></div><div class="fhint">Logos sit side by side in one row. Upload each one in Elements below.</div>`;
+    wrapEl.querySelectorAll('[data-n]').forEach(x => x.onclick = () => {
+      const want = +x.dataset.n; let have = els.filter(e => e.t === 'logo').length;
+      while (have > want) { const k = els.map(e => e.t).lastIndexOf('logo'); els.splice(k, 1); have--; }
+      while (have < want) { const k = els.map(e => e.t).lastIndexOf('logo'); els.splice(k + 1, 0, newEl('logo')); have++; }
+      renderAll();
     });
     return wrapEl;
   }
@@ -2919,6 +2952,13 @@ function rawMediaEditor(b) {
   return box;
 }
 
+/* ---------- Simple mode: which controls count as advanced ---------- */
+{
+  const ADV = el => { if (el && el.classList) el.classList.add('adv'); return el; };
+  for (const n of ['sizeRows', 'spacingEditor', 'boxEditor', 'fitRows', 'showOnRow']) { const f = window[n]; window[n] = (...a) => ADV(f(...a)); }
+  const fe = window.fieldEl; window.fieldEl = (f, ...a) => { const el = fe(f, ...a); return ['gaps', 'boxes', 'box1'].includes(f.t) || (f.t === 'bg' && f.k !== 'bgx') || ['halign', 'valign'].includes(f.k) ? ADV(el) : el; };
+}
+
 /* ---------- Custom HTML -> Columns section ---------- */
 // Bootstrap visibility (d-none, d-sm-block, d-lg-none…) at our three breakpoints: desktop ~lg, tablet ~md, mobile ~xs.
 const BP = ['xs', 'sm', 'md', 'lg', 'xl'], DEV_BP = { d: 'lg', t: 'md', m: 'xs' };
@@ -3071,7 +3111,7 @@ $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 // GitHub Pages sends the upload time as Last-Modified (document.lastModified). Without that header the browser reports "now",
 // so then the time this file was built is shown instead.
 (() => {
-  const built = new Date('2026-10-21T13:26:18Z'), lm = new Date(document.lastModified);
+  const built = new Date('2026-10-21T13:51:21Z'), lm = new Date(document.lastModified);
   const d = !isNaN(lm) && Math.abs(Date.now() - lm) > 10000 ? lm : built;
   if (isNaN(d)) return;
   const p = n => String(n).padStart(2, '0'), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
