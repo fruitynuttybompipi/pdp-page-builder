@@ -776,6 +776,7 @@ const PDP_CSS = `
       .pdp-fit img { position: absolute; inset: 0; width: 100% !important; height: 100% !important; max-width: none; object-fit: var(--fit, cover); object-position: var(--fpos, center); }
       .pdp-col:has(> .pdp-fit), .livara-product-img:has(> .pdp-fit) { align-self: stretch; display: flex; flex-direction: column; }
       .pdp-item-fit { align-items: stretch !important; }
+      .pdp-item-rev { flex-direction: row-reverse; }
       .pdp-item-fit .pdp-item-img { position: relative; min-height: 120px; }
       .pdp-item-fit .pdp-item-img img { position: absolute; inset: 0; width: 100%; height: 100% !important; object-fit: var(--fit, cover); object-position: var(--fpos, center); }
       @media only screen and (max-width: 768px) { .pdp-item { column-gap: 4vw; } }
@@ -998,7 +999,7 @@ function buildHTML(st, assets, opt) {
       const pic = f || P ? `<div class="pdp-item-img"><img src="${src(f, [400, 400])}" class="w-100 h-auto" alt="${esc(el.v || '')}"></div>` : '';
       const fit = ['cover', 'contain', 'fill'].includes(el.ifit) ? el.ifit : '';
       const ist = [`--iw:${iw}`, ...(fit ? [`--fit:${fit}`, `--fpos:${el.ipos || 'center'}`] : []), ...sz, ...(+el.w > 0 && s.align && ALIGN[s.align] ? ALIGN[s.align].filter(x => x.startsWith('margin')) : []), ...(el.va ? ['align-items:' + { top: 'flex-start', middle: 'center', bottom: 'flex-end' }[el.va]] : []), ...(setv(el.gap) ? [`column-gap:${Math.max(0, +el.gap || 0)}px`] : [])];
-      return `<div class="pdp-item${fit ? ' pdp-item-fit' : ''}${mb}" style="${ist.join(';')}">${pic}<div class="pdp-item-body"${el.ta ? ` style="text-align:${el.ta}"` : ''}>${el.v.trim() ? `<div class="bold font-lg">${inl(el.v)}</div>` : ''}${String(el.sub || '').trim() ? `<div class="font-lg" style="font-style:italic">${inl(el.sub)}</div>` : ''}${String(el.body || '').trim() ? `<div class="font-sm" style="margin-top:.6em">${rich(el.body, 'inline')}</div>` : ''}</div></div>`;
+      return `<div class="pdp-item${fit ? ' pdp-item-fit' : ''}${el.side === 'right' ? ' pdp-item-rev' : ''}${mb}" style="${ist.join(';')}">${pic}<div class="pdp-item-body"${el.ta ? ` style="text-align:${el.ta}"` : ''}>${el.v.trim() ? `<div${txs(el.tStyle, 'bold font-lg')}>${inl(el.v)}</div>` : ''}${String(el.sub || '').trim() ? `<div${txs(el.sStyle || { italic: true }, 'font-lg')}>${inl(el.sub)}</div>` : ''}${String(el.body || '').trim() ? `<div${txs(el.bStyle, 'font-sm', { css: ['margin-top:.6em'] })}>${String(el.body).split('\n').some(isLi) ? rich(el.body, 'block') : rich(el.body, 'inline')}</div>` : ''}</div></div>`;
     }
     if (el.t === 'video') { // YouTube link or a video file (assets/video/{SKU}_PDP_video{n}.mp4)
       const vcss = [...sz, ...(s.align && ALIGN[s.align] ? ALIGN[s.align] : [])], vst = vcss.length ? ` style="${vcss.join(';')}"` : '';
@@ -1957,23 +1958,32 @@ function itemEditor(el, body, names, b, tt) {
   const box = document.createElement('div'); box.className = 'field'; const ids = [fid(), fid(), fid(), fid()];
   box.innerHTML = `<label for="${ids[0]}">Title</label><input type="text" id="${ids[0]}">
     <label for="${ids[1]}" style="margin-top:6px">Subtitle <span class="fhint">(italic, e.g. 3 x 30g)</span></label><input type="text" id="${ids[1]}">
-    <label for="${ids[2]}" style="margin-top:6px">Text</label><textarea id="${ids[2]}" rows="3"></textarea>
+    <label id="${ids[2]}l" style="margin-top:6px">Text</label>${TOOLBAR}<div class="rte" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="${ids[2]}l" id="${ids[2]}"></div><div class="linkbar" hidden><input type="text" placeholder="https://www.amway.my/…" aria-label="Link address"><button class="btn sm">Add link</button><button class="btn sm ghost">Cancel</button></div>
     <div class="prow" style="margin-top:6px"><label for="${ids[3]}">Picture width</label><div class="pin"><input type="number" id="${ids[3]}" min="1" style="width:72px"><select aria-label="Picture width unit" data-iwu><option value="%">% of item</option><option value="px">px</option></select></div></div>
+    <div class="prow"><span>Layout</span><div class="seg seg-full" role="group" aria-label="Picture side"><button data-side="" aria-pressed="${el.side !== 'right'}">Picture left</button><button data-side="right" aria-pressed="${el.side === 'right'}">Picture right</button></div></div>
     <div class="prow"><span>Text align</span><div class="seg seg-full" role="group" aria-label="Text align">${[['', 'Default'], ['left', 'Left'], ['center', 'Center'], ['right', 'Right']].map(([v, l]) => `<button data-ta="${v}" aria-pressed="${(el.ta || '') === v}">${l}</button>`).join('')}</div></div>
     <div class="prow"><span>Text next to picture</span><div class="seg seg-full" role="group" aria-label="Text position">${[['top', 'Top'], ['', 'Middle'], ['bottom', 'Bottom']].map(([v, l]) => `<button data-va="${v}" aria-pressed="${(el.va || '') === v}">${l}</button>`).join('')}</div></div>
     <div class="prow"><label for="${ids[3]}g">Space</label><div class="pin"><input type="number" min="0" id="${ids[3]}g" placeholder="Auto" style="width:72px">px between picture and text</div></div>
     <div class="fhint">The picture never takes more than 60% of the item, so the text always has room. **bold** and *italic* work in the text.</div>`;
   body.appendChild(box);
   const [ti, su, tx, iw] = ids.map(i => box.querySelector('#' + i)), iu = box.querySelector('[data-iwu]');
-  ti.value = el.v || ''; su.value = el.sub || ''; tx.value = el.body || ''; iw.value = el.iw || 30; iu.value = el.iwu || '%';
+  ti.value = el.v || ''; su.value = el.sub || ''; tx.innerHTML = mdToRte(el.body || ''); iw.value = el.iw || 30; iu.value = el.iwu || '%';
+  bindRte(box.querySelector('.tbar'), tx, box.querySelector('.linkbar'));
   ti.oninput = () => { el.v = ti.value; tt.textContent = ti.value || 'Empty'; schedulePreview(); };
   su.oninput = () => { el.sub = su.value; schedulePreview(); };
-  tx.oninput = () => { el.body = tx.value; schedulePreview(); };
+  tx.addEventListener('input', () => { el.body = rteToMd(tx); schedulePreview(); });
   iw.oninput = () => { el.iw = iw.value; schedulePreview(); };
   iu.onchange = () => { el.iwu = iu.value; if (iu.value === 'px' && +iw.value <= 90) iw.value = el.iw = '120'; if (iu.value === '%' && +iw.value > 90) iw.value = el.iw = '30'; schedulePreview(); };
   const seg = (attr, key) => box.querySelectorAll(`[data-${attr}]`).forEach(x => x.onclick = () => { el[key] = x.dataset[attr]; box.querySelectorAll(`[data-${attr}]`).forEach(y => y.setAttribute('aria-pressed', y === x)); schedulePreview(); });
-  seg('ta', 'ta'); seg('va', 'va');
+  seg('ta', 'ta'); seg('va', 'va'); seg('side', 'side');
   box.after(fitRows(el, 'The picture takes the height of the text next to it.'));
+  // Font, size, weight, italic and colour for each text part.
+  const st = document.createElement('div'); st.className = 'list';
+  [['tStyle', 'Title style', null], ['sStyle', 'Subtitle style', { italic: true }], ['bStyle', 'Text style', null]].forEach(([k, label, def]) => {
+    const s = el[k] || (el[k] = def ? Object.assign({}, def) : {});
+    const p = panel(k + el.id, label, ''); p.querySelector('.body').appendChild(styleRows(s, () => schedulePreview(), true)); st.appendChild(p);
+  });
+  box.parentNode.insertBefore(st, box.nextSibling.nextSibling);
   const gp = box.querySelector('#' + ids[3] + 'g'); gp.value = el.gap || ''; gp.oninput = () => { el.gap = gp.value; schedulePreview(); };
   // Width of the whole element (% of the column) and where a narrower one sits.
   body.appendChild(sizeRows(el, false));
@@ -3022,7 +3032,7 @@ $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 // GitHub Pages sends the upload time as Last-Modified (document.lastModified). Without that header the browser reports "now",
 // so then the time this file was built is shown instead.
 (() => {
-  const built = new Date('2026-10-21T09:28:21Z'), lm = new Date(document.lastModified);
+  const built = new Date('2026-10-21T09:47:58Z'), lm = new Date(document.lastModified);
   const d = !isNaN(lm) && Math.abs(Date.now() - lm) > 10000 ? lm : built;
   if (isNaN(d)) return;
   const p = n => String(n).padStart(2, '0'), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
