@@ -111,6 +111,12 @@ header.bar {
 .center { min-height: 0; display: grid; grid-template-rows: auto auto 1fr; background: var(--stage) }
 .stagebar { display: flex; align-items: center; gap: 10px; padding: 8px 14px; color: var(--muted); font-size: 12px; border-bottom: 1px solid var(--line); background: var(--surface) }
 .stage { min-height: 0; overflow: hidden; position: relative; padding: 16px }
+.fsbar { display: none }
+body.fs .stage { position: fixed; inset: 0; z-index: 50; background: #000; padding: 56px 16px 16px }
+body.fs .fsbar { display: flex; position: absolute; top: 10px; left: 50%; transform: translateX(-50%); gap: 10px; align-items: center; z-index: 2 }
+body.fs .fsbar .seg { background: #222; border-color: #333 } body.fs .fsbar .seg button { color: #ccc } body.fs .fsbar .seg button[aria-pressed="true"] { background: #fff; color: #000 }
+.fsx { background: #222; color: #eee; border: 1px solid #333; border-radius: 8px; padding: 6px 12px; font: inherit; font-size: 13px; cursor: pointer } .fsx:hover { background: #333 }
+body.fs .frame-wrap { box-shadow: none }
 .frame-wrap { margin: 0 auto; transform-origin: top left; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 8px 30px rgba(0,0,0,.08) }
 .frame-wrap iframe { display: block; border: 0; background: #fff }
 
@@ -344,9 +350,9 @@ details.item[open] > .body { animation: rise .2s ease-out }
     </aside>
 
     <main class="center">
-      <div class="stagebar"><span class="live" id="liveDot" title="Preview updates as you edit"></span><span id="stageInfo"></span><span class="spacer"></span><span class="hide-sm">Click a section in the preview to edit it</span><select id="pvLang" class="pvlang" aria-label="Preview language" hidden></select><button class="btn sm" id="gridBtn" aria-pressed="false" title="Show alignment guides (G)"><i data-ico="grid"></i>Grid</button></div>
+      <div class="stagebar"><span class="live" id="liveDot" title="Preview updates as you edit"></span><span id="stageInfo"></span><span class="spacer"></span><span class="hide-sm">Click a section in the preview to edit it</span><select id="pvLang" class="pvlang" aria-label="Preview language" hidden></select><button class="btn sm" id="gridBtn" aria-pressed="false" title="Show alignment guides (G)"><i data-ico="grid"></i>Grid</button><button class="btn sm" id="fsBtn" title="Full screen preview (F)"><i data-ico="expand"></i>Full screen</button></div>
       <div class="restore" id="restoreBar" hidden><span id="restoreMsg"></span><button class="btn sm primary" id="restoreYes">Restore</button><button class="btn sm" id="restoreNo">Start fresh</button></div>
-      <div class="stage" id="stage"><div class="frame-wrap" id="frameWrap"><iframe id="frame" title="Page preview"></iframe></div></div>
+      <div class="stage" id="stage"><div class="fsbar" id="fsBar"><div class="seg" role="group" aria-label="Screen size"><button data-fsdev="desktop">Desktop</button><button data-fsdev="tablet">Tablet</button><button data-fsdev="mobile">Mobile</button></div><button class="fsx" id="fsExit" title="Exit full screen (Esc)">✕ Exit</button></div><div class="frame-wrap" id="frameWrap"><iframe id="frame" title="Page preview"></iframe></div></div>
     </main>
 
     <aside class="pane right">
@@ -385,6 +391,7 @@ details.item[open] > .body { animation: rise .2s ease-out }
       <tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>Select the previous / next section</td></tr>
       <tr><td><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd></td><td>Preview Desktop / Tablet / Mobile</td></tr>
       <tr><td><kbd>G</kbd></td><td>Grid lines on / off</td></tr>
+      <tr><td><kbd>F</kbd></td><td>Full screen preview on / off (Esc to exit)</td></tr>
       <tr><td><kbd>?</kbd></td><td>Show this list</td></tr>
       <tr><td><kbd>Esc</kbd></td><td>Close a window</td></tr>
     </tbody></table>
@@ -1384,6 +1391,7 @@ const ICONS = {
   columns: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/>',
   blank: '<rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="3 3"/><path d="M12 8v8M8 12h8"/>',
   code: '<path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/>',
+  expand: '<path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/>',
   imgtext: '<rect x="2" y="6" width="8" height="8" rx="1.5"/><path d="M13 7h9M13 10.5h9M13 14h6M2 18.5h20"/>',
   totop: '<path d="M5 4h14M12 20V9M7 13l5-5 5 5"/>', tobottom: '<path d="M5 20h14M12 4v11M7 11l5 5 5-5"/>',
   video: '<rect x="2" y="5" width="20" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>',
@@ -1422,7 +1430,7 @@ const assets = {};          // key -> {name, type, blob, url}
 let selId = null, selEl = null, tab = 'block', device = 'desktop';
 const openItems = new Set();
 const $ = s => document.querySelector(s);
-const DEV = { desktop: 1366, tablet: 834, mobile: 390 };
+const DEV = { desktop: 1313, tablet: 834, mobile: 390 };
 
 function toast(msg) {
   const t = $('#toast'); t.innerHTML = ico('check') + '<span></span>'; t.lastChild.textContent = msg; t.hidden = false; t.classList.remove('out'); void t.offsetWidth; t.classList.add('in');
@@ -1499,7 +1507,7 @@ function updUndo() { $('#undoBtn').disabled = !hist.past.length; $('#redoBtn').d
 
 function renderPreview() {
   try { lastScroll = frame.contentWindow ? frame.contentWindow.scrollY : 0; } catch (e) { lastScroll = 0; }
-  frame.srcdoc = buildHTML(langState(st, pvLangOn()), assets, { preview: true, sel: selId, selEl, grid: gridOn, live: st.liveImg !== false, liveBase: st.imgBase || DEFAULT_IMG_BASE }).html;
+  frame.srcdoc = buildHTML(langState(st, pvLangOn()), assets, { preview: true, clean: fsOn, sel: selId, selEl, grid: gridOn && !fsOn, live: st.liveImg !== false, liveBase: st.imgBase || DEFAULT_IMG_BASE }).html;
   const dot = $('#liveDot'); dot.classList.remove('pulse'); void dot.offsetWidth; dot.classList.add('pulse');
 }
 frame.addEventListener('load', () => {
@@ -1558,8 +1566,19 @@ function fit() {
 }
 new ResizeObserver(fit).observe(stage);
 document.querySelectorAll('[data-dev]').forEach(b => b.addEventListener('click', () => {
-  device = b.dataset.dev; document.querySelectorAll('[data-dev]').forEach(x => x.setAttribute('aria-pressed', x === b)); fit();
+  device = b.dataset.dev; document.querySelectorAll('[data-dev]').forEach(x => x.setAttribute('aria-pressed', x === b)); fsMark(); fit();
 }));
+// Full screen preview: only the page, on black, with its own screen-size switch.
+let fsOn = false;
+const fsMark = () => document.querySelectorAll('[data-fsdev]').forEach(x => x.setAttribute('aria-pressed', x.dataset.fsdev === device));
+function setFs(on) {
+  if (on === fsOn) return; fsOn = on; document.body.classList.toggle('fs', on); fsMark();
+  try { if (on && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); else if (!on && document.fullscreenElement) document.exitFullscreen().catch(() => {}); } catch (e) { }
+  fit(); schedulePreview(true);
+}
+document.querySelectorAll('[data-fsdev]').forEach(x => x.onclick = () => document.querySelector(`button[data-dev="${x.dataset.fsdev}"]`).click());
+$('#fsBtn').onclick = () => setFs(true); $('#fsExit').onclick = () => setFs(false);
+document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement && fsOn) setFs(false); }); // browser Esc
 
 /* ---------- Library & outline ---------- */
 function renderLib() {
@@ -3111,7 +3130,7 @@ $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 // GitHub Pages sends the upload time as Last-Modified (document.lastModified). Without that header the browser reports "now",
 // so then the time this file was built is shown instead.
 (() => {
-  const built = new Date('2026-10-21T13:51:21Z'), lm = new Date(document.lastModified);
+  const built = new Date('2026-10-21T14:05:58Z'), lm = new Date(document.lastModified);
   const d = !isNaN(lm) && Math.abs(Date.now() - lm) > 10000 ? lm : built;
   if (isNaN(d)) return;
   const p = n => String(n).padStart(2, '0'), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -3162,7 +3181,8 @@ function onKey(e) {
   if (['1', '2', '3'].includes(e.key)) { document.querySelector(`[data-dev="${['desktop', 'tablet', 'mobile'][+e.key - 1]}"]`).click(); return; }
   if (e.key === '?') { e.preventDefault(); showKeys(); return; }
   if (k === 'g' && e.target.ownerDocument !== document) setGrid(!gridOn); // builder doc has its own G handler
-  if (k === 'escape') { $('#modal').hidden = true; $('#keysModal').hidden = true; }
+  if (k === 'f' && !e.ctrlKey && !e.metaKey && !e.altKey) { setFs(!fsOn); return; }
+  if (k === 'escape') { $('#modal').hidden = true; $('#keysModal').hidden = true; if (fsOn) setFs(false); }
 }
 document.addEventListener('keydown', onKey);
 renderLib(); renderAll(); fit(); commitSnap();
