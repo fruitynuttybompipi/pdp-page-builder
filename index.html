@@ -35,6 +35,7 @@
 .chip { display: flex; align-items: center; gap: 8px }
 .chip .ico { color: var(--accent); transition: transform .2s }
 .chip:hover .ico { transform: scale(1.18) rotate(-6deg) }
+.chip-wide { grid-column: 1 / -1; justify-content: center }
 .chip-new { grid-column: 1 / -1; border-style: solid; border-color: var(--accent); background: var(--accent-soft); font-weight: 600; justify-content: center }
 .row .t { display: flex; align-items: center; gap: 6px }
 .row .t .ico { color: var(--accent) }
@@ -433,7 +434,7 @@ function inl(s) {
     .replace(/\*\*\*(.+?)\*\*\*/g, '<b><i>$1</i></b>')
     .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
     .replace(/(^|[^*])\*([^*\n]+?)\*/g, '$1<i>$2</i>')
-    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, t, u) => /^(https?:|#|mailto:)/i.test(u) ? `<a href="${u}">${t}</a>` : t);
+    .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, t, u) => /^(https?:|#|mailto:)/i.test(u) ? `<a href="${u}"${/^https?:/i.test(u) ? ' target="_blank" rel="noopener"' : ''}>${t}</a>` : t);
 }
 const isLi = l => /^\s*[-•]\s+/.test(l);
 const isOl = l => /^\s*\d+[.)]\s+/.test(l);
@@ -641,7 +642,8 @@ TYPES.cards = { label: 'Cards', fields: [
     { k: 'cards', t: 'cards', label: 'Cards' } ],
   make: () => ({ layout: 'top', per: '3', imgW: '40', gap: '', cbg: { type: 'color', c1: '#F3F3F3', c2: '#FFFFFF', angle: '135' }, crad: { r: '12' }, cpad: { pad: ['', '', '', ''] }, cards: [newCard(1), newCard(2), newCard(3)] }),
   sum: d => d.cards.length + ' cards · ' + (d.per || 3) + ' per row' };
-const ORDER = ['blank', 'hero', 'intro', 'text', 'columns', 'cards', 'video', 'features', 'profile', 'brand', 'image', 'divline', 'moreinfo', 'banner', 'raw'];
+TYPES.imgtext = { label: 'Image + text', as: 'columns', make: () => ({ valign: 'flex-start', cols: [newCol([newEl('item')])] }) };
+const ORDER = ['blank', 'hero', 'intro', 'text', 'columns', 'cards', 'video', 'features', 'imgtext', 'profile', 'brand', 'image', 'divline', 'moreinfo', 'banner', 'raw'];
 const iconLike = k => k === 'icon' || k === 'logo';
 
 /* ---------- Upgrade projects saved before elements existed ---------- */
@@ -777,6 +779,16 @@ const PDP_CSS = `
       .pdp-col:has(> .pdp-fit), .livara-product-img:has(> .pdp-fit) { align-self: stretch; display: flex; flex-direction: column; }
       .pdp-item-fit { align-items: stretch !important; }
       .pdp-item-rev { flex-direction: row-reverse; }
+      .pdp-item-stack { flex-direction: column; align-items: stretch !important; row-gap: 1vw; }
+      .pdp-item-stack .pdp-item-img { align-self: var(--ipa, flex-start); width: var(--iw, 30%); max-width: 100%; }
+      @media only screen and (max-width: 1200px) {
+        .pdp-item-tstack { flex-direction: column; align-items: stretch !important; row-gap: 2vw; }
+        .pdp-item-tstack .pdp-item-img { align-self: var(--ipa, flex-start); width: var(--iw, 30%); max-width: 100%; }
+      }
+      @media only screen and (max-width: 768px) {
+        .pdp-item-mstack, .pdp-item-tstack { flex-direction: column; align-items: stretch !important; row-gap: 3vw; }
+        .pdp-item-mstack .pdp-item-img { align-self: var(--ipa, flex-start); width: var(--iw, 30%); max-width: 100%; }
+      }
       .pdp-item-fit .pdp-item-img { position: relative; min-height: 120px; }
       .pdp-item-fit .pdp-item-img img { position: absolute; inset: 0; width: 100%; height: 100% !important; object-fit: var(--fit, cover); object-position: var(--fpos, center); }
       @media only screen and (max-width: 768px) { .pdp-item { column-gap: 4vw; } }
@@ -887,7 +899,11 @@ function buildHTML(st, assets, opt) {
   const txs = (s, cls, o) => {
     o = o || {}; s = s || {}; const css = [];
     let c = String(cls || '').split(' ').filter(Boolean);
-    if (o.part !== 'font' && s.align) { css.push(o.alignVar ? '--al:' + s.align : `text-align:${s.align}!important`, 'align-self:stretch'); if (o.inline) css.push('display:block'); }
+    const dev = o.part !== 'font' && !o.alignVar && (s.alignT || s.alignM);
+    if (dev) { // tablet / mobile align: everything through variables so the media rules can win
+      if (s.align) css.push('--alD:' + s.align); if (s.alignT) css.push('--alT:' + s.alignT); if (s.alignM) css.push('--alM:' + s.alignM);
+      css.push('align-self:stretch'); if (o.inline) css.push('display:block');
+    } else if (o.part !== 'font' && s.align) { css.push(o.alignVar ? '--al:' + s.align : `text-align:${s.align}!important`, 'align-self:stretch'); if (o.inline) css.push('display:block'); }
     if (o.part !== 'align') {
       if (s.size) { c = c.filter(x => !SIZE_RE.test(x)); c.push('font-' + s.size); }
       if (s.weight) css.push('font-weight:' + (s.weight === 'bold' ? 700 : 400));
@@ -999,7 +1015,8 @@ function buildHTML(st, assets, opt) {
       const pic = f || P ? `<div class="pdp-item-img"><img src="${src(f, [400, 400])}" class="w-100 h-auto" alt="${esc(el.v || '')}"></div>` : '';
       const fit = ['cover', 'contain', 'fill'].includes(el.ifit) ? el.ifit : '';
       const ist = [`--iw:${iw}`, ...(fit ? [`--fit:${fit}`, `--fpos:${el.ipos || 'center'}`] : []), ...sz, ...(+el.w > 0 && s.align && ALIGN[s.align] ? ALIGN[s.align].filter(x => x.startsWith('margin')) : []), ...(el.va ? ['align-items:' + { top: 'flex-start', middle: 'center', bottom: 'flex-end' }[el.va]] : []), ...(setv(el.gap) ? [`column-gap:${Math.max(0, +el.gap || 0)}px`] : [])];
-      return `<div class="pdp-item${fit ? ' pdp-item-fit' : ''}${el.side === 'right' ? ' pdp-item-rev' : ''}${mb}" style="${ist.join(';')}">${pic}<div class="pdp-item-body"${el.ta ? ` style="text-align:${el.ta}"` : ''}>${el.v.trim() ? `<div${txs(el.tStyle, 'bold font-lg')}>${inl(el.v)}</div>` : ''}${String(el.sub || '').trim() ? `<div${txs(el.sStyle || { italic: true }, 'font-lg')}>${inl(el.sub)}</div>` : ''}${String(el.body || '').trim() ? `<div${txs(el.bStyle, 'font-sm', { css: ['margin-top:.6em'] })}>${String(el.body).split('\n').some(isLi) ? rich(el.body, 'block') : rich(el.body, 'inline')}</div>` : ''}</div></div>`;
+      if (el.side === 'stack' || el.mstack) ist.push('--ipa:' + ({ center: 'center', right: 'flex-end' }[el.ta] || 'flex-start'), ...(setv(el.gap) ? [`row-gap:${Math.max(0, +el.gap || 0)}px`] : []));
+      return `<div class="pdp-item${fit ? ' pdp-item-fit' : ''}${el.side === 'right' ? ' pdp-item-rev' : ''}${el.side === 'stack' ? ' pdp-item-stack' : el.mstack === 'tm' ? ' pdp-item-tstack' : el.mstack ? ' pdp-item-mstack' : ''}${mb}" style="${ist.join(';')}">${pic}<div class="pdp-item-body"${el.ta ? ` style="text-align:${el.ta}"` : ''}>${el.v.trim() ? `<div${txs(el.tStyle, 'bold font-lg')}>${inl(el.v)}</div>` : ''}${String(el.sub || '').trim() ? `<div${txs(el.sStyle || { italic: true }, 'font-lg')}>${inl(el.sub)}</div>` : ''}${String(el.body || '').trim() ? `<div${txs(el.bStyle, 'font-sm', { css: ['margin-top:.6em'] })}>${String(el.body).split('\n').some(isLi) ? rich(el.body, 'block') : rich(el.body, 'inline')}</div>` : ''}</div></div>`;
     }
     if (el.t === 'video') { // YouTube link or a video file (assets/video/{SKU}_PDP_video{n}.mp4)
       const vcss = [...sz, ...(s.align && ALIGN[s.align] ? ALIGN[s.align] : [])], vst = vcss.length ? ` style="${vcss.join(';')}"` : '';
@@ -1224,7 +1241,11 @@ ${items}
       const cs = [...bgCss(d.cbg, b.id + '.cbg.bg'), ...roundCss(d.crad, 'r')];
       const pads = ((d.cpad || {}).pad || []).map(v => Math.max(0, +v || 0)), bc = [];
       if (pads.some(Boolean)) bc.push('padding:' + pads.map(v => v + '%').join(' '));
-      if (d.calign) bc.push('align-items:' + { left: 'flex-start', center: 'center', right: 'flex-end' }[d.calign], 'text-align:' + d.calign);
+      const cp = side ? d.cpos || {} : {}, H = { left: 'flex-start', center: 'center', right: 'flex-end' };
+      if (cp.h) bc.push('align-items:' + H[cp.h], 'text-align:' + cp.h);
+      else if (d.calign) bc.push('align-items:' + H[d.calign], 'text-align:' + d.calign);
+      if (cp.v) bc.push('justify-content:' + { top: 'flex-start', middle: 'center', bottom: 'flex-end' }[cp.v]);
+      if ((cp.pad || []).some(v => +v > 0)) bc.push('padding:' + cp.pad.map(v => Math.max(0, +v || 0) + '%').join(' ') + '!important');
       const bodyPad = styleAttr(bc);
       const cards = d.cards.map(cd => {
         const f = R(cd.img, cd.id, 'image');
@@ -1279,6 +1300,10 @@ ${items}
   // Builder (LIVARA) styles only when LIVARA sections are used and the page's own CSS doesn't already style them.
   if (st.pageCss) css = (/class="[^"]*\b(livara-|more-info)/.test(body) && !/\.livara-banner|\.more-info/.test(st.pageCss) ? ORIG_CSS + '\n' : '') + st.pageCss + css;
   if (body.includes('pdp-') || body.includes('--tw:')) css += PDP_CSS;
+  if (/--al[DTM]:/.test(body)) css += `
+      [style*="--alD:"] { text-align: var(--alD) !important; }
+      @media only screen and (max-width: 1200px) { [style*="--alT:"] { text-align: var(--alT) !important; } }
+      @media only screen and (max-width: 768px) { [style*="--alM:"] { text-align: var(--alM) !important; } }`;
   if (P) {
     const hl = (sel ? `[data-bid="${sel}"]{outline:3px solid #c27a35!important;outline-offset:-3px}` : '') + (selEl ? `[data-oid="${selEl}"]{outline:2px solid #ec206e!important;outline-offset:2px}` : '');
     return { html: `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${LIB_CSS}</style><style>${PREVIEW_BASE}</style><style>${css}</style><style>html,body{scrollbar-width:auto!important;-ms-overflow-style:auto!important;scrollbar-color:#b9ada0 transparent!important}body{font-family:"GT Walsheim Pro",system-ui,-apple-system,"Segoe UI",sans-serif}${clean ? '' : `[data-bid]{cursor:pointer}[data-bid]:hover{outline:2px dashed rgba(194,122,53,.7);outline-offset:-2px}${hl}`}${grid ? GRID_CSS : ''}</style></head><body>\n${body}\n</body></html>`, files, warns };
@@ -1343,6 +1368,8 @@ const ICONS = {
   text: '<path d="M4 7V4h16v3M9 20h6M12 4v16"/>',
   columns: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/>',
   blank: '<rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="3 3"/><path d="M12 8v8M8 12h8"/>',
+  code: '<path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/>',
+  imgtext: '<rect x="2" y="6" width="8" height="8" rx="1.5"/><path d="M13 7h9M13 10.5h9M13 14h6M2 18.5h20"/>',
   totop: '<path d="M5 4h14M12 20V9M7 13l5-5 5 5"/>', tobottom: '<path d="M5 20h14M12 4v11M7 11l5 5 5-5"/>',
   video: '<rect x="2" y="5" width="20" height="14" rx="3"/><path d="m10 9 5 3-5 3z"/>',
   features: '<rect x="3" y="4" width="8" height="6" rx="1"/><path d="M14 6h7M14 9h5"/><rect x="13" y="14" width="8" height="6" rx="1"/><path d="M3 16h7M5 19h5"/>',
@@ -1371,8 +1398,8 @@ const ICONS = {
   plus: '<path d="M12 5v14M5 12h14"/>', grid: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>', check: '<path d="M20 6 9 17l-5-5"/>',
 };
 const ico = (n, cls) => `<svg class="ico${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
-const TYPE_ICON = { cards: 'cards', divline: 'divider', hero: 'hero', intro: 'intro', text: 'text', columns: 'columns', blank: 'blank', video: 'video', features: 'features', profile: 'profile', brand: 'brand', image: 'image', moreinfo: 'moreinfo', banner: 'banner' };
-const EL_ICON = { item: 'cards', video: 'video', divider: 'divider', headline: 'headline', title: 'title', text: 'para', icon: 'icon', icons: 'icons', image: 'image', logo: 'logo', button: 'button' };
+const TYPE_ICON = { raw: 'code', imgtext: 'imgtext', cards: 'cards', divline: 'divider', hero: 'hero', intro: 'intro', text: 'text', columns: 'columns', blank: 'blank', video: 'video', features: 'features', profile: 'profile', brand: 'brand', image: 'image', moreinfo: 'moreinfo', banner: 'banner' };
+const EL_ICON = { item: 'imgtext', video: 'video', divider: 'divider', headline: 'headline', title: 'title', text: 'para', icon: 'icon', icons: 'icons', image: 'image', logo: 'logo', button: 'button' };
 
 /* ---------- App state ---------- */
 let st = blankState();
@@ -1521,7 +1548,7 @@ document.querySelectorAll('[data-dev]').forEach(b => b.addEventListener('click',
 
 /* ---------- Library & outline ---------- */
 function renderLib() {
-  $('#lib').innerHTML = ORDER.map(t => `<button class="chip${t === 'blank' ? ' chip-new' : ''}" draggable="true" data-new="${t}">${ico(TYPE_ICON[t])}<span>${TYPES[t].label}</span></button>`).join('');
+  $('#lib').innerHTML = ORDER.map(t => `<button class="chip${t === 'blank' ? ' chip-new' : t === 'raw' ? ' chip-wide' : ''}" draggable="true" data-new="${t}">${ico(TYPE_ICON[t])}<span>${TYPES[t].label}</span></button>`).join('');
   $('#lib').querySelectorAll('.chip').forEach(c => {
     c.addEventListener('dragstart', e => { e.dataTransfer.setData('text/x-new', c.dataset.new); e.dataTransfer.effectAllowed = 'copy'; });
     c.addEventListener('click', () => { const i = st.blocks.findIndex(b => b.id === selId); addBlock(c.dataset.new, i < 0 ? st.blocks.length : i + 1); });
@@ -1660,10 +1687,12 @@ function styleRows(s, onChange, withFont) {
   const box = document.createElement('div'); box.className = 'list';
   const wId = fid(), zId = fid(), cId = fid();
   box.innerHTML = alignSeg(s.align) + (withFont ? `
+    ${[['alignT', 'Tablet align'], ['alignM', 'Mobile align']].map(([k, l]) => `<div class="prow"><span>${l}</span><div class="seg" role="group" aria-label="${l}" data-dev="${k}">${[['', 'Same'], ['left', 'Left'], ['center', 'Center'], ['right', 'Right']].map(([v, tx]) => `<button data-v="${v}" aria-pressed="${(s[k] || '') === v}">${tx}</button>`).join('')}</div></div>`).join('')}
     <div class="prow"><label for="${wId}">Weight</label><div class="pin"><select id="${wId}"><option value="">Default</option><option value="bold">Bold</option><option value="regular">Regular</option></select><label class="check"><input type="checkbox" data-ital> <i>Italic</i></label></div></div>
     <div class="prow"><label for="${zId}">Size</label><select id="${zId}"><option value="">Default</option><option value="xs">XS</option><option value="sm">S</option><option value="md">M</option><option value="lg">L</option><option value="xlg">XL</option></select></div>
     <div class="prow"><label for="${cId}">Colour</label><div class="pin"><input type="color" id="${cId}"><button class="btn sm ghost" data-c>Default</button></div></div>` : '');
-  box.querySelectorAll('.seg button').forEach(btn => btn.onclick = () => { s.align = btn.dataset.v; box.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', x === btn)); onChange(); });
+  box.querySelectorAll('.seg:not([data-dev]) button').forEach(btn => btn.onclick = () => { s.align = btn.dataset.v; box.querySelectorAll('.seg:not([data-dev]) button').forEach(x => x.setAttribute('aria-pressed', x === btn)); onChange(); });
+  box.querySelectorAll('.seg[data-dev]').forEach(sg => sg.querySelectorAll('button').forEach(btn => btn.onclick = () => { s[sg.dataset.dev] = btn.dataset.v; sg.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === btn)); onChange(); }));
   if (withFont) {
     const [we, ze] = box.querySelectorAll('select'), ce = box.querySelector('input[type=color]'), cb = box.querySelector('[data-c]');
     const it = box.querySelector('[data-ital]'); it.checked = !!s.italic; it.onchange = () => { s.italic = it.checked; onChange(); };
@@ -1960,7 +1989,8 @@ function itemEditor(el, body, names, b, tt) {
     <label for="${ids[1]}" style="margin-top:6px">Subtitle <span class="fhint">(italic, e.g. 3 x 30g)</span></label><input type="text" id="${ids[1]}">
     <label id="${ids[2]}l" style="margin-top:6px">Text</label>${TOOLBAR}<div class="rte" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="${ids[2]}l" id="${ids[2]}"></div><div class="linkbar" hidden><input type="text" placeholder="https://www.amway.my/…" aria-label="Link address"><button class="btn sm">Add link</button><button class="btn sm ghost">Cancel</button></div>
     <div class="prow" style="margin-top:6px"><label for="${ids[3]}">Picture width</label><div class="pin"><input type="number" id="${ids[3]}" min="1" style="width:72px"><select aria-label="Picture width unit" data-iwu><option value="%">% of item</option><option value="px">px</option></select></div></div>
-    <div class="prow"><span>Layout</span><div class="seg seg-full" role="group" aria-label="Picture side"><button data-side="" aria-pressed="${el.side !== 'right'}">Picture left</button><button data-side="right" aria-pressed="${el.side === 'right'}">Picture right</button></div></div>
+    <div class="prow"><span>Layout</span><div class="seg seg-full" role="group" aria-label="Picture side"><button data-side="" aria-pressed="${!el.side}">Picture left</button><button data-side="right" aria-pressed="${el.side === 'right'}">Picture right</button><button data-side="stack" aria-pressed="${el.side === 'stack'}">Stacked</button></div></div>
+    <div class="prow" data-mstackrow ${el.side === 'stack' ? 'hidden' : ''}><span>Stack on</span><div class="seg seg-full" role="group" aria-label="Stack on smaller screens">${[['', 'Never'], ['m', 'Mobile'], ['tm', 'Tablet & mobile']].map(([v, l]) => `<button data-mstack="${v}" aria-pressed="${(el.mstack === true ? 'm' : el.mstack || '') === v}">${l}</button>`).join('')}</div></div>
     <div class="prow"><span>Text align</span><div class="seg seg-full" role="group" aria-label="Text align">${[['', 'Default'], ['left', 'Left'], ['center', 'Center'], ['right', 'Right']].map(([v, l]) => `<button data-ta="${v}" aria-pressed="${(el.ta || '') === v}">${l}</button>`).join('')}</div></div>
     <div class="prow"><span>Text next to picture</span><div class="seg seg-full" role="group" aria-label="Text position">${[['top', 'Top'], ['', 'Middle'], ['bottom', 'Bottom']].map(([v, l]) => `<button data-va="${v}" aria-pressed="${(el.va || '') === v}">${l}</button>`).join('')}</div></div>
     <div class="prow"><label for="${ids[3]}g">Space</label><div class="pin"><input type="number" min="0" id="${ids[3]}g" placeholder="Auto" style="width:72px">px between picture and text</div></div>
@@ -1976,6 +2006,9 @@ function itemEditor(el, body, names, b, tt) {
   iu.onchange = () => { el.iwu = iu.value; if (iu.value === 'px' && +iw.value <= 90) iw.value = el.iw = '120'; if (iu.value === '%' && +iw.value > 90) iw.value = el.iw = '30'; schedulePreview(); };
   const seg = (attr, key) => box.querySelectorAll(`[data-${attr}]`).forEach(x => x.onclick = () => { el[key] = x.dataset[attr]; box.querySelectorAll(`[data-${attr}]`).forEach(y => y.setAttribute('aria-pressed', y === x)); schedulePreview(); });
   seg('ta', 'ta'); seg('va', 'va'); seg('side', 'side');
+  box.querySelectorAll('[data-side]').forEach(x => x.addEventListener('click', () => { box.querySelector('[data-mstackrow]').hidden = x.dataset.side === 'stack'; }));
+  if (el.mstack === true) el.mstack = 'm'; // older projects: a tick box
+  seg('mstack', 'mstack');
   box.after(fitRows(el, 'The picture takes the height of the text next to it.'));
   // Font, size, weight, italic and colour for each text part.
   const st = document.createElement('div'); st.className = 'list';
@@ -2128,6 +2161,12 @@ function cardLayoutEditor(d, b, names) {
     <div class="prow"><label for="${gId}">Gap</label><div class="pin"><input type="number" id="${gId}" min="0" placeholder="Auto" style="width:64px" data-gap>px between cards</div></div>
     <div class="fhint">Tablet shows up to 2 per row, mobile 1 per row.</div></div>
     <div class="poscard"><div class="poshead">${ico('blank')}Card style (all cards)</div><div data-cs></div></div>`;
+  if (d.layout === 'side') {
+    const pc = document.createElement('div'); pc.className = 'poscard';
+    pc.innerHTML = `<div class="poshead">${ico('imgtext')}Content position (next to the picture)</div>`;
+    pc.appendChild(posControls(d.cpos || (d.cpos = {}), { reset: true, label: 'Place card content', hint: 'Top / middle / bottom moves the text up or down next to the picture; left / centre / right lines it up. Padding is a % of the card width and replaces the card padding when set.' }));
+    box.insertBefore(pc, box.children[1]);
+  }
   box.querySelectorAll('[data-lay]').forEach(x => x.onclick = () => { d.layout = x.dataset.lay; renderInspector(); schedulePreview(); });
   box.querySelectorAll('[data-per]').forEach(x => x.onclick = () => { d.per = x.dataset.per; box.querySelectorAll('[data-per]').forEach(y => y.setAttribute('aria-pressed', y === x)); onEdit(b); });
   const iw = box.querySelector('[data-iw]'); if (iw) { const v = box.querySelector('[data-iwv]'); iw.value = d.imgW || 40; v.textContent = iw.value + '%'; iw.oninput = () => { d.imgW = iw.value; v.textContent = iw.value + '%'; schedulePreview(); }; }
@@ -3032,7 +3071,7 @@ $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 // GitHub Pages sends the upload time as Last-Modified (document.lastModified). Without that header the browser reports "now",
 // so then the time this file was built is shown instead.
 (() => {
-  const built = new Date('2026-10-21T09:47:58Z'), lm = new Date(document.lastModified);
+  const built = new Date('2026-10-21T13:26:18Z'), lm = new Date(document.lastModified);
   const d = !isNaN(lm) && Math.abs(Date.now() - lm) > 10000 ? lm : built;
   if (isNaN(d)) return;
   const p = n => String(n).padStart(2, '0'), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
