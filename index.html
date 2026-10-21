@@ -535,9 +535,10 @@ const EL = {
   logo: { label: 'Logo', img: true, ph: [600, 200] },
   icons: { label: 'Icon row', init: () => ({ items: [newIco(), newIco(), newIco()], isz: '', isu: 'vw', gap: '' }) },
   divider: { label: 'Divider', init: () => ({ dv: { w: '100', th: '2', cap: 'round', fill: 'solid', c1: '#9F672E', c2: '#4E2312', sp: '' }, style: { align: 'center' } }) },
+  video: { label: 'Video', init: () => ({ vsrc: 'yt', url: '', ctrl: false }) },
   button: { label: 'Button', def: 'Shop now', init: () => ({ href: '', iconPos: 'left', btn: { fill: 'solid', c1: '#9F672E', c2: '#4E2312', tc: '#FFFFFF', angle: '135', r: '6', size: 'md' } }) },
 };
-const EL_ORDER = ['headline', 'title', 'text', 'icon', 'icons', 'image', 'logo', 'button', 'divider'];
+const EL_ORDER = ['headline', 'title', 'text', 'icon', 'icons', 'image', 'video', 'logo', 'button', 'divider'];
 function newIco() { return { id: uid('k'), img: S(), cap: '' }; }
 const newEl = (t, v, extra) => Object.assign({ id: uid('e'), t, v: v ?? (EL[t].def || ''), img: S(), style: {}, w: '' }, EL[t].init ? EL[t].init() : {}, extra || {});
 const elSum = els => { const e = (els || []).find(x => EL[x.t] && EL[x.t].text && x.v.trim()); return e ? e.v.split('\n')[0] : (els || []).length + ' elements'; };
@@ -596,6 +597,7 @@ const TYPES = {
     { k: 'alt', t: 'text', label: 'Image description (alt text)' } ],
     make: () => ({ desk: S(), tab: S(), mob: S(), alt: '' }), sum: d => d.alt || 'Image' },
   moreinfo: { label: 'More Information', fields: [
+    { k: 'sbg', t: 'bg', label: 'Background' },
     { k: 'title', t: 'text', label: 'Heading' },
     { k: 'items', t: 'list', label: 'Items', add: 'Add item', title: it => it.title,
       make: () => ({ id: uid('i'), title: 'NEW ITEM', body: '', specs: '' }),
@@ -672,12 +674,13 @@ function migrate(st) {
 
 /* ---------- File naming: {SKU}_PDP_{part}{n}.{ext}, numbered in page order like the original ---------- */
 function autoNames(st) {
-  const m = {}, c = { banner: 0, img: 0, icon: 0, logo: 0, wl: 0, bg: 0, btn: 0 };
+  const m = {}, c = { banner: 0, img: 0, icon: 0, logo: 0, wl: 0, bg: 0, btn: 0, video: 0 };
   const P = (st.sku || '').trim() + '_PDP_';
   const walk = (els, logoName) => (els || []).forEach(el => {
     if (el.t === 'icon') m[el.id] = P + 'icon' + (++c.icon);
     else if (el.t === 'image') m[el.id] = P + 'img' + (++c.img);
     else if (el.t === 'logo') m[el.id] = logoName();
+    else if (el.t === 'video' && el.vsrc === 'file') m[el.id] = P + 'video' + (++c.video);
     else if (el.t === 'icons') (el.items || []).forEach(it => m[it.id] = P + 'icon' + (++c.icon));
     else if (el.t === 'button' && el.img && (el.img.a || el.img.name)) m[el.id] = P + 'btn_icon' + (++c.btn);
   });
@@ -699,6 +702,7 @@ function autoNames(st) {
       if ((d.cbg || {}).type === 'image') m[id + '.cbg.bg'] = P + 'bg' + (++c.bg);
       d.cards.forEach(cd => { m[cd.id] = P + 'img' + (++c.img); walk(cd.els, heroLogo); });
     }
+    else if (b.type === 'moreinfo') { if ((d.sbg || {}).type === 'image') m[id + '.sbg.bg'] = P + 'bg' + (++c.bg); }
     else if (b.type === 'columns') {
       if ((d.sbg || {}).type === 'image') m[id + '.sbg.bg'] = P + 'bg' + (++c.bg);
       d.cols.forEach(col => { if ((col.bgx || {}).type === 'image') m[id + '.' + col.id + '.bg'] = P + 'bg' + (++c.bg); walk(col.els, heroLogo); });
@@ -738,7 +742,7 @@ function resolveSlot(slot, ref, names, assets, key) {
   const a = slot.a && assets[slot.a];
   if (a) {
     let n = custom || names[ref] || 'image';
-    if (!extOf(n)) n += extOf(a.name) || (iconLike(key) ? '.png' : '.jpg');
+    if (!extOf(n)) n += extOf(a.name) || (key === 'video' ? '.mp4' : iconLike(key) ? '.png' : '.jpg');
     return { name: n, kind: 'new', asset: a };
   }
   return custom ? { name: custom, kind: 'existing' } : null;
@@ -760,6 +764,9 @@ const PDP_CSS = `
       .pdp-image img { max-width: 100%; }
       .pdp-logo { width: 20vw; max-width: 100%; }
       .pdp-btn-wrap { align-self: stretch; }
+      .pdp-video { width: 100%; max-width: 100%; }
+      .pdp-video iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; }
+      .pdp-video video { display: block; width: 100%; height: auto; }
       .pdp-cards-sec { padding: 5vw 12vw; }
       .pdp-cards { display: grid; grid-template-columns: repeat(var(--per, 3), minmax(0, 1fr)); gap: var(--cgap, 2vw); align-items: stretch; }
       .pdp-card { display: flex; flex-direction: column; min-width: 0; overflow: hidden; background-color: #F3F3F3; border-radius: 12px; }
@@ -971,6 +978,18 @@ function buildHTML(st, assets, opt) {
       const body = el.t === 'text' ? (el.v.split('\n').some(l => isLi(l) || isOl(l)) ? rich(el.v, 'block') : rich(el.v, 'inline')) : lines;
       return `<div${txs(s, base + mb, { css: sz, alignVar: ctx.name === 'hero' })}>${body}${el.t === 'text' && ctx.name === 'feature' ? '\n          ' : ''}</div>`;
     }
+    if (el.t === 'video') { // YouTube link or a video file (assets/video/{SKU}_PDP_video{n}.mp4)
+      const vcss = [...sz, ...(s.align && ALIGN[s.align] ? ALIGN[s.align] : [])], vst = vcss.length ? ` style="${vcss.join(';')}"` : '';
+      const box = txt => `<div class="pdp-video${mb}"${vst}><div style="aspect-ratio:16/9;background:#151210;color:#e9e1d7;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;font:13px/1.4 system-ui,sans-serif;text-align:center;padding:10px"><div style="font-size:34px;line-height:1">&#9654;</div><div style="opacity:.75;word-break:break-all">${esc(txt)}</div></div></div>`;
+      if (el.vsrc !== 'file') {
+        const u = ytEmbed(el.url); if (!u) return P ? box('YouTube video · no link yet') : '';
+        return P ? box(u) : `<div class="pdp-video${mb}"${vst}><iframe src="${esc(u)}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>`;
+      }
+      const vf = R(el.img, el.id, 'video'); if (!vf) return P ? box('Video file · not set') : '';
+      vf.path = 'assets/video/' + vf.name;
+      const vsrc = P ? (vf.asset ? vf.asset.url : liveBase.replace(/img\/?$/, '') + 'video/' + encodeURI(vf.name)) : vf.path;
+      return `<div class="pdp-video${mb}"${vst}><video src="${vsrc}" playsinline${el.ctrl ? ' controls' : ' autoplay muted loop'}></video></div>`;
+    }
     const f = R(el.img, el.id, el.t);
     if (!f && !P) return '';
     const css = [...sz];
@@ -1157,7 +1176,7 @@ ${cols}
             </div>`;
       }).join('\n');
       out.push(`    ${sec(b)}
-      <div class="more-info">
+      <div class="more-info"${styleAttr(bgCss(d.sbg, b.id + '.sbg.bg'))}>
         <div class="info-body" style="position: relative; z-index: 9;">
           <div class="info-title font-xlg font-bold">${inl(d.title)}</div>
           <div class="info-content font-sm">
@@ -1322,7 +1341,7 @@ const ICONS = {
 };
 const ico = (n, cls) => `<svg class="ico${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
 const TYPE_ICON = { cards: 'cards', divline: 'divider', hero: 'hero', intro: 'intro', text: 'text', columns: 'columns', blank: 'blank', video: 'video', features: 'features', profile: 'profile', brand: 'brand', image: 'image', moreinfo: 'moreinfo', banner: 'banner' };
-const EL_ICON = { divider: 'divider', headline: 'headline', title: 'title', text: 'para', icon: 'icon', icons: 'icons', image: 'image', logo: 'logo', button: 'button' };
+const EL_ICON = { video: 'video', divider: 'divider', headline: 'headline', title: 'title', text: 'para', icon: 'icon', icons: 'icons', image: 'image', logo: 'logo', button: 'button' };
 
 /* ---------- App state ---------- */
 let st = blankState();
@@ -1642,7 +1661,7 @@ function elsEditor(label, els, b, names) {
   els.forEach((el, i) => {
     const def = EL[el.t]; if (!def) return;
     const det = document.createElement('details'); det.className = 'item el'; det.dataset.key = el.id; det.open = openItems.has(el.id);
-    const snip = el.t === 'divider' ? `${(el.dv || {}).w || 100}% · ${(el.dv || {}).th || 2}px` : el.t === 'icons' ? (el.items || []).length + ' icons' : def.text || el.t === 'button' ? el.v.split('\n')[0] : (resolveSlot(el.img, el.id, names, assets, el.t) || { name: 'No image' }).name;
+    const snip = el.t === 'video' ? (el.vsrc === 'file' ? ((resolveSlot(el.img, el.id, names, assets, 'video') || { name: 'No file yet' }).name) : (el.url || 'No link yet')) : el.t === 'divider' ? `${(el.dv || {}).w || 100}% · ${(el.dv || {}).th || 2}px` : el.t === 'icons' ? (el.items || []).length + ' icons' : def.text || el.t === 'button' ? el.v.split('\n')[0] : (resolveSlot(el.img, el.id, names, assets, el.t) || { name: 'No image' }).name;
     det.innerHTML = `<summary><span class="etag">${ico(EL_ICON[el.t], 'sm')}${esc(def.label)}</span><span class="tt">${esc(snip || 'Empty')}</span>${+el.w > 0 ? `<span class="psum">${+el.w}%</span>` : ''}
       <button data-a="up" aria-label="Move up" ${i ? '' : 'disabled'}>${ico('up')}</button><button data-a="down" aria-label="Move down" ${i < els.length - 1 ? '' : 'disabled'}>${ico('down')}</button><button data-a="dup" aria-label="Duplicate">${ico('copy')}</button><button data-a="del" aria-label="Delete">${ico('trash')}</button></summary><div class="body"></div>`;
     det.addEventListener('toggle', () => det.open ? openItems.add(el.id) : openItems.delete(el.id));
@@ -1659,6 +1678,7 @@ function elsEditor(label, els, b, names) {
     if (el.t === 'divider') dividerEditor(el, body);
     else if (el.t === 'icons') iconsEditor(el, body, names, b, tt);
     else if (el.t === 'button') buttonEditor(el, body, names, b, tt);
+    else if (el.t === 'video') videoEditor(el, body, names, b);
     else if (def.text) {
       const id = fid();
       body.insertAdjacentHTML('beforeend', `<div class="field"><label id="${id}l">Text</label>${def.area ? TOOLBAR : TOOLBAR_SHORT}<div class="rte${def.area ? ' tall' : ''}" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="${id}l" id="${id}"></div><div class="linkbar" hidden><input type="text" placeholder="https://www.amway.my/…" aria-label="Link address"><button class="btn sm">Add link</button><button class="btn sm ghost">Cancel</button></div><div class="fhint">Select words, then use the buttons (or Ctrl+B / Ctrl+I). Click again to undo the style.</div></div>`);
@@ -1884,6 +1904,21 @@ function angleRow(o, key, onChange) {
   inp.oninput = () => { if (inp.value !== '') { o[key] = inp.value; row.querySelectorAll('[data-ang]').forEach(b => b.setAttribute('aria-pressed', +b.dataset.ang === cur())); onChange(); } };
   row.querySelectorAll('[data-ang]').forEach(b => b.onclick = () => set(b.dataset.ang));
   return row;
+}
+function videoEditor(el, body, names, b) {
+  const uId = fid(), box = document.createElement('div'); box.className = 'field';
+  box.innerHTML = `<div class="seg seg-full" role="group" aria-label="Video source"><button data-vs="yt" aria-pressed="${el.vsrc !== 'file'}">YouTube link</button><button data-vs="file" aria-pressed="${el.vsrc === 'file'}">Video file (.mp4)</button></div>
+    ${el.vsrc === 'file' ? '' : `<label for="${uId}" style="margin-top:8px">YouTube link</label><input type="text" id="${uId}" placeholder="https://www.youtube.com/watch?v=…"><div class="fhint">Any YouTube link works; it is turned into an embed.</div>`}`;
+  body.appendChild(box);
+  box.querySelectorAll('[data-vs]').forEach(x => x.onclick = () => { el.vsrc = x.dataset.vs; renderAll(); });
+  const ui = box.querySelector('#' + uId); if (ui) { ui.value = el.url || ''; ui.oninput = () => { el.url = ui.value.trim(); schedulePreview(); }; }
+  if (el.vsrc === 'file') {
+    body.appendChild(slotEl({ k: 'img', ext: 'video', label: 'Video file' }, el, el.id, names, b));
+    const c = document.createElement('label'); c.className = 'check'; c.innerHTML = '<input type="checkbox"> Show play controls <span class="fhint">(off = plays by itself, muted, on loop)</span>';
+    const cb = c.querySelector('input'); cb.checked = !!el.ctrl; cb.onchange = () => { el.ctrl = cb.checked; schedulePreview(); }; body.appendChild(c);
+  }
+  body.appendChild(sizeRows(el, false));
+  body.appendChild(styleRows(el.style || (el.style = {}), () => schedulePreview(), false));
 }
 function dividerEditor(el, body) {
   const D = el.dv || (el.dv = EL.divider.init().dv), ids = Array.from({ length: 5 }, fid);
@@ -2239,13 +2274,13 @@ function slotEl(f, obj, ref, names, b) {
   const kind = same ? 'existing' : r ? r.kind : 'empty';
   const badge = same ? 'Same as server' : { new: 'New upload', existing: 'Existing file', empty: 'Empty' }[kind];
   const id = fid(), fnId = fid();
-  el.innerHTML = `<div class="thumb">${r && r.asset ? `<img src="${r.asset.url}" alt="">` : (r ? 'On server' : 'Drop<br>image')}</div>
+  el.innerHTML = `<div class="thumb">${r && r.asset ? (ek === 'video' ? '🎬' : `<img src="${r.asset.url}" alt="">`) : (r ? 'On server' : 'Drop<br>image')}</div>
     <div class="meta">
       <div class="top"><span class="fl">${esc(f.label)}</span><span class="badge ${kind}">${badge}</span></div>
       <code>${esc(same ? r.asset.name : r ? r.name : (f.hint ? 'Not set' : auto || '—'))}</code>${same ? '<div class="fhint">This file is already on the server, so the page points to it and the zip skips it.</div>' : ''}
       ${f.hint ? `<div class="fhint" style="font-size:11.5px;color:var(--muted)">${esc(f.hint)}</div>` : ''}
       <div class="acts">
-        <label class="btn sm" for="${id}">${slot.a ? 'Replace' : 'Upload'}</label><input type="file" id="${id}" accept="image/*" hidden>
+        <label class="btn sm" for="${id}">${slot.a ? 'Replace' : 'Upload'}</label><input type="file" id="${id}" accept="${ek === 'video' ? 'video/*' : 'image/*'}" hidden>
         ${slot.a || slot.name ? '<button class="btn sm ghost danger" data-clear>Clear</button>' : ''}
       </div>
       <label for="${fnId}" style="font-size:11px;color:var(--muted)">${slot.a ? 'Filename (leave blank for automatic)' : 'Or use a file already on the server (name or full link)'}</label>
@@ -2259,7 +2294,7 @@ function slotEl(f, obj, ref, names, b) {
     slot.name = base; renderInspector(); schedulePreview();
   });
   const take = file => {
-    if (!file || !/^image\//.test(file.type)) return toast('That file is not an image.');
+    if (!file || !(ek === 'video' ? /^video\// : /^image\//).test(file.type)) return toast(ek === 'video' ? 'That file is not a video.' : 'That file is not an image.');
     const key = uid('a'); assets[key] = { name: file.name, type: file.type, blob: file, url: URL.createObjectURL(file) };
     slot.a = key; slot.name = ''; renderAll();
   };
@@ -2435,7 +2470,7 @@ function openExport() {
     <div class="fhint" id="srvSum">Checking which images exist on the server…</div>
     <div class="ftable-wrap"><table class="ftable"><thead><tr><th>File</th><th>Status</th><th>Size</th></tr></thead><tbody>
       ${pageLangs(st).map(l => `<tr><td><code>${esc(sku)}_${l}.html</code></td><td>Included</td><td></td></tr>`).join('')}
-      ${list.map(f => `<tr><td><code>${esc(f.path || 'assets/img/' + f.name)}</code></td><td ${f.kind === 'new' ? '' : `data-srv="${esc(f.name)}"`}>${f.kind === 'new' ? 'New · in the zip' : f.same ? 'Same name as a server file · skipped' : 'Uses server file'}</td><td class="mono">${f.kind === 'new' ? mb(f.asset.blob.size) : ''}</td></tr>`).join('')}
+      ${list.map(f => `<tr><td><code>${esc(f.path || 'assets/img/' + f.name)}</code></td><td ${f.kind === 'new' || f.path ? '' : `data-srv="${esc(f.name)}"`}>${f.kind === 'new' ? 'New · in the zip' : f.same ? 'Same name as a server file · skipped' : 'Uses server file'}</td><td class="mono">${f.kind === 'new' ? mb(f.asset.blob.size) : ''}</td></tr>`).join('')}
       ${extraRefs.map(n => `<tr><td><code>assets/img/${esc(n)}</code></td><td data-srv="${esc(n)}">Uses server file</td><td></td></tr>`).join('')}
     </tbody></table></div>`;
   $('#exBody').querySelectorAll('[data-go]').forEach(btn => btn.onclick = () => { $('#modal').hidden = true; select(checks[+btn.dataset.go].bid, true); });
@@ -2913,7 +2948,7 @@ $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 // GitHub Pages sends the upload time as Last-Modified (document.lastModified). Without that header the browser reports "now",
 // so then the time this file was built is shown instead.
 (() => {
-  const built = new Date('2026-10-21T08:37:25Z'), lm = new Date(document.lastModified);
+  const built = new Date('2026-10-21T08:48:00Z'), lm = new Date(document.lastModified);
   const d = !isNaN(lm) && Math.abs(Date.now() - lm) > 10000 ? lm : built;
   if (isNaN(d)) return;
   const p = n => String(n).padStart(2, '0'), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
