@@ -506,6 +506,7 @@ function imgWalk(s, fn) {
       if (Array.isArray(o)) return o.forEach(walk);
       if (!o || typeof o !== 'object') return;
       if (o.id && o.img && typeof o.img === 'object' && 'a' in o.img && (!o.t || (EL[o.t] && EL[o.t].img))) fn(o.id, o, 'img');
+      if (o.id) for (const k of ['imgT', 'imgM']) if (o[k] && 'a' in o[k]) fn(o.id + '.' + k, o, k);
       for (const [k, v] of Object.entries(o)) if (v && typeof v === 'object' && k !== 'img') walk(v);
     };
     walk(b.data);
@@ -733,7 +734,10 @@ function autoNames(st) {
       for (const f of ['desk', 'tab', 'mob']) if (k === b.id + '.' + f) return d[f];
       if (k === b.id + '.bg') return (d.bg || {}).img; if (k === b.id + '.sbg.bg') return (d.sbg || {}).img; if (k === b.id + '.cbg.bg') return (d.cbg || {}).img; }
     return null; };
-  const scan = o => { if (!o || typeof o !== 'object') return; if (o.id && o.img && o.img.a) up.add(o.id); Object.values(o).forEach(scan); };
+  // Tablet / mobile pictures of an element or card: {SKU}_PDP_tb_img1 / _mb_img1, like the banner's.
+  const dev = o => { if (!o || typeof o !== 'object') return; if (o.id && m[o.id]) for (const [k, p] of [['imgT', 'tb_'], ['imgM', 'mb_']]) if (o[k]) m[o.id + '.' + k] = m[o.id].replace('_PDP_', '_PDP_' + p); Object.values(o).forEach(dev); };
+  dev(st.blocks);
+  const scan = o => { if (!o || typeof o !== 'object') return; if (o.id && o.img && o.img.a) up.add(o.id); if (o.id) for (const k of ['imgT', 'imgM']) if (o[k] && o[k].a) up.add(o.id + '.' + k); Object.values(o).forEach(scan); };
   scan(st.blocks);
   for (const b of st.blocks) { const d = b.data;
     (d.items || []).forEach(it => { if ((it.bg || {}).img && it.bg.img.a) up.add(b.id + '.' + it.id + '.bg'); });
@@ -896,6 +900,13 @@ function buildHTML(st, assets, opt) {
   const src = (f, ph) => P ? (f ? (f.asset ? f.asset.url : (live ? liveBase + encodeURI(f.name) : phSVG(f.name, ph))) : phSVG('No image yet', ph, true)) : 'assets/img/' + f.name;
   const bid = b => P ? ` data-bid="${b.id}"` : '';
   const lbl = b => TYPES[b.type].label;
+  // Different picture on tablet / mobile: wrap the first <img> in a <picture>. Mobile falls back to tablet, then desktop.
+  const devPic = (o, key, ph, html) => {
+    const T = o.imgT ? R(o.imgT, o.id + '.imgT', key) : null, M = o.imgM ? R(o.imgM, o.id + '.imgM', key) : null;
+    if (!T && !M) return html;
+    const s = (M ? `<source media="(max-width: 768px)" srcset="${src(M, ph)}">` : '') + (T ? `<source media="(max-width: 1200px)" srcset="${src(T, ph)}">` : '');
+    return html.replace(/<img\b[\s\S]*?>/, m => `<picture style="display:contents">${s}${m}</picture>`);
+  };
 
   function resp(b, d, alt, phs, need) {
     const D = R(d.desk, b.id + '.desk', 'desk'), T = R(d.tab, b.id + '.tab', 'tab'), M = R(d.mob, b.id + '.mob', 'mob');
@@ -1026,7 +1037,7 @@ function buildHTML(st, assets, opt) {
     }
     if (el.t === 'item') { // picture on the left, title / subtitle / text on the right
       const f = R(el.img, el.id, 'image'), px = el.iwu === 'px', iw = px ? Math.max(8, +el.iw || 120) + 'px' : Math.min(90, Math.max(3, +el.iw || 30)) + '%';
-      const pic = f || P ? `<div class="pdp-item-img"><img src="${src(f, [400, 400])}" class="w-100 h-auto" alt="${esc(el.v || '')}"></div>` : '';
+      const pic = f || P ? devPic(el, 'image', [400, 400], `<div class="pdp-item-img"><img src="${src(f, [400, 400])}" class="w-100 h-auto" alt="${esc(el.v || '')}"></div>`) : '';
       const fit = ['cover', 'contain', 'fill'].includes(el.ifit) ? el.ifit : '';
       const ist = [`--iw:${iw}`, ...(fit ? [`--fit:${fit}`, `--fpos:${el.ipos || 'center'}`] : []), ...sz, ...(+el.w > 0 && s.align && ALIGN[s.align] ? ALIGN[s.align].filter(x => x.startsWith('margin')) : []), ...(el.va ? ['align-items:' + { top: 'flex-start', middle: 'center', bottom: 'flex-end' }[el.va]] : []), ...(setv(el.gap) ? [`column-gap:${Math.max(0, +el.gap || 0)}px`] : [])];
       if (el.side === 'stack' || el.mstack) ist.push('--ipa:' + ({ center: 'center', right: 'flex-end' }[el.ta] || 'flex-start'), ...(setv(el.gap) ? [`row-gap:${Math.max(0, +el.gap || 0)}px`] : []));
@@ -1046,6 +1057,7 @@ function buildHTML(st, assets, opt) {
     }
     const f = R(el.img, el.id, el.t);
     if (!f && !P) return '';
+    if (el.t !== 'icon' && (el.imgT || el.imgM) && !el._dp) { el._dp = 1; try { return devPic(el, el.t, def.ph, renderEl(el, ctx, last)); } finally { delete el._dp; } }
     const css = [...sz];
     if (hgt) css.push('height:' + hgt);
     const fit = hgt ? ' style="height:100%!important;width:auto!important;max-width:100%"' : '';
@@ -1269,7 +1281,7 @@ ${items}
       const bodyPad = styleAttr(bc);
       const cards = d.cards.map(cd => {
         const f = R(cd.img, cd.id, 'image');
-        const pic = f || P ? `<div class="pdp-card-img"><img src="${src(f, [800, 600])}" alt="${esc(cd.alt || '')}"></div>` : '';
+        const pic = f || P ? devPic(cd, 'image', [800, 600], `<div class="pdp-card-img"><img src="${src(f, [800, 600])}" alt="${esc(cd.alt || '')}"></div>`) : '';
         return addCls(`        <div class="pdp-card"${P ? ` data-oid="card${cd.id}"` : ''}${styleAttr(cs)}>
           ${pic}
           <div class="pdp-card-body"${bodyPad}>
@@ -1794,6 +1806,7 @@ function elsEditor(label, els, b, names) {
       body.appendChild(styleRows(s, () => schedulePreview(), true));
     } else {
       body.appendChild(slotEl({ k: 'img', ext: el.t, label: def.label }, el, el.id, names, b));
+      if (el.t !== 'icon') body.appendChild(devSlots(el, el.t, names, b));
       const aId = fid();
       body.insertAdjacentHTML('beforeend', `<div class="field"><label for="${aId}">Image description (alt text)</label><input type="text" id="${aId}"></div>`);
       const ai = body.querySelector('#' + aId); ai.value = el.v;
@@ -2025,6 +2038,7 @@ function fitRows(el, hint) {
 }
 function itemEditor(el, body, names, b, tt) {
   body.appendChild(slotEl({ k: 'img', ext: 'image', label: 'Picture' }, el, el.id, names, b));
+  body.appendChild(devSlots(el, 'image', names, b));
   const box = document.createElement('div'); box.className = 'field'; const ids = [fid(), fid(), fid(), fid()];
   box.innerHTML = `<label for="${ids[0]}">Title</label><input type="text" id="${ids[0]}">
     <label for="${ids[1]}" style="margin-top:6px">Subtitle <span class="fhint">(italic, e.g. 3 x 30g)</span></label><input type="text" id="${ids[1]}">
@@ -2237,6 +2251,7 @@ function cardsEditor(d, b, names) {
     });
     const body = det.querySelector('.body');
     body.appendChild(slotEl({ k: 'img', ext: 'image', label: 'Card image' }, cd, cd.id, names, b));
+    body.appendChild(devSlots(cd, 'image', names, b));
     const aId = fid();
     body.insertAdjacentHTML('beforeend', `<div class="field"><label for="${aId}">Image description (alt text)</label><input type="text" id="${aId}"></div>`);
     const ai = body.querySelector('#' + aId); ai.value = cd.alt || ''; ai.oninput = () => { cd.alt = ai.value; schedulePreview(); };
@@ -2441,6 +2456,15 @@ function fieldEl(f, obj, ref, names, b) {
   return wrapEl;
 }
 
+// Optional tablet / mobile pictures for an element or card (empty = use the desktop one).
+function devSlots(obj, ext, names, b) {
+  const has = () => [obj.imgT, obj.imgM].filter(s => s && (s.a || String(s.name || '').trim())).length;
+  const det = panel('dev' + obj.id, 'Tablet & mobile picture', has() ? has() + ' set' : 'Same as desktop'), body = det.querySelector('.body');
+  obj.imgT = obj.imgT || S(); obj.imgM = obj.imgM || S();
+  body.appendChild(slotEl({ k: 'imgT', ext, label: 'Tablet', hint: 'Optional. Uses the desktop picture if empty.' }, obj, obj.id + '.imgT', names, b));
+  body.appendChild(slotEl({ k: 'imgM', ext, label: 'Mobile', hint: 'Optional. Uses the tablet picture (or desktop) if empty.' }, obj, obj.id + '.imgM', names, b));
+  return det;
+}
 function slotEl(f, obj, ref, names, b) {
   const slot = obj[f.k], el = document.createElement('div'); el.className = 'slot';
   const ek = f.ext || f.k, r = resolveSlot(slot, ref, names, assets, ek);
@@ -2600,7 +2624,15 @@ function runChecks() {
   for (const f of buildHTML(st, assets, {}).files.values()) if (f.same) add('info', `${f.name} matches a file already on the server, so the page uses that one and the zip skips it.`);
   for (const f of buildHTML(st, assets, {}).files.values())
     if (f.kind === 'new' && f.asset.blob.size > 800 * 1024) add('info', `${f.name} is ${(f.asset.blob.size / 1048576).toFixed(1)} MB. Turn on “Optimise images” to shrink it.`);
-  for (const l of pageLangs(st).slice(1)) { const m = trMissing(st, l); if (m) add('warn', `${LANGS[l]}: ${m} text${m === 1 ? '' : 's'} not translated, so ${m === 1 ? 'it stays' : 'they stay'} in English. Page settings → Translate texts.`); }
+  for (const l of pageLangs(st).slice(1)) { // what is still in English on the BM / 中文 pages, per section
+    const tr = (st.tr || {})[l] || {}, ti = (st.trImg || {})[l] || {};
+    trWalk({ blocks: [], title: st.title, desc: st.desc, kw: st.kw }, k => { if (!String(tr[k] || '').trim()) add('warn', `${LANGS[l]}: page ${{ 'page.title': 'title', 'page.desc': 'description', 'page.kw': 'keywords' }[k]} not translated.`); });
+    for (const b of st.blocks) {
+      trWalk({ blocks: [b] }, (k, o, f) => { if (!String(tr[k] || '').trim()) add('warn', `${LANGS[l]}: not translated – “${String(o[f]).replace(/<[^>]*>|[*]/g, '').trim().split('\n')[0].slice(0, 50)}”`, b); });
+      const en = []; imgWalk({ blocks: [b] }, (ref, h, k) => { const x = ti[ref], r0 = resolveSlot(h[k], ref, names, assets, /^img/.test(k) ? (h.t || 'image') : k); if (r0 && !(x && (x.a || String(x.name || '').trim()))) en.push(r0.name); });
+      if (en.length) add('info', `${LANGS[l]}: ${en.length} image${en.length === 1 ? '' : 's'} use${en.length === 1 ? 's' : ''} the English version – ${en.slice(0, 4).join(', ')}${en.length > 4 ? '…' : ''}. Fine unless the picture has words on it.`, b);
+    }
+  }
   const seen = new Map();
   for (const c of out) { const k = c.lvl + c.where + c.msg; if (seen.has(k)) seen.get(k).n++; else seen.set(k, Object.assign(c, { n: 1 })); }
   return [...seen.values()].map(c => c.n > 1 ? Object.assign(c, { msg: `${c.msg} (×${c.n})` }) : c);
@@ -3104,7 +3136,7 @@ function openTranslate(lang, keepScroll) {
   const texts = [];
   trWalk(st, (k, o, f) => { const g = groups.get(grpOf(k)); if (g) { g.texts.push(texts.length); texts.push({ k, src: o[f] }); } });
   const names = autoNames(st), imgs = [];
-  imgWalk(st, (ref, h, k) => { const g = groups.get(grpOf(ref)); const r0 = resolveSlot(h[k], ref, names, assets, k === 'img' ? (h.t || 'image') : k); if (g && r0) { g.imgs.push(imgs.length); imgs.push({ ref, src: r0, kind: k === 'img' ? (h.t || 'image') : 'banner', label: k === 'img' ? (EL[h.t] ? EL[h.t].label : 'Card image') : { desk: 'Banner · desktop', tab: 'Banner · tablet', mob: 'Banner · mobile' }[k] }); } });
+  imgWalk(st, (ref, h, k) => { const g = groups.get(grpOf(ref)); const el = /^img/.test(k), r0 = resolveSlot(h[k], ref, names, assets, el ? (h.t || 'image') : k); if (g && r0) { g.imgs.push(imgs.length); imgs.push({ ref, src: r0, kind: el ? (h.t || 'image') : 'banner', label: el ? (EL[h.t] ? EL[h.t].label : 'Card image') + ({ imgT: ' · tablet', imgM: ' · mobile' }[k] || '') : { desk: 'Banner · desktop', tab: 'Banner · tablet', mob: 'Banner · mobile' }[k] }); } });
   const base = (st.imgBase || DEFAULT_IMG_BASE).replace(/\/?$/, '/');
   $('#trBody').innerHTML = `<div class="seg" role="group" aria-label="Language" style="margin-bottom:10px">${(st.langs || []).map(l => `<button data-tl="${l}" aria-pressed="${l === lang}">${LANGS[l]}</button>`).join('')}</div>
     <div class="fhint" style="margin-bottom:8px"><span data-miss>${trMissing(st, lang)}</span> of ${texts.length} texts not translated yet. Empty boxes stay in English. Keep **bold**, *italic* and - list marks as they are. Images: upload a ${esc(LANGS[lang])} version only where the picture has words on it; others use the English image.</div>
@@ -3130,7 +3162,7 @@ $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 // GitHub Pages sends the upload time as Last-Modified (document.lastModified). Without that header the browser reports "now",
 // so then the time this file was built is shown instead.
 (() => {
-  const built = new Date('2026-10-21T14:05:58Z'), lm = new Date(document.lastModified);
+  const built = new Date('2026-10-21T14:37:09Z'), lm = new Date(document.lastModified);
   const d = !isNaN(lm) && Math.abs(Date.now() - lm) > 10000 ? lm : built;
   if (isNaN(d)) return;
   const p = n => String(n).padStart(2, '0'), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
