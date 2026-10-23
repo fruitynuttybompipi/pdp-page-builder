@@ -382,6 +382,7 @@ details.item[open] > .body { animation: rise .2s ease-out }
     <div class="status" id="exStatus"></div>
     <div class="acts">
       <button class="btn" id="exClose">Close</button>
+      <button class="btn" id="exPrev" title="One file that opens anywhere: styles and images inside, server images loaded from amway.my">Save preview file</button>
       <button class="btn" id="exHtml">Save HTML only</button>
       <button class="btn primary" id="exZip">Save .zip</button>
     </div>
@@ -2998,6 +2999,17 @@ const toDataURL = blob => new Promise((ok, no) => { const r = new FileReader(); 
 function fromDataURL(u) { const [h, b64] = u.split(','); const bin = atob(b64), a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new Blob([a], { type: h.slice(5).split(';')[0] }); }
 // Project file = a normal .html page you can open in a browser to look at, with the editable project embedded inside it.
 const PROJ_ID = 'pdp-builder-project';
+// Preview file: the page with the template CSS and new images inside it, and server images loaded from amway.my,
+// so it looks right when opened straight from a computer. Not for upload: upload {SKU}_en.html from the zip.
+$('#exPrev').onclick = async () => {
+  const view = {};
+  for (const [k, a] of Object.entries(assets)) if (JSON.stringify(st).includes('"' + k + '"')) view[k] = { name: a.name, url: await toDataURL(a.blob) };
+  const lang = pvLangOn() || 'en';
+  const page = buildHTML(langState(st, lang), view, { preview: true, clean: true, live: true, liveBase: st.imgBase || DEFAULT_IMG_BASE }).html
+    .replace('<head>', `<head><title>${esc(st.title || st.sku || 'PDP')} · preview</title>`);
+  try { await saveFile(`${(st.sku || 'page').trim()}_${lang}_preview.html`, page); toast('Preview file saved · open it in any browser'); }
+  catch (e) { $('#exStatus').textContent = saveMsg(e); }
+};
 $('#saveProject').onclick = async () => {
   const used = {}, view = {};
   for (const [k, a] of Object.entries(assets)) if (JSON.stringify(st).includes('"' + k + '"')) { const data = await toDataURL(a.blob); used[k] = { name: a.name, type: a.type, data }; view[k] = { name: a.name, url: data }; }
@@ -3307,7 +3319,7 @@ $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 // GitHub Pages sends the upload time as Last-Modified (document.lastModified). Without that header the browser reports "now",
 // so then the time this file was built is shown instead.
 (() => {
-  const built = new Date('2026-10-23T09:19:50Z'), lm = new Date(document.lastModified);
+  const built = new Date('2026-10-23T09:22:29Z'), lm = new Date(document.lastModified);
   const d = !isNaN(lm) && Math.abs(Date.now() - lm) > 10000 ? lm : built;
   if (isNaN(d)) return;
   const p = n => String(n).padStart(2, '0'), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
