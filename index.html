@@ -847,7 +847,7 @@ const PDP_CSS = `
       .pdp-clean .container-sm { max-width: 760px; width: 100%; margin: 0 auto; padding: 0; }
       .pdp-clean .text-md.lg.b { font-size: 20px; font-weight: 700; letter-spacing: .5px; margin: 0; }
       .pdp-clean .mt-4 { margin-top: 1.5rem; line-height: 1.6; } .pdp-clean .mt-4 p { margin: 0 0 .6em; }
-      .pdp-clean .my-5 { margin: 2.5rem 0 0; }
+      .pdp-clean .my-5 { margin: 2.5rem 0 0 !important; } /* artistry.css .my-5 adds 3rem below, which made the bottom bigger than the top */
       .pdp-clean .icon-wrap { flex-wrap: wrap; row-gap: 14px; } .pdp-clean .icon-wrap img { max-width: none; height: auto; }
       @media only screen and (max-width: 768px) { .pdp-clean .text-md.lg.b { font-size: 16px; } }
       .pdp-video iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; }
@@ -1055,7 +1055,9 @@ function buildHTML(st, assets, opt) {
   const etx = (id, f) => P && !clean ? ` data-tx="${id}.${f}"` : ''; // double-click to type in the preview
   const oid = (html, k) => P && html ? html.replace(/^(\s*<[a-z]+)/i, `$1 data-oid="${k}"`) : html;
   const addCls = (html, c) => !c || !html ? html : /^<[a-z]+[^>]*?\sclass="/i.test(html) ? html.replace(/class="/, `class="${c} `) : html.replace(/^<([a-z]+)/i, `<$1 class="${c}"`);
-  const sec = (b, cls, extra) => { const c = [...(extra || []), ...boxCss(b)], k = [cls, hideCls(b)].filter(Boolean).join(' '); return `<section${k ? ` class="${k}"` : ''}${bid(b)}${c.length ? ` style="${c.join(';')}"` : ''}>`; };
+  const secPad = b => { const x = b.box || {}, d = s => [...(setv(x['pt' + s]) ? [`padding-top:${Math.max(0, +x['pt' + s] || 0)}px!important`] : []), ...(setv(x['pb' + s]) ? [`padding-bottom:${Math.max(0, +x['pb' + s] || 0)}px!important`] : [])];
+    return { css: d(''), cls: devRule2(d('T'), d('M')) }; }; // space dragged at the top / bottom of a section
+  const sec = (b, cls, extra) => { const sp = secPad(b), c = [...(extra || []), ...boxCss(b), ...sp.css], k = [cls, sp.cls, hideCls(b)].filter(Boolean).join(' '); return `<section${k ? ` class="${k}"` : ''}${bid(b)}${c.length ? ` style="${c.join(';')}"` : ''}>`; };
 
   // One element (headline, title, paragraph, icon, image, logo) inside a column.
   const ALIGN = { left: ['margin-right:auto', 'align-self:flex-start'], center: ['margin-left:auto', 'margin-right:auto', 'align-self:center'], right: ['margin-left:auto', 'align-self:flex-end'] };
@@ -1354,15 +1356,19 @@ ${cols}
         out.push(`    ${sec(b)}\n      <div class="w-100">\n        ${imgs}\n      </div>\n    </section>`);
       }
     } else if (b.type === 'artclean') {
-      const wD = +d.wD > 0 ? +d.wD : 100, wM = +d.wM > 0 ? +d.wM : 63;
+      const wD = +d.wD > 0 ? +d.wD : 100, wM = +d.wM > 0 ? +d.wM : 63, px = v => setv(v) ? Math.max(0, +v || 0) : null;
+      // Space above and below the section (same on both sides), and between the icons; tablet / mobile can differ.
+      const vp = k => px(d['vpad' + k]) != null ? [`padding-top:${px(d['vpad' + k])}px!important`, `padding-bottom:${px(d['vpad' + k])}px!important`] : [];
+      const ig = k => px(d['igap' + k]) != null ? [`margin:0 ${px(d['igap' + k]) / 2}px!important`] : [];
+      const vk = devRule2(vp('T'), vp('M')), gk = devRule2(ig('T'), ig('M'), '.icon-wrap > div'), half = px(d.igap) != null ? px(d.igap) / 2 : 10;
       const icons = (d.rows || []).flatMap(rw => rw.items || []).map(it => ({ it, f: R(it.img, it.id, 'icon') })).filter(x => x.f || P);
       // A default badge keeps its full amway.my link until you upload or type another file.
       const isrc = (it, f) => it.url && !it.img.a && f && it.url.split('/').pop() === f.name ? it.url : src(f, [160, 160]);
-      const wrap = icons.map(({ it, f }) => `          <div style="margin: 0 10px;">
+      const wrap = icons.map(({ it, f }) => `          <div style="margin: 0 ${half}px;">
             <img src="${isrc(it, f)}" width="${wD}px" class="d-none d-md-block">
             <img src="${isrc(it, f)}" width="${wM}px" class="d-block d-md-none">
           </div>`).join('\n');
-      out.push(`    ${sec(b, 'content-section pdp-clean', bgCss(d.sbg, b.id + '.sbg.bg'))}
+      out.push(`    ${sec(b, ['content-section pdp-clean', vk, gk].filter(Boolean).join(' '), [...bgCss(d.sbg, b.id + '.sbg.bg'), ...(px(d.vpad) != null ? [`padding-top:${px(d.vpad)}px`, `padding-bottom:${px(d.vpad)}px`] : [])])}
     <div class="container container-sm md text-center">
       ${String(d.title || '').trim() ? `<h3${tx(b, 'title', 'text-md lg b')}${etx(b.id, 'title')}>${inl(d.title)}</h3>` : ''}
       ${String(d.body || '').trim() ? `<div${tx(b, 'text', 'mt-4')}${etx(b.id, 'body')}>${rich(d.body, 'block')}</div>` : ''}
@@ -1742,8 +1748,11 @@ frame.addEventListener('load', () => {
 // Drag the small handles around the selected element: top / bottom = space above / below, left / right = padding. Saved for the device in the top bar.
 function drawGrip(doc) {
   doc.querySelectorAll('.pdp-grip').forEach(x => x.remove());
-  if (fsOn || !selEl) return; const o = findObj(selEl), n = doc.querySelector(`[data-oid="${selEl}"]`); if (!o || !o.t || !n) return;
-  if (!doc.getElementById('pdp-grip-css')) { const s = doc.createElement('style'); s.id = 'pdp-grip-css'; s.textContent = `.pdp-grip{position:absolute;z-index:2147483645;border-radius:7px;background:#ec206e;box-shadow:0 1px 4px rgba(0,0,0,.25);touch-action:none;opacity:.9}.pdp-grip:hover{opacity:1}.pdp-grip[data-s="mt"],.pdp-grip[data-s="mb"]{width:40px;height:10px;margin:-5px 0 0 -20px;cursor:ns-resize}.pdp-grip[data-s="pl"],.pdp-grip[data-s="pr"]{width:10px;height:40px;margin:-20px 0 0 -5px;cursor:ew-resize}.pdp-grip span{position:absolute;left:14px;top:-4px;white-space:nowrap;font:600 11px/1 system-ui,sans-serif;color:#fff;background:#2a211a;padding:3px 6px;border-radius:5px;pointer-events:none}.rx-bar{position:absolute;z-index:2147483646;display:flex;gap:2px;padding:3px;background:#2a211a;border-radius:7px;box-shadow:0 4px 14px rgba(0,0,0,.25);font:600 12px/1 system-ui,sans-serif}.rx-bar button{all:unset;color:#fff;padding:5px 8px;border-radius:5px;cursor:pointer}.rx-bar button:hover{background:rgba(255,255,255,.18)}[data-tx]:hover{cursor:text}[contenteditable="true"]{outline:2px solid #ec206e!important;outline-offset:3px;background:rgba(236,32,110,.05);cursor:text}`; doc.head.appendChild(s); }
+  if (fsOn) return;
+  const sn = selId && doc.querySelector(`body > [data-bid="${selId}"]`), sb = selId && findBlock(selId); if (sn && sb) secGrip(doc, sn, sb); // top / bottom of the selected section
+  if (!selEl) return; const n = doc.querySelector(`[data-oid="${selEl}"]`); if (!n) return;
+  const o = findObj(selEl); if (!o || !o.t) return;
+  drawGrip.css(doc);
   const win = doc.defaultView, cs = () => win.getComputedStyle(n);
   const SIDES = { mt: ['margin-top', 'above', 0, -1], mb: ['margin-bottom', 'below', 0, 1], pl: ['padding-left', 'on the left', 1, 1], pr: ['padding-right', 'on the right', 1, -1] }; // [css, label, horizontal, drag direction that adds space]
   const grips = Object.keys(SIDES).map(k => { const g = doc.createElement('div'); g.className = 'pdp-grip'; g.dataset.s = k; g.title = 'Drag to change the space ' + SIDES[k][1]; g.innerHTML = '<span hidden></span>'; doc.body.appendChild(g); return g; });
@@ -1764,6 +1773,26 @@ function drawGrip(doc) {
       g.addEventListener('pointermove', move); g.addEventListener('pointerup', up);
     });
     g.addEventListener('click', e => e.stopPropagation());
+  });
+}
+drawGrip.css = doc => { if (doc.getElementById('pdp-grip-css')) return; const s = doc.createElement('style'); s.id = 'pdp-grip-css'; s.textContent = `.pdp-grip-sec{background:#c27a35!important;width:72px!important;margin-left:-36px!important}`+`.pdp-grip{position:absolute;z-index:2147483645;border-radius:7px;background:#ec206e;box-shadow:0 1px 4px rgba(0,0,0,.25);touch-action:none;opacity:.9}.pdp-grip:hover{opacity:1}.pdp-grip[data-s="mt"],.pdp-grip[data-s="mb"]{width:40px;height:10px;margin:-5px 0 0 -20px;cursor:ns-resize}.pdp-grip[data-s="pl"],.pdp-grip[data-s="pr"]{width:10px;height:40px;margin:-20px 0 0 -5px;cursor:ew-resize}.pdp-grip span{position:absolute;left:14px;top:-4px;white-space:nowrap;font:600 11px/1 system-ui,sans-serif;color:#fff;background:#2a211a;padding:3px 6px;border-radius:5px;pointer-events:none}.rx-bar{position:absolute;z-index:2147483646;display:flex;gap:2px;padding:3px;background:#2a211a;border-radius:7px;box-shadow:0 4px 14px rgba(0,0,0,.25);font:600 12px/1 system-ui,sans-serif}.rx-bar button{all:unset;color:#fff;padding:5px 8px;border-radius:5px;cursor:pointer}.rx-bar button:hover{background:rgba(255,255,255,.18)}[data-tx]:hover{cursor:text}[contenteditable="true"]{outline:2px solid #ec206e!important;outline-offset:3px;background:rgba(236,32,110,.05);cursor:text}`; doc.head.appendChild(s); };
+// The selected section gets a handle on its top and bottom edge: drag to change the space inside it above / below (saved for the device in the top bar).
+function secGrip(doc, n, b) {
+  drawGrip.css(doc);
+  const win = doc.defaultView, x = b.box || (b.box = { w: '', wu: '%', h: '', hu: 'px' }), suf = { tablet: 'T', mobile: 'M' }[device] || '';
+  [['pt', 'padding-top', 'top'], ['pb', 'padding-bottom', 'bottom']].forEach(([k, prop, word]) => {
+    const g = doc.createElement('div'); g.className = 'pdp-grip pdp-grip-sec'; g.dataset.s = k === 'pt' ? 'mt' : 'mb'; g.title = `Drag to change the space at the ${word} of this section · double-click for the default`; g.innerHTML = '<span hidden></span>'; doc.body.appendChild(g);
+    const place = () => { const r = n.getBoundingClientRect(); g.style.left = (r.left + r.width / 2 + win.scrollX) + 'px'; g.style.top = ((k === 'pt' ? r.top + 7 : r.bottom - 7) + win.scrollY) + 'px'; }; place();
+    g.addEventListener('pointerdown', e => {
+      e.preventDefault(); e.stopPropagation(); g.setPointerCapture(e.pointerId);
+      const y0 = e.clientY, v0 = parseFloat(win.getComputedStyle(n)[k === 'pt' ? 'paddingTop' : 'paddingBottom']) || 0, lab = g.firstChild; lab.hidden = false; let v = Math.round(v0);
+      const move = ev => { v = Math.max(0, Math.round(v0 + ev.clientY - y0)); n.style.setProperty(prop, v + 'px', 'important'); lab.textContent = `${v}px ${word} space · ${device}`; place(); };
+      const up = () => { g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); lab.hidden = true;
+        if (v === Math.round(v0)) return; commitSnap(); x[k + suf] = String(v); lastScroll = win.scrollY; renderInspector(); schedulePreview(true); toast(`Section ${word} space: ${v}px (${device})`); };
+      g.addEventListener('pointermove', move); g.addEventListener('pointerup', up);
+    });
+    g.addEventListener('click', e => e.stopPropagation());
+    g.addEventListener('dblclick', e => { e.stopPropagation(); if (!setv(x[k + suf])) return; commitSnap(); delete x[k + suf]; lastScroll = win.scrollY; renderInspector(); schedulePreview(true); toast('Back to the default space'); });
   });
 }
 function fit() {
@@ -2657,9 +2686,12 @@ function fieldEl(f, obj, ref, names, b) {
     wrapEl.innerHTML = `<div class="flabel">${esc(f.label)}</div>
       <div class="prow"><label for="${a}">Desktop / tablet width</label><div class="pin"><input type="number" min="10" id="${a}" placeholder="100" style="width:64px">px</div></div>
       <div class="prow"><label for="${m}">Mobile width</label><div class="pin"><input type="number" min="10" id="${m}" placeholder="63" style="width:64px">px</div></div>
+      <div class="prow"><label for="${a}g">Space between icons${devTag()}</label><div class="pin"><input type="number" min="0" id="${a}g" placeholder="${devSuf() ? 'Same' : '20'}" style="width:64px">px</div></div>
+      <div class="prow"><label for="${a}v">Space above &amp; below${devTag()}</label><div class="pin"><input type="number" min="0" id="${a}v" placeholder="${devSuf() ? 'Same' : '45'}" style="width:64px">px</div></div>
       <div class="list"></div><div><button class="btn sm" data-addico>+ Add icon</button></div>
-      <div class="fhint">Icons sit side by side, centred, with 10px on each side. Mobile (below 768px) uses the mobile width.</div>`;
+      <div class="fhint">Icons sit side by side, centred. Mobile (below 768px) uses the mobile width. The space settings follow the Desktop / Tablet / Mobile buttons in the top bar.</div>`;
     const ai = wrapEl.querySelector('#' + a), mi = wrapEl.querySelector('#' + m); ai.value = obj.wD || ''; mi.value = obj.wM || '';
+    [['g', 'igap'], ['v', 'vpad']].forEach(([s, k]) => { const x = wrapEl.querySelector('#' + a + s), key = k + devSuf(); x.value = obj[key] ?? ''; x.oninput = () => { obj[key] = x.value; schedulePreview(); }; });
     ai.oninput = () => { obj.wD = ai.value; schedulePreview(); }; mi.oninput = () => { obj.wM = mi.value; schedulePreview(); };
     const list = wrapEl.querySelector('.list');
     items.forEach((it, i) => {
@@ -3480,7 +3512,7 @@ $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 // GitHub Pages sends the upload time as Last-Modified (document.lastModified). Without that header the browser reports "now",
 // so then the time this file was built is shown instead.
 (() => {
-  const built = new Date('2026-10-23T14:25:14Z'), lm = new Date(document.lastModified);
+  const built = new Date('2026-10-23T14:41:08Z'), lm = new Date(document.lastModified);
   const d = !isNaN(lm) && Math.abs(Date.now() - lm) > 10000 ? lm : built;
   if (isNaN(d)) return;
   const p = n => String(n).padStart(2, '0'), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
