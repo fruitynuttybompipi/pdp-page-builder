@@ -957,12 +957,17 @@ function buildHTML(st, assets, opt) {
       if (x.italic != null) p.push(`font-style:${x.italic ? 'italic' : 'normal'}!important`);
       if (okColor(x.color)) p.push(`color:${x.color}!important`);
       return p; };
-    const pt = rule('T'), pm = rule('M'); if (!pt.length && !pm.length) return '';
-    const k = 'pdpx-' + (devRules.length + 1);
-    if (pt.length) devRules.push(`@media only screen and (max-width: 1200px) { .${k} { ${pt.join('; ')} } }`); else devRules.push('');
-    if (pm.length) devRules.push(`@media only screen and (max-width: 768px) { .${k} { ${pm.join('; ')} } }`);
-    return k;
+    return devRule2(rule('T'), rule('M'));
   };
+  // One class whose tablet (<=1200px) and mobile (<=768px) rules override the desktop look. sub = extra selector inside.
+  function devRule2(pt, pm, sub) {
+    if (!pt.length && !pm.length) return '';
+    const k = 'pdpx-' + (devRules.length + 1), sel = sub ? `.${k} ${sub}` : '.' + k;
+    devRules.push(pt.length ? `@media only screen and (max-width: 1200px) { ${sel} { ${pt.join('; ')} } }` : '');
+    if (pm.length) devRules.push(`@media only screen and (max-width: 768px) { ${sel} { ${pm.join('; ')} } }`);
+    return k;
+  }
+  const AL3 = { left: 'flex-start', center: 'center', right: 'flex-end' };
   const txs = (s, cls, o) => {
     o = o || {}; s = s || {}; const css = [];
     let c = String(cls || '').split(' ').filter(Boolean);
@@ -1043,10 +1048,12 @@ function buildHTML(st, assets, opt) {
       if (setv(el.gap)) css.push(`--tg:${Math.max(0, +el.gap || 0)}px`);
       const AL = { left: 'flex-start', center: 'center', right: 'flex-end' };
       if (AL[el.calign]) css.push(`--ia:${AL[el.calign]}`, `--ta:${el.calign}`); // align content in every item
+      const caD = d => AL[el['calign' + d]] ? [`--ia:${AL[el['calign' + d]]}!important`, `--ta:${el['calign' + d]}!important`] : [];
+      const ck = devRule2(caD('T'), caD('M'));
       if (AL[el.place]) css.push(`justify-content:${AL[el.place]}`); // where a short last line sits
       if (setv(el.igap)) css.push(`--irg:${Math.max(0, +el.igap || 0)}px`);
       css.push(`--imin:${setv(el.imin) ? Math.max(0, +el.imin || 0) : 150}px`);
-      const lc = (el.place === 'stretch' ? ' pdp-its-grow' : '') + (nt ? ' pdp-its-nt' : '') + (nm ? ' pdp-its-nm' : '') + [['d', lay.d], ['t', lay.t], ['m', lay.m]].filter(([, v]) => v).map(([k, v]) => ` pdp-its-${k}-${v}`).join('');
+      const lc = (ck ? ' ' + ck : '') + (el.place === 'stretch' ? ' pdp-its-grow' : '') + (nt ? ' pdp-its-nt' : '') + (nm ? ' pdp-its-nm' : '') + [['d', lay.d], ['t', lay.t], ['m', lay.m]].filter(([, v]) => v).map(([k, v]) => ` pdp-its-${k}-${v}`).join('');
       return `<div class="pdp-ititles${lc}${mb}" style="${css.join(';')}">${items.map(({ it, f }) => `
           <div class="pdp-ititle">${f || P ? devPic(it, 'icon', [300, 300], `<div class="pdp-ititle-img"><img src="${src(f, [300, 300])}" alt="${esc(String(it.title || '').replace(/[*]/g, ''))}"></div>`) : ''}${String(it.title || '').trim() ? `<div${txs(el.tStyle, 'bold font-lg')}>${inl(it.title)}</div>` : ''}</div>`).join('')}
         </div>`;
@@ -1102,7 +1109,9 @@ function buildHTML(st, assets, opt) {
       const fit = ['cover', 'contain', 'fill'].includes(el.ifit) ? el.ifit : '';
       const ist = [`--iw:${iw}`, ...(fit ? [`--fit:${fit}`, `--fpos:${el.ipos || 'center'}`] : []), ...sz, ...(+el.w > 0 && s.align && ALIGN[s.align] ? ALIGN[s.align].filter(x => x.startsWith('margin')) : []), ...(el.va ? ['align-items:' + { top: 'flex-start', middle: 'center', bottom: 'flex-end' }[el.va]] : []), ...(setv(el.gap) ? [`column-gap:${Math.max(0, +el.gap || 0)}px`] : [])];
       if (el.side === 'stack' || el.mstack) ist.push('--ipa:' + ({ center: 'center', right: 'flex-end' }[el.ta] || 'flex-start'), ...(setv(el.gap) ? [`row-gap:${Math.max(0, +el.gap || 0)}px`] : []));
-      return `<div class="pdp-item${fit ? ' pdp-item-fit' : ''}${el.side === 'right' ? ' pdp-item-rev' : ''}${el.side === 'stack' ? ' pdp-item-stack' : el.mstack === 'tm' ? ' pdp-item-tstack' : el.mstack ? ' pdp-item-mstack' : ''}${mb}" style="${ist.join(';')}">${pic}<div class="pdp-item-body"${el.ta ? ` style="text-align:${el.ta}"` : ''}>${el.v.trim() ? `<div${txs(el.tStyle, 'bold font-lg')}>${inl(el.v)}</div>` : ''}${String(el.sub || '').trim() ? `<div${txs(el.sStyle || { italic: true }, 'font-lg')}>${inl(el.sub)}</div>` : ''}${String(el.body || '').trim() ? `<div${txs(el.bStyle, 'font-sm', { css: ['margin-top:.6em'] })}>${String(el.body).split('\n').some(isLi) ? rich(el.body, 'block') : rich(el.body, 'inline')}</div>` : ''}</div></div>`;
+      const taD = d => { const v = el['ta' + d]; return AL3[v] ? [`--ipa:${AL3[v]}!important`] : []; }, taB = d => { const v = el['ta' + d]; return AL3[v] ? [`text-align:${v}!important`] : []; };
+      const tk = devRule2(taD('T'), taD('M')), tb = devRule2(taB('T'), taB('M'));
+      return `<div class="pdp-item${tk ? ' ' + tk : ''}${fit ? ' pdp-item-fit' : ''}${el.side === 'right' ? ' pdp-item-rev' : ''}${el.side === 'stack' ? ' pdp-item-stack' : el.mstack === 'tm' ? ' pdp-item-tstack' : el.mstack ? ' pdp-item-mstack' : ''}${mb}" style="${ist.join(';')}">${pic}<div class="pdp-item-body${tb ? ' ' + tb : ''}"${el.ta ? ` style="text-align:${el.ta}"` : ''}>${el.v.trim() ? `<div${txs(el.tStyle, 'bold font-lg')}>${inl(el.v)}</div>` : ''}${String(el.sub || '').trim() ? `<div${txs(el.sStyle || { italic: true }, 'font-lg')}>${inl(el.sub)}</div>` : ''}${String(el.body || '').trim() ? `<div${txs(el.bStyle, 'font-sm', { css: ['margin-top:.6em'] })}>${String(el.body).split('\n').some(isLi) ? rich(el.body, 'block') : rich(el.body, 'inline')}</div>` : ''}</div></div>`;
     }
     if (el.t === 'video') { // YouTube link or a video file (assets/video/{SKU}_PDP_video{n}.mp4)
       const vcss = [...sz, ...(s.align && ALIGN[s.align] ? ALIGN[s.align] : [])], vst = vcss.length ? ` style="${vcss.join(';')}"` : '';
@@ -2118,7 +2127,7 @@ function itemEditor(el, body, names, b, tt) {
     <div class="prow" style="margin-top:6px"><label for="${ids[3]}">Picture width</label><div class="pin"><input type="number" id="${ids[3]}" min="1" style="width:72px"><select aria-label="Picture width unit" data-iwu><option value="%">% of item</option><option value="px">px</option></select></div></div>
     <div class="prow"><span>Layout</span><div class="seg seg-full" role="group" aria-label="Picture side"><button data-side="" aria-pressed="${!el.side}">Picture left</button><button data-side="right" aria-pressed="${el.side === 'right'}">Picture right</button><button data-side="stack" aria-pressed="${el.side === 'stack'}">Stacked</button></div></div>
     <div class="prow" data-mstackrow ${el.side === 'stack' ? 'hidden' : ''}><span>Stack on</span><div class="seg seg-full" role="group" aria-label="Stack on smaller screens">${[['', 'Never'], ['m', 'Mobile'], ['tm', 'Tablet & mobile']].map(([v, l]) => `<button data-mstack="${v}" aria-pressed="${(el.mstack === true ? 'm' : el.mstack || '') === v}">${l}</button>`).join('')}</div></div>
-    <div class="prow"><span>Text align</span><div class="seg seg-full" role="group" aria-label="Text align">${[['', 'Default'], ['left', 'Left'], ['center', 'Center'], ['right', 'Right']].map(([v, l]) => `<button data-ta="${v}" aria-pressed="${(el.ta || '') === v}">${l}</button>`).join('')}</div></div>
+    <div class="prow"><span>Text align${devTag()}</span><div class="seg seg-full" role="group" aria-label="Text align">${[['', devSuf() ? 'Same' : 'Default'], ['left', 'Left'], ['center', 'Center'], ['right', 'Right']].map(([v, l]) => `<button data-ta="${v}" aria-pressed="${(el['ta' + devSuf()] || '') === v}">${l}</button>`).join('')}</div></div>
     <div class="prow"><span>Text next to picture</span><div class="seg seg-full" role="group" aria-label="Text position">${[['top', 'Top'], ['', 'Middle'], ['bottom', 'Bottom']].map(([v, l]) => `<button data-va="${v}" aria-pressed="${(el.va || '') === v}">${l}</button>`).join('')}</div></div>
     <div class="prow"><label for="${ids[3]}g">Space</label><div class="pin"><input type="number" min="0" id="${ids[3]}g" placeholder="Auto" style="width:72px">px between picture and text</div></div>
     <div class="fhint">The picture never takes more than 60% of the item, so the text always has room. **bold** and *italic* work in the text.</div>`;
@@ -2132,7 +2141,7 @@ function itemEditor(el, body, names, b, tt) {
   iw.oninput = () => { el.iw = iw.value; schedulePreview(); };
   iu.onchange = () => { el.iwu = iu.value; if (iu.value === 'px' && +iw.value <= 90) iw.value = el.iw = '120'; if (iu.value === '%' && +iw.value > 90) iw.value = el.iw = '30'; schedulePreview(); };
   const seg = (attr, key) => box.querySelectorAll(`[data-${attr}]`).forEach(x => x.onclick = () => { el[key] = x.dataset[attr]; box.querySelectorAll(`[data-${attr}]`).forEach(y => y.setAttribute('aria-pressed', y === x)); schedulePreview(); });
-  seg('ta', 'ta'); seg('va', 'va'); seg('side', 'side');
+  seg('ta', 'ta' + devSuf()); seg('va', 'va'); seg('side', 'side');
   box.querySelectorAll('[data-side]').forEach(x => x.addEventListener('click', () => { box.querySelector('[data-mstackrow]').hidden = x.dataset.side === 'stack'; }));
   if (el.mstack === true) el.mstack = 'm'; // older projects: a tick box
   seg('mstack', 'mstack');
@@ -2186,17 +2195,21 @@ function dividerEditor(el, body) {
   paint();
   body.appendChild(styleRows(el.style || (el.style = {}), () => schedulePreview(), false));
 }
+// Settings that save per preview size: Desktop = key, Tablet = keyT, Mobile = keyM (empty falls back to the bigger screen).
+const devSuf = () => ({ tablet: 'T', mobile: 'M' }[device] || '');
+const devGet = (o, k) => { const d = devSuf(); return d === 'M' ? (o[k + 'M'] || o[k + 'T'] || o[k]) : d === 'T' ? (o[k + 'T'] || o[k]) : o[k]; };
+const devTag = () => ({ T: ' · Tablet', M: ' · Mobile' }[devSuf()] || '');
 function ititlesEditor(el, body, names, b, tt) {
   const items = el.items || (el.items = []), wId = fid(), gId = fid();
   body.insertAdjacentHTML('beforeend', `<div class="prow"><span>How many</span><div class="seg seg-full" role="group" aria-label="Number of icons">${[1, 2, 3, 4, 5, 6].map(k => `<button data-n="${k}" aria-pressed="${items.length === k}">${k}</button>`).join('')}</div></div><div class="fhint">Side by side in one row on desktop. Set tablet and mobile in "Layout on each screen".</div>
-    <div class="prow"><span>Align content in every item</span><div class="seg seg-full" role="group" aria-label="Align content in every item">${[['', 'Center'], ['left', 'Left'], ['right', 'Right']].map(([v, l]) => `<button data-ca="${v}" aria-pressed="${(el.calign || '') === v}">${l}</button>`).join('')}</div></div>
+    <div class="prow"><span>Align content in every item${devTag()}</span><div class="seg seg-full" role="group" aria-label="Align content in every item">${[['', devSuf() ? 'Same' : 'Center'], ['left', 'Left'], ...(devSuf() ? [['center', 'Center']] : []), ['right', 'Right']].map(([v, l]) => `<button data-ca="${v}" aria-pressed="${(el['calign' + devSuf()] || '') === v}">${l}</button>`).join('')}</div></div>
     <div class="prow"><span>Place items across the line</span><div class="seg seg-full" role="group" aria-label="Place items across the line">${[['', 'Center'], ['left', 'Left'], ['right', 'Right'], ['stretch', 'Stretch']].map(([v, l]) => `<button data-pl="${v}" aria-pressed="${(el.place || '') === v}">${l}</button>`).join('')}</div></div>
     <div class="prow"><label for="${wId}r">Space between</label><div class="pin"><input type="number" min="0" id="${wId}r" placeholder="Auto" style="width:64px">px between lines of icons</div></div>
     <div class="prow"><label for="${wId}m">Minimum width</label><div class="pin"><input type="number" min="0" id="${wId}m" placeholder="150" style="width:64px">px per item</div></div>
     <div class="fhint">When the space is narrower than this, icons drop to the next line, like Cards. "Place" decides where the shorter line sits, and Stretch widens them to fill it.</div>`);
   const ri = body.querySelector('#' + wId + 'r'); ri.value = el.igap ?? ''; ri.oninput = () => { el.igap = ri.value; schedulePreview(); };
   const mi = body.querySelector('#' + wId + 'm'); mi.value = el.imin ?? ''; mi.oninput = () => { el.imin = mi.value; schedulePreview(); };
-  [['ca', 'calign'], ['pl', 'place']].forEach(([a, k]) => body.querySelectorAll(`[data-${a}]`).forEach(x => x.onclick = () => { el[k] = x.dataset[a]; body.querySelectorAll(`[data-${a}]`).forEach(y => y.setAttribute('aria-pressed', y === x)); schedulePreview(); }));
+  [['ca', 'calign' + devSuf()], ['pl', 'place']].forEach(([a, k]) => body.querySelectorAll(`[data-${a}]`).forEach(x => x.onclick = () => { el[k] = x.dataset[a]; body.querySelectorAll(`[data-${a}]`).forEach(y => y.setAttribute('aria-pressed', y === x)); schedulePreview(); }));
   body.querySelectorAll('[data-n]').forEach(x => x.onclick = () => { const n = +x.dataset.n; while (items.length > n) items.pop(); while (items.length < n) items.push(newIT()); renderAll(); });
   const list = document.createElement('div'); list.className = 'list';
   items.forEach((it, i) => {
@@ -3283,7 +3296,7 @@ $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 // GitHub Pages sends the upload time as Last-Modified (document.lastModified). Without that header the browser reports "now",
 // so then the time this file was built is shown instead.
 (() => {
-  const built = new Date('2026-10-23T09:06:31Z'), lm = new Date(document.lastModified);
+  const built = new Date('2026-10-23T09:13:09Z'), lm = new Date(document.lastModified);
   const d = !isNaN(lm) && Math.abs(Date.now() - lm) > 10000 ? lm : built;
   if (isNaN(d)) return;
   const p = n => String(n).padStart(2, '0'), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
