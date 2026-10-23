@@ -505,7 +505,7 @@ function imgWalk(s, fn) {
     const walk = o => {
       if (Array.isArray(o)) return o.forEach(walk);
       if (!o || typeof o !== 'object') return;
-      if (o.id && o.img && typeof o.img === 'object' && 'a' in o.img && (!o.t || (EL[o.t] && EL[o.t].img))) fn(o.id, o, 'img');
+      if (o.id && o.img && typeof o.img === 'object' && 'a' in o.img && (!o.t || o.t === 'item' || (EL[o.t] && EL[o.t].img))) fn(o.id, o, 'img');
       if (o.id) for (const k of ['imgT', 'imgM']) if (o[k] && 'a' in o[k]) fn(o.id + '.' + k, o, k);
       for (const [k, v] of Object.entries(o)) if (v && typeof v === 'object' && k !== 'img') walk(v);
     };
@@ -545,13 +545,15 @@ const EL = {
   icon: { label: 'Icon', img: true, ph: [160, 160] },
   image: { label: 'Image', img: true, ph: [900, 700] },
   logo: { label: 'Logo', img: true, ph: [600, 200] },
+  ititles: { label: 'Icon + title', init: () => ({ items: [newIT(), newIT(), newIT()], iw: '45', gap: '', tStyle: {} }) },
   icons: { label: 'Icon row', init: () => ({ items: [newIco(), newIco(), newIco()], isz: '', isu: 'vw', gap: '' }) },
   divider: { label: 'Divider', init: () => ({ dv: { w: '100', th: '2', cap: 'round', fill: 'solid', c1: '#9F672E', c2: '#4E2312', sp: '' }, style: { align: 'center' } }) },
   video: { label: 'Video', init: () => ({ vsrc: 'yt', url: '', ctrl: false }) },
   item: { label: 'Image + text', def: 'Item title', init: () => ({ sub: '3 x 30g', body: 'Short description of this item.', iw: '30' }) },
   button: { label: 'Button', def: 'Shop now', init: () => ({ href: '', iconPos: 'left', btn: { fill: 'solid', c1: '#9F672E', c2: '#4E2312', tc: '#FFFFFF', angle: '135', r: '6', size: 'md' } }) },
 };
-const EL_ORDER = ['headline', 'title', 'text', 'icon', 'icons', 'image', 'video', 'item', 'logo', 'button', 'divider'];
+const EL_ORDER = ['headline', 'title', 'text', 'icon', 'icons', 'ititles', 'image', 'video', 'item', 'logo', 'button', 'divider'];
+const newIT = () => ({ id: uid('k'), img: S(), title: 'Icon title' });
 function newIco() { return { id: uid('k'), img: S(), cap: '' }; }
 const newEl = (t, v, extra) => Object.assign({ id: uid('e'), t, v: v ?? (EL[t].def || ''), img: S(), style: {}, w: '' }, EL[t].init ? EL[t].init() : {}, extra || {});
 const elSum = els => { const e = (els || []).find(x => EL[x.t] && EL[x.t].text && x.v.trim()); return e ? e.v.split('\n')[0] : (els || []).length + ' elements'; };
@@ -697,8 +699,8 @@ function autoNames(st) {
     else if (el.t === 'image') m[el.id] = P + 'img' + (++c.img);
     else if (el.t === 'logo') m[el.id] = logoName();
     else if (el.t === 'video' && el.vsrc === 'file') m[el.id] = P + 'video' + (++c.video);
-    else if (el.t === 'item') m[el.id] = P + 'img' + (++c.img);
-    else if (el.t === 'icons') (el.items || []).forEach(it => m[it.id] = P + 'icon' + (++c.icon));
+    else if (el.t === 'item') m[el.id] = el.preset === 'ititle' ? P + 'icon' + (++c.icon) : P + 'img' + (++c.img);
+    else if (el.t === 'icons' || el.t === 'ititles') (el.items || []).forEach(it => m[it.id] = P + 'icon' + (++c.icon));
     else if (el.t === 'button' && el.img && (el.img.a || el.img.name)) m[el.id] = P + 'btn_icon' + (++c.btn);
   });
   const heroLogo = () => { const n = ++c.logo; return P + 'logo' + (n > 1 ? n : ''); };
@@ -834,6 +836,10 @@ const PDP_CSS = `
       @media only screen and (min-width: 1201px) { .pdp-hide-d { display: none !important; } }
       @media only screen and (min-width: 769px) and (max-width: 1200px) { .pdp-hide-t { display: none !important; } }
       @media only screen and (max-width: 768px) { .pdp-hide-m { display: none !important; } }
+      .pdp-ititles { display: flex; flex-wrap: wrap; justify-content: space-around; align-items: flex-start; row-gap: 3vw; width: 100%; align-self: stretch; }
+      .pdp-ititle { flex: 0 0 calc(100% / var(--n, 3)); max-width: calc(100% / var(--n, 3)); padding: 0 1.5vw; display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--tg, 1.5vw); }
+      .pdp-ititle-img { width: var(--iw, 45%); } .pdp-ititle-img img { width: 100%; height: auto; display: block; }
+      @media only screen and (max-width: 768px) { .pdp-ititles[style*="--n:4"] .pdp-ititle, .pdp-ititles[style*="--n:5"] .pdp-ititle, .pdp-ititles[style*="--n:6"] .pdp-ititle { flex-basis: 50%; max-width: 50%; } } /* phones: 4-6 icons go 2 per row */
       .pdp-icons { display: flex; flex-wrap: wrap; gap: 2vw; align-items: flex-start; align-self: stretch; }
       .pdp-icon-item { width: var(--isz, 5.5vw); display: flex; flex-direction: column; align-items: center; text-align: center; gap: .4em; }
       .pdp-icon-item img { width: 100%; height: auto; }
@@ -994,6 +1000,15 @@ function buildHTML(st, assets, opt) {
       if (setv(D.sp)) c.push(`margin-top:${+D.sp || 0}px`, `margin-bottom:${+D.sp || 0}px`);
       c.push(...(ALIGN[s.align || 'center'] || ALIGN.center));
       return `<div class="pdp-divider${mb}" role="separator" style="${c.join(';')}"></div>`;
+    }
+    if (el.t === 'ititles') { // 1-6 icons side by side, each with a bold title below
+      const items = (el.items || []).map(it => ({ it, f: R(it.img, it.id, 'icon') }));
+      if (!items.length) return '';
+      const css = [`--n:${items.length}`, `--iw:${Math.min(100, Math.max(5, +el.iw || 45))}%`, ...sz];
+      if (setv(el.gap)) css.push(`--tg:${Math.max(0, +el.gap || 0)}px`);
+      return `<div class="pdp-ititles${mb}" style="${css.join(';')}">${items.map(({ it, f }) => `
+          <div class="pdp-ititle">${f || P ? devPic(it, 'icon', [300, 300], `<div class="pdp-ititle-img"><img src="${src(f, [300, 300])}" alt="${esc(String(it.title || '').replace(/[*]/g, ''))}"></div>`) : ''}${String(it.title || '').trim() ? `<div${txs(el.tStyle, 'bold font-lg')}>${inl(it.title)}</div>` : ''}</div>`).join('')}
+        </div>`;
     }
     if (el.t === 'icons') {
       const items = (el.items || []).map(it => ({ it, f: R(it.img, it.id, 'icon') })).filter(x => x.f || P);
@@ -1442,7 +1457,7 @@ const ICONS = {
 };
 const ico = (n, cls) => `<svg class="ico${cls ? ' ' + cls : ''}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
 const TYPE_ICON = { raw: 'code', imgtext: 'imgtext', cards: 'cards', divline: 'divider', hero: 'hero', intro: 'intro', text: 'text', columns: 'columns', blank: 'blank', video: 'video', features: 'features', profile: 'profile', brand: 'brand', image: 'image', moreinfo: 'moreinfo', banner: 'banner' };
-const EL_ICON = { item: 'imgtext', video: 'video', divider: 'divider', headline: 'headline', title: 'title', text: 'para', icon: 'icon', icons: 'icons', image: 'image', logo: 'logo', button: 'button' };
+const EL_ICON = { ititles: 'icon', item: 'imgtext', video: 'video', divider: 'divider', headline: 'headline', title: 'title', text: 'para', icon: 'icon', icons: 'icons', image: 'image', logo: 'logo', button: 'button' };
 
 /* ---------- App state ---------- */
 let st = blankState();
@@ -1782,8 +1797,8 @@ function elsEditor(label, els, b, names) {
   els.forEach((el, i) => {
     const def = EL[el.t]; if (!def) return;
     const det = document.createElement('details'); det.className = 'item el'; det.dataset.key = el.id; det.open = openItems.has(el.id);
-    const snip = el.t === 'item' ? (el.v || 'Image + text') : el.t === 'video' ? (el.vsrc === 'file' ? ((resolveSlot(el.img, el.id, names, assets, 'video') || { name: 'No file yet' }).name) : (el.url || 'No link yet')) : el.t === 'divider' ? `${(el.dv || {}).w || 100}% · ${(el.dv || {}).th || 2}px` : el.t === 'icons' ? (el.items || []).length + ' icons' : def.text || el.t === 'button' ? el.v.split('\n')[0] : (resolveSlot(el.img, el.id, names, assets, el.t) || { name: 'No image' }).name;
-    det.innerHTML = `<summary><span class="etag">${ico(EL_ICON[el.t], 'sm')}${esc(def.label)}</span><span class="tt">${esc(snip || 'Empty')}</span>${+el.w > 0 ? `<span class="psum">${+el.w}%</span>` : ''}
+    const snip = el.t === 'item' ? (el.v || 'Image + text') : el.t === 'video' ? (el.vsrc === 'file' ? ((resolveSlot(el.img, el.id, names, assets, 'video') || { name: 'No file yet' }).name) : (el.url || 'No link yet')) : el.t === 'divider' ? `${(el.dv || {}).w || 100}% · ${(el.dv || {}).th || 2}px` : el.t === 'icons' || el.t === 'ititles' ? (el.items || []).length + ' icons' : def.text || el.t === 'button' ? el.v.split('\n')[0] : (resolveSlot(el.img, el.id, names, assets, el.t) || { name: 'No image' }).name;
+    det.innerHTML = `<summary><span class="etag">${ico(EL_ICON[el.preset === 'ititle' ? 'icon' : el.t], 'sm')}${esc(el.preset === 'ititle' ? 'Icon + title' : def.label)}</span><span class="tt">${esc(snip || 'Empty')}</span>${+el.w > 0 ? `<span class="psum">${+el.w}%</span>` : ''}
       <button class="adv" data-a="top" aria-label="Send to top" title="Send to top" ${i ? '' : 'disabled'}>${ico('totop')}</button><button data-a="up" aria-label="Move up" title="Move up" ${i ? '' : 'disabled'}>${ico('up')}</button><button data-a="down" aria-label="Move down" title="Move down" ${i < els.length - 1 ? '' : 'disabled'}>${ico('down')}</button><button class="adv" data-a="bottom" aria-label="Send to bottom" title="Send to bottom" ${i < els.length - 1 ? '' : 'disabled'}>${ico('tobottom')}</button><button data-a="dup" aria-label="Duplicate">${ico('copy')}</button><button data-a="del" aria-label="Delete">${ico('trash')}</button></summary><div class="body"></div>`;
     det.addEventListener('toggle', () => det.open ? openItems.add(el.id) : openItems.delete(el.id));
     det.querySelector('summary').addEventListener('click', e => {
@@ -1800,6 +1815,7 @@ function elsEditor(label, els, b, names) {
     const tt = det.querySelector('.tt');
     if (el.t === 'divider') dividerEditor(el, body);
     else if (el.t === 'icons') iconsEditor(el, body, names, b, tt);
+    else if (el.t === 'ititles') ititlesEditor(el, body, names, b, tt);
     else if (el.t === 'button') buttonEditor(el, body, names, b, tt);
     else if (el.t === 'video') videoEditor(el, body, names, b);
     else if (el.t === 'item') itemEditor(el, body, names, b, tt);
@@ -2045,8 +2061,9 @@ function fitRows(el, hint) {
   return box;
 }
 function itemEditor(el, body, names, b, tt) {
-  body.appendChild(slotEl({ k: 'img', ext: 'image', label: 'Picture' }, el, el.id, names, b));
-  body.appendChild(devSlots(el, 'image', names, b));
+  const ic = el.preset === 'ititle';
+  body.appendChild(slotEl({ k: 'img', ext: ic ? 'icon' : 'image', label: ic ? 'Icon' : 'Picture' }, el, el.id, names, b));
+  body.appendChild(devSlots(el, ic ? 'icon' : 'image', names, b));
   const box = document.createElement('div'); box.className = 'field'; const ids = [fid(), fid(), fid(), fid()];
   box.innerHTML = `<label for="${ids[0]}">Title</label><input type="text" id="${ids[0]}">
     <label for="${ids[1]}" style="margin-top:6px">Subtitle <span class="fhint">(italic, e.g. 3 x 30g)</span></label><input type="text" id="${ids[1]}">
@@ -2121,6 +2138,28 @@ function dividerEditor(el, body) {
   body.querySelectorAll('[data-df]').forEach(x => x.onclick = () => { D.fill = x.dataset.df; renderInspector(); schedulePreview(); });
   paint();
   body.appendChild(styleRows(el.style || (el.style = {}), () => schedulePreview(), false));
+}
+function ititlesEditor(el, body, names, b, tt) {
+  const items = el.items || (el.items = []), wId = fid(), gId = fid();
+  body.insertAdjacentHTML('beforeend', `<div class="prow"><span>How many</span><div class="seg seg-full" role="group" aria-label="Number of icons">${[1, 2, 3, 4, 5, 6].map(k => `<button data-n="${k}" aria-pressed="${items.length === k}">${k}</button>`).join('')}</div></div><div class="fhint">Side by side in one row. On phones, 4–6 go 2 per row.</div>`);
+  body.querySelectorAll('[data-n]').forEach(x => x.onclick = () => { const n = +x.dataset.n; while (items.length > n) items.pop(); while (items.length < n) items.push(newIT()); renderAll(); });
+  const list = document.createElement('div'); list.className = 'list';
+  items.forEach((it, i) => {
+    const p = panel('it' + it.id, `${i + 1} · ${String(it.title || 'Icon').replace(/[*]/g, '')}`, ''), pb = p.querySelector('.body');
+    pb.appendChild(slotEl({ k: 'img', ext: 'icon', label: 'Icon ' + (i + 1) }, it, it.id, names, b));
+    const tId = fid(); pb.insertAdjacentHTML('beforeend', `<div class="field"><label for="${tId}">Title</label><input type="text" id="${tId}"><div class="fhint">**bold** and *italic* work.</div></div>`);
+    const ti = pb.querySelector('#' + tId); ti.value = it.title || ''; ti.oninput = () => { it.title = ti.value; p.querySelector('.tt').textContent = `${i + 1} · ${ti.value.replace(/[*]/g, '') || 'Icon'}`; schedulePreview(); };
+    pb.appendChild(devSlots(it, 'icon', names, b));
+    list.appendChild(p);
+  });
+  body.appendChild(list);
+  body.insertAdjacentHTML('beforeend', `<div class="prow"><label for="${wId}">Icon size</label><div class="pin"><input type="number" min="5" max="100" id="${wId}" style="width:64px">% of its space</div></div>
+    <div class="prow"><label for="${gId}">Space</label><div class="pin"><input type="number" min="0" id="${gId}" placeholder="Auto" style="width:64px">px between icon and title</div></div>`);
+  const wi = body.querySelector('#' + wId), gi = body.querySelector('#' + gId);
+  wi.value = el.iw || 45; gi.value = el.gap || '';
+  wi.oninput = () => { el.iw = wi.value; schedulePreview(); }; gi.oninput = () => { el.gap = gi.value; schedulePreview(); };
+  const sp = panel('its' + el.id, 'Title style', ''); sp.querySelector('.body').appendChild(styleRows(el.tStyle || (el.tStyle = {}), () => schedulePreview(), true)); body.appendChild(sp);
+  body.appendChild(sizeRows(el, false));
 }
 function iconsEditor(el, body, names, b, tt) {
   const items = el.items || (el.items = []), sId = fid(), gId = fid();
@@ -2592,7 +2631,7 @@ async function saveFile(filename, data) {
 const saveMsg = e => ({ declined: 'Save cancelled.', rate_limited: 'Another save is waiting. Try again in a moment.', too_large: 'The file is too large to save here.' }[e && e.code] || 'Saving files is not available in this view. Open the page in claude.ai.');
 
 // Things worth fixing before a page goes live. Each finding points at its section.
-const SAMPLE_TEXT = ['Shop now', 'PRODUCT NAME', 'Short line about the product.', 'Paragraph text.', 'Title', 'Headline', 'Your text here.', 'Feature title', 'Feature description.', 'Tagline', 'BRAND: Who We Are', 'About the brand.', 'Describe the product here.', 'NEW ITEM'];
+const SAMPLE_TEXT = ['Icon title', 'Shop now', 'PRODUCT NAME', 'Short line about the product.', 'Paragraph text.', 'Title', 'Headline', 'Your text here.', 'Feature title', 'Feature description.', 'Tagline', 'BRAND: Who We Are', 'About the brand.', 'Describe the product here.', 'NEW ITEM'];
 const SAMPLE_BITS = ['Volume: 50ml', 'Shake well before use.', 'Water, Glycerin, Butylene Glycol, Niacinamide', 'Adults looking for a simple, effective daily routine.'];
 function runChecks() {
   const out = [], names = autoNames(st), add = (lvl, msg, b) => out.push({ lvl, msg, bid: b && b.id, where: b ? `${TYPES[b.type].label} #${st.blocks.indexOf(b) + 1}` : 'Page' });
@@ -2610,8 +2649,8 @@ function runChecks() {
     } else if (el.t === 'button') {
       if (sample(el.v)) add('warn', `Button text is still “${el.v}”.`, b);
       if (!/^(https?:|mailto:|tel:)/i.test((el.href || '').trim())) add('warn', `Button “${el.v}” has no link.`, b);
-    } else if (el.t === 'icons') {
-      (el.items || []).forEach((it, i) => { if (!resolveSlot(it.img, it.id, names, assets, 'icon')) add('warn', `Icon row: icon ${i + 1} has no image.`, b); });
+    } else if (el.t === 'icons' || el.t === 'ititles') {
+      (el.items || []).forEach((it, i) => { if (!resolveSlot(it.img, it.id, names, assets, 'icon')) add('warn', `${lbl}: icon ${i + 1} has no image.`, b); if (el.t === 'ititles' && sample(it.title)) add('warn', `${lbl}: icon ${i + 1} still has sample text.`, b); });
     } else if (EL[el.t] && EL[el.t].img) {
       if (!resolveSlot(el.img, el.id, names, assets, el.t)) add('warn', `${lbl} has no image.`, b);
       else if (el.t !== 'icon' && !(el.v || '').trim()) add('info', `${lbl} has no description (alt text).`, b);
@@ -3151,7 +3190,7 @@ function openTranslate(lang, keepScroll) {
   const texts = [];
   trWalk(st, (k, o, f) => { const g = groups.get(grpOf(k)); if (g) { g.texts.push(texts.length); texts.push({ k, src: o[f] }); } });
   const names = autoNames(st), imgs = [];
-  imgWalk(st, (ref, h, k) => { const g = groups.get(grpOf(ref)); const el = /^img/.test(k), r0 = resolveSlot(h[k], ref, names, assets, el ? (h.t || 'image') : k); if (g && r0) { g.imgs.push(imgs.length); imgs.push({ ref, src: r0, kind: el ? (h.t || 'image') : 'banner', label: el ? (EL[h.t] ? EL[h.t].label : 'Card image') + ({ imgT: ' · tablet', imgM: ' · mobile' }[k] || '') : { desk: 'Banner · desktop', tab: 'Banner · tablet', mob: 'Banner · mobile' }[k] }); } });
+  imgWalk(st, (ref, h, k) => { const g = groups.get(grpOf(ref)); const el = /^img/.test(k), r0 = resolveSlot(h[k], ref, names, assets, el ? (h.t || 'image') : k); if (g && r0) { g.imgs.push(imgs.length); imgs.push({ ref, src: r0, kind: el ? (h.t || 'image') : 'banner', label: el ? (EL[h.t] ? EL[h.t].label : 'title' in h || 'cap' in h ? 'Icon' : 'Card image') + ({ imgT: ' · tablet', imgM: ' · mobile' }[k] || '') : { desk: 'Banner · desktop', tab: 'Banner · tablet', mob: 'Banner · mobile' }[k] }); } });
   const base = (st.imgBase || DEFAULT_IMG_BASE).replace(/\/?$/, '/');
   $('#trBody').innerHTML = `<div class="seg" role="group" aria-label="Language" style="margin-bottom:10px">${(st.langs || []).map(l => `<button data-tl="${l}" aria-pressed="${l === lang}">${LANGS[l]}</button>`).join('')}</div>
     <div class="fhint" style="margin-bottom:8px"><span data-miss>${trMissing(st, lang)}</span> of ${texts.length} texts not translated yet. Empty boxes stay in English. Keep **bold**, *italic* and - list marks as they are. Images: upload a ${esc(LANGS[lang])} version only where the picture has words on it; others use the English image.</div>
@@ -3177,7 +3216,7 @@ $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 // GitHub Pages sends the upload time as Last-Modified (document.lastModified). Without that header the browser reports "now",
 // so then the time this file was built is shown instead.
 (() => {
-  const built = new Date('2026-10-23T06:59:24Z'), lm = new Date(document.lastModified);
+  const built = new Date('2026-10-23T08:28:58Z'), lm = new Date(document.lastModified);
   const d = !isNaN(lm) && Math.abs(Date.now() - lm) > 10000 ? lm : built;
   if (isNaN(d)) return;
   const p = n => String(n).padStart(2, '0'), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
