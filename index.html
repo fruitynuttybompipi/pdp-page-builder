@@ -517,6 +517,7 @@ function langState(s, lang) {
   if (!lang || lang === 'en') return s;
   const c = JSON.parse(JSON.stringify(s)), tr = (s.tr || {})[lang] || {}, ti = (s.trImg || {})[lang] || {};
   trWalk(c, (k, o, f) => { if (String(tr[k] || '').trim()) o[f] = tr[k]; });
+  c.blocks.forEach(b => { const u = b.type === 'video' && b.data.urls && String(b.data.urls[lang] || '').trim(); if (u) b.data.url = u; });
   if (Object.keys(ti).length) {
     const names = autoNames(s);
     imgWalk(c, (ref, h, k) => {
@@ -582,7 +583,9 @@ const TYPES = {
     make: () => ({ bg: '', valign: 'flex-start', cols: [newCol([newEl('image'), newEl('title'), newEl('text')]), newCol([newEl('image'), newEl('title'), newEl('text')])] }),
     sum: d => d.cols.length + ' columns' },
   video: { label: 'YouTube video', fields: [
-    { k: 'url', t: 'text', label: 'YouTube link', hint: 'Paste any YouTube link. It is converted to an embed link.' } ],
+    { k: 'url', t: 'text', label: 'YouTube link', hint: 'Paste any YouTube link. It is converted to an embed link.' },
+    { k: 'urls', t: 'ytlangs', label: 'YouTube link' },
+    { k: 'sbg', t: 'bg', label: 'Background', simple: true } ],
     make: () => ({ url: '' }), sum: d => ytEmbed(d.url).replace('https://www.youtube.com/embed/', '') || 'No link yet' },
   features: { label: 'Feature rows', fields: [
     { k: 'startRev', t: 'check', label: 'First row has the image on the left' },
@@ -716,6 +719,7 @@ function autoNames(st) {
       if ((d.cbg || {}).type === 'image') m[id + '.cbg.bg'] = P + 'bg' + (++c.bg);
       d.cards.forEach(cd => { m[cd.id] = P + 'img' + (++c.img); walk(cd.els, heroLogo); });
     }
+    else if (b.type === 'video') { if ((d.sbg || {}).type === 'image') m[id + '.sbg.bg'] = P + 'bg' + (++c.bg); }
     else if (b.type === 'moreinfo') { if ((d.sbg || {}).type === 'image') m[id + '.sbg.bg'] = P + 'bg' + (++c.bg); }
     else if (b.type === 'columns') {
       if ((d.sbg || {}).type === 'image') m[id + '.sbg.bg'] = P + 'bg' + (++c.bg);
@@ -942,7 +946,8 @@ function buildHTML(st, assets, opt) {
   const styled = (b, g) => { const s = sv(b, g); return !!(s.align || s.size || s.weight || okColor(s.color)); };
   const wrapT = (b, g, html) => styled(b, g) ? `<div${tx(b, g, '')}>${html}</div>` : html;
   const boxCss = b => {
-    const x = b.box || {}, c = [], n = v => String(v || '').trim();
+    const x = b.box || {}, c = [], n = v => String(v || '').trim(), vid = b.type === 'video';
+    if (vid) { const vs = n(x.vs) !== '' ? Math.max(0, +n(x.vs) || 0) : x.full ? 0 : null; if (x.full) c.push('padding-left:0!important', 'padding-right:0!important'); if (vs != null) c.push(`padding-top:${vs}px!important`, `padding-bottom:${vs}px!important`); return c; }
     if (+n(x.w) > 0) c.push(`width:${+n(x.w)}${x.wu === 'px' ? 'px' : '%'}`, 'max-width:100%', 'margin-left:auto', 'margin-right:auto');
     if (+n(x.h) > 0) c.push(`height:${+n(x.h)}${x.hu === 'vh' ? 'vh' : 'px'}`, 'overflow:hidden');
     if (x.full) c.push('padding-left:0!important', 'padding-right:0!important'); // edge to edge: drop the template's side padding
@@ -1190,10 +1195,12 @@ ${cols}
     } else if (b.type === 'video') {
       const u = ytEmbed(d.url);
       if (!u && !P) { warns.push('YouTube video: no link, so the video is left out.'); continue; }
+      const x = b.box || {}, vw = +x.w > 0 ? `width:${+x.w}${x.wu === 'px' ? 'px' : '%'};max-width:100%` : '', vh = +x.h > 0 ? `height:${+x.h}${x.hu === 'vh' ? 'vh' : 'px'};aspect-ratio:auto` : '';
+      const vst = [vw, vh].filter(Boolean).join(';'), vsec = sec(b, 'video-section', bgCss(d.sbg, b.id + '.sbg.bg'));
       out.push(P
-        ? `    ${sec(b, 'video-section')}<div style="aspect-ratio:16/9;width:100%;background:#151210;color:#e9e1d7;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;font:14px/1.4 system-ui,sans-serif;text-align:center;padding:12px"><div style="font-size:40px;line-height:1">&#9654;</div><div>YouTube video</div><div style="opacity:.65;font:12px monospace;word-break:break-all">${esc(u || 'No link yet')}</div></div></section>`
-        : `    ${sec(b, 'video-section')}
-      <iframe src="${esc(u)}"
+        ? `    ${vsec}<div style="${vst ? vst + ';' : 'width:100%;'}aspect-ratio:16/9;${vh}background:#151210;color:#e9e1d7;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;font:14px/1.4 system-ui,sans-serif;text-align:center;padding:12px"><div style="font-size:40px;line-height:1">&#9654;</div><div>YouTube video</div><div style="opacity:.65;font:12px monospace;word-break:break-all">${esc(u || 'No link yet')}</div></div></section>`
+        : `    ${vsec}
+      <iframe src="${esc(u)}"${vst ? ` style="${vst}"` : ''}
         title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media;
         gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
       </iframe>
@@ -1333,6 +1340,7 @@ ${items}
   if (st.pageCss) css = (/class="[^"]*\b(livara-|more-info)/.test(body) && !/\.livara-banner|\.more-info/.test(st.pageCss) ? ORIG_CSS + '\n' : '') + st.pageCss + css;
   if (body.includes('pdp-') || body.includes('--tw:')) css += PDP_CSS;
   // desktop More Information: bottom space same as top (original CSS has top padding only)
+  if (body.includes('video-section')) css += `\n      .video-section { padding-top: 4vw; padding-bottom: 4vw; }\n      @media only screen and (max-width: 768px) { .video-section { padding-top: 6vw; padding-bottom: 6vw; } }`; // same space above and below the video
   if (body.includes('class="more-info"')) css += `\n      @media only screen and (min-width: 1201px) { .more-info .info-body { padding-bottom: 5vw; } }`;
   if (/--al[DTM]:/.test(body)) css += `
       [style*="--alD:"] { text-align: var(--alD) !important; }
@@ -1711,15 +1719,15 @@ function panel(key, title, sumText) {
 }
 function sizeEditor(b) {
   const x = b.box || (b.box = { w: '', wu: '%', h: '', hu: 'px' });
-  const canFull = ['columns', 'cards', 'features'].includes(b.type);
+  const canFull = ['columns', 'cards', 'features', 'video'].includes(b.type), vid = b.type === 'video';
   const canFlush = canFull;
   if (x.vs == null && x.flush) x.vs = '0'; // older projects: "No space on top and bottom" ticked
-  const sum = () => `${x.full && canFull ? (String(x.vs ?? '') !== '' ? `Full width, ${+x.vs || 0}px top/bottom · ` : 'Full width · ') : ''}${+x.w > 0 ? x.w + x.wu : 'Auto'} × ${+x.h > 0 ? x.h + x.hu : 'Auto'}`;
+  const sum = () => `${x.full && canFull ? (String(x.vs ?? '') !== '' ? `Full width, ${+x.vs || 0}px top/bottom · ` : 'Full width · ') : vid && String(x.vs ?? '') !== '' ? `${+x.vs || 0}px top/bottom · ` : ''}${+x.w > 0 ? x.w + x.wu : 'Auto'} × ${+x.h > 0 ? x.h + x.hu : 'Auto'}`;
   const det = panel('box' + b.id, 'Section size', sum()), body = det.querySelector('.body');
   const wId = fid(), hId = fid(), vId = fid();
   body.innerHTML = `${canFull ? '<label class="check"><input type="checkbox" data-full> <b>Full width</b> &nbsp;<span class="fhint">edge to edge, no side padding</span></label>' : ''}${canFlush ? `<div data-flushrow><div class="prow"><label for="${vId}">Top &amp; bottom space</label><div class="pin"><input type="number" min="0" id="${vId}" data-flush placeholder="Template"><span class="fhint">&nbsp;px</span></div></div><div class="fhint">0 = no space. Leave empty to use the template's own space.</div></div>` : ''}<div class="prow"><label for="${wId}">Width</label><div class="pin"><input type="number" min="1" id="${wId}" placeholder="Auto"><select aria-label="Width unit"><option value="%">%</option><option value="px">px</option></select></div></div>
     <div class="prow"><label for="${hId}">Height</label><div class="pin"><input type="number" min="1" id="${hId}" placeholder="Auto"><select aria-label="Height unit"><option value="px">px</option><option value="vh">% of screen</option></select></div></div>
-    <div class="fhint">Leave empty for automatic. A narrower section is centred. A fixed height cuts off anything taller.</div>
+    <div class="fhint">${vid ? 'Width and height size the video player (centred). Leave empty for full width at 16:9.' : 'Leave empty for automatic. A narrower section is centred. A fixed height cuts off anything taller.'}</div>
     <div><button class="btn sm ghost">Reset to auto</button></div>`;
   const [wi, ws] = body.querySelector('#' + wId).parentElement.children, [hi, hs] = body.querySelector('#' + hId).parentElement.children;
   wi.value = x.w; ws.value = x.wu; hi.value = x.h; hs.value = x.hu;
@@ -1727,7 +1735,7 @@ function sizeEditor(b) {
   [wi, ws, hi, hs].forEach(i => i.addEventListener('input', upd));
   body.querySelector('button').onclick = () => { wi.value = hi.value = ''; upd(); };
   const fb = body.querySelector('[data-full]'), fl = body.querySelector('[data-flush]'), flRow = body.querySelector('[data-flushrow]');
-  const showFl = () => { if (flRow) flRow.hidden = !x.full; };
+  const showFl = () => { if (flRow) flRow.hidden = !x.full && !vid; }; // video: space on top and bottom any time
   if (fb) { fb.checked = !!x.full; fb.onchange = () => { x.full = fb.checked; if (x.full) { x.vs = '0'; if (fl) fl.value = '0'; } showFl(); upd(); }; } // full width starts with no top/bottom space
   if (fl) { fl.value = x.vs ?? ''; fl.oninput = () => { x.vs = fl.value; delete x.flush; upd(); }; }
   showFl();
@@ -2365,6 +2373,13 @@ function fieldEl(f, obj, ref, names, b) {
       rg.oninput = () => { g[k] = rg.value; nb.value = rg.value; schedulePreview(); };
       nb.oninput = () => { g[k] = nb.value; rg.value = nb.value || 0; schedulePreview(); };
     });
+    return wrapEl;
+  }
+  if (f.t === 'ytlangs') { // a different video per language; empty = the English one
+    const u = obj[f.k] || (obj[f.k] = {}), langs = (st.langs || []).filter(l => LANGS[l] && l !== 'en');
+    if (!langs.length) { wrapEl.innerHTML = '<div class="fhint">Turn on Bahasa Melayu or 中文 in Page settings to add a different video for each language.</div>'; return wrapEl; }
+    langs.forEach(l => { const i = fid(); wrapEl.insertAdjacentHTML('beforeend', `<label for="${i}">${esc(f.label)} · ${esc(LANGS[l])}</label><input type="text" id="${i}" data-l="${l}" placeholder="Empty = same video as English" style="margin-bottom:8px">`); });
+    wrapEl.querySelectorAll('input').forEach(x => { x.value = u[x.dataset.l] || ''; x.oninput = () => { u[x.dataset.l] = x.value; schedulePreview(); }; });
     return wrapEl;
   }
   if (f.t === 'logocount') { // 1-6 logos side by side, kept together at the first logo's place
@@ -3007,7 +3022,7 @@ function rawMediaEditor(b) {
 {
   const ADV = el => { if (el && el.classList) el.classList.add('adv'); return el; };
   for (const n of ['sizeRows', 'spacingEditor', 'boxEditor', 'fitRows', 'showOnRow']) { const f = window[n]; window[n] = (...a) => ADV(f(...a)); }
-  const fe = window.fieldEl; window.fieldEl = (f, ...a) => { const el = fe(f, ...a); return ['gaps', 'boxes', 'box1'].includes(f.t) || (f.t === 'bg' && f.k !== 'bgx') || ['halign', 'valign'].includes(f.k) ? ADV(el) : el; };
+  const fe = window.fieldEl; window.fieldEl = (f, ...a) => { const el = fe(f, ...a); return ['gaps', 'boxes', 'box1'].includes(f.t) || (f.t === 'bg' && f.k !== 'bgx' && !f.simple) || ['halign', 'valign'].includes(f.k) ? ADV(el) : el; };
 }
 
 /* ---------- Custom HTML -> Columns section ---------- */
@@ -3162,7 +3177,7 @@ $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 // GitHub Pages sends the upload time as Last-Modified (document.lastModified). Without that header the browser reports "now",
 // so then the time this file was built is shown instead.
 (() => {
-  const built = new Date('2026-10-21T14:37:09Z'), lm = new Date(document.lastModified);
+  const built = new Date('2026-10-23T06:59:24Z'), lm = new Date(document.lastModified);
   const d = !isNaN(lm) && Math.abs(Date.now() - lm) > 10000 ? lm : built;
   if (isNaN(d)) return;
   const p = n => String(n).padStart(2, '0'), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
