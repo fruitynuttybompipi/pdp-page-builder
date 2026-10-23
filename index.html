@@ -1024,6 +1024,7 @@ function buildHTML(st, assets, opt) {
     if (a) devT.push(`.pdp-x-${el.id}{${a}}`); if (b) devM.push(`.pdp-x-${el.id}{${b}}`); return 'pdp-x-' + el.id; };
   const elCls = el => [hideCls(el), devCls(el)].filter(Boolean).join(' ');
   // Preview only: tag each element/column/card/row so a click opens its own panel.
+  const etx = (id, f) => P && !clean ? ` data-tx="${id}.${f}"` : ''; // double-click to type in the preview
   const oid = (html, k) => P && html ? html.replace(/^(\s*<[a-z]+)/i, `$1 data-oid="${k}"`) : html;
   const addCls = (html, c) => !c || !html ? html : /^<[a-z]+[^>]*?\sclass="/i.test(html) ? html.replace(/class="/, `class="${c} `) : html.replace(/^<([a-z]+)/i, `<$1 class="${c}"`);
   const sec = (b, cls, extra) => { const c = [...(extra || []), ...boxCss(b)], k = [cls, hideCls(b)].filter(Boolean).join(' '); return `<section${k ? ` class="${k}"` : ''}${bid(b)}${c.length ? ` style="${c.join(';')}"` : ''}>`; };
@@ -1063,7 +1064,7 @@ function buildHTML(st, assets, opt) {
       css.push(`--imin:${setv(el.imin) ? Math.max(0, +el.imin || 0) : 150}px`);
       const lc = (ck ? ' ' + ck : '') + (iwk ? ' ' + iwk : '') + (el.place === 'stretch' ? ' pdp-its-grow' : '') + (nt ? ' pdp-its-nt' : '') + (nm ? ' pdp-its-nm' : '') + [['d', lay.d], ['t', lay.t], ['m', lay.m]].filter(([, v]) => v).map(([k, v]) => ` pdp-its-${k}-${v}`).join('');
       return `<div class="pdp-ititles${lc}${mb}" style="${css.join(';')}">${items.map(({ it, f }) => `
-          <div class="pdp-ititle">${f || P ? devPic(it, 'icon', [300, 300], `<div class="pdp-ititle-img"><img src="${src(f, [300, 300])}" alt="${esc(String(it.title || '').replace(/[*]/g, ''))}"></div>`) : ''}${String(it.title || '').trim() ? `<div${txs(el.tStyle, 'bold font-lg')}>${inl(it.title)}</div>` : ''}</div>`).join('')}
+          <div class="pdp-ititle">${f || P ? devPic(it, 'icon', [300, 300], `<div class="pdp-ititle-img"><img src="${src(f, [300, 300])}" alt="${esc(String(it.title || '').replace(/[*]/g, ''))}"></div>`) : ''}${String(it.title || '').trim() ? `<div${etx(it.id, 'title')}${txs(el.tStyle, 'bold font-lg')}>${inl(it.title)}</div>` : ''}</div>`).join('')}
         </div>`;
     }
     if (el.t === 'icons') {
@@ -1111,7 +1112,7 @@ function buildHTML(st, assets, opt) {
         </div>`;
       const base = el.t === 'title' && ctx.name === 'feature' ? 'livara-details-title bold font-lg' : def.cls;
       const body = el.t === 'text' ? (el.v.split('\n').some(l => isLi(l) || isOl(l)) ? rich(el.v, 'block') : rich(el.v, 'inline')) : lines;
-      return `<div${txs(s, base + mb, { css: sz, alignVar: ctx.name === 'hero' })}>${body}${el.t === 'text' && ctx.name === 'feature' ? '\n          ' : ''}</div>`;
+      return `<div${etx(el.id, 'v')}${txs(s, base + mb, { css: sz, alignVar: ctx.name === 'hero' })}>${body}${el.t === 'text' && ctx.name === 'feature' ? '\n          ' : ''}</div>`;
     }
     if (el.t === 'item') { // picture on the left, title / subtitle / text on the right
       const f = R(el.img, el.id, 'image'), px = el.iwu === 'px', iw = px ? Math.max(8, +el.iw || 120) + 'px' : Math.min(90, Math.max(3, +el.iw || 30)) + '%';
@@ -1121,7 +1122,7 @@ function buildHTML(st, assets, opt) {
       if (el.side === 'stack' || el.mstack) ist.push('--ipa:' + ({ center: 'center', right: 'flex-end' }[el.ta] || 'flex-start'), ...(setv(el.gap) ? [`row-gap:${Math.max(0, +el.gap || 0)}px`] : []));
       const taD = d => { const v = el['ta' + d]; return AL3[v] ? [`--ipa:${AL3[v]}!important`] : []; }, taB = d => { const v = el['ta' + d]; return AL3[v] ? [`text-align:${v}!important`] : []; };
       const tk = devRule2(taD('T'), taD('M')), tb = devRule2(taB('T'), taB('M'));
-      return `<div class="pdp-item${tk ? ' ' + tk : ''}${fit ? ' pdp-item-fit' : ''}${el.side === 'right' ? ' pdp-item-rev' : ''}${el.side === 'stack' ? ' pdp-item-stack' : el.mstack === 'tm' ? ' pdp-item-tstack' : el.mstack ? ' pdp-item-mstack' : ''}${mb}" style="${ist.join(';')}">${pic}<div class="pdp-item-body${tb ? ' ' + tb : ''}"${el.ta ? ` style="text-align:${el.ta}"` : ''}>${el.v.trim() ? `<div${txs(el.tStyle, 'bold font-lg')}>${inl(el.v)}</div>` : ''}${String(el.sub || '').trim() ? `<div${txs(el.sStyle || { italic: true }, 'font-lg')}>${inl(el.sub)}</div>` : ''}${String(el.body || '').trim() ? `<div${txs(el.bStyle, 'font-sm', { css: ['margin-top:.6em'] })}>${String(el.body).split('\n').some(isLi) ? rich(el.body, 'block') : rich(el.body, 'inline')}</div>` : ''}</div></div>`;
+      return `<div class="pdp-item${tk ? ' ' + tk : ''}${fit ? ' pdp-item-fit' : ''}${el.side === 'right' ? ' pdp-item-rev' : ''}${el.side === 'stack' ? ' pdp-item-stack' : el.mstack === 'tm' ? ' pdp-item-tstack' : el.mstack ? ' pdp-item-mstack' : ''}${mb}" style="${ist.join(';')}">${pic}<div class="pdp-item-body${tb ? ' ' + tb : ''}"${el.ta ? ` style="text-align:${el.ta}"` : ''}>${el.v.trim() ? `<div${etx(el.id, 'v')}${txs(el.tStyle, 'bold font-lg')}>${inl(el.v)}</div>` : ''}${String(el.sub || '').trim() ? `<div${etx(el.id, 'sub')}${txs(el.sStyle || { italic: true }, 'font-lg')}>${inl(el.sub)}</div>` : ''}${String(el.body || '').trim() ? `<div${etx(el.id, 'body')}${txs(el.bStyle, 'font-sm', { css: ['margin-top:.6em'] })}>${String(el.body).split('\n').some(isLi) ? rich(el.body, 'block') : rich(el.body, 'inline')}</div>` : ''}</div></div>`;
     }
     if (el.t === 'video') { // YouTube link or a video file (assets/video/{SKU}_PDP_video{n}.mp4)
       const vcss = [...sz, ...(s.align && ALIGN[s.align] ? ALIGN[s.align] : [])], vst = vcss.length ? ` style="${vcss.join(';')}"` : '';
@@ -1423,7 +1424,7 @@ ${items}
       @media only screen and (max-width: 1200px) { [style*="--alT:"] { text-align: var(--alT) !important; } }
       @media only screen and (max-width: 768px) { [style*="--alM:"] { text-align: var(--alM) !important; } }`;
   if (P) {
-    const hl = (sel ? `[data-bid="${sel}"]{outline:3px solid #c27a35!important;outline-offset:-3px}` : '') + (selEl ? `[data-oid="${selEl}"]{outline:2px solid #ec206e!important;outline-offset:2px}` : '');
+    const hl = clean ? '' : `</style><style id="pdp-sel">${selCss(sel, selEl)}`;
     return { html: `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${LIB_CSS}</style><style>${PREVIEW_BASE}</style><style>${css}</style><style>html,body{scrollbar-width:auto!important;-ms-overflow-style:auto!important;scrollbar-color:#b9ada0 transparent!important}body{font-family:"GT Walsheim Pro",system-ui,-apple-system,"Segoe UI",sans-serif}${clean ? '' : `[data-bid]{cursor:pointer}[data-bid]:hover{outline:2px dashed rgba(194,122,53,.7);outline-offset:-2px}${hl}`}${grid ? GRID_CSS : ''}</style></head><body>\n${body}\n</body></html>`, files, warns };
   }
   const head = HEAD_TPL.replace('<html lang="en">', `<html lang="${HTML_LANG[(opt && opt.lang) || 'en'] || 'en'}">`).replace('{{TITLE}}', esc(st.title)).replace('{{DESC}}', esc(st.desc)).replace('{{KW}}', esc(st.kw));
@@ -1535,6 +1536,9 @@ function toast(msg) {
 const reId = o => JSON.parse(JSON.stringify(o).replace(/"id":"[^"]+"/g, () => '"id":"' + uid('x') + '"'));
 let enterIds = new Set();
 const findBlock = id => st.blocks.find(b => b.id === id);
+const selCss = (sel, selEl) => (sel ? `[data-bid="${sel}"]{outline:3px solid #c27a35!important;outline-offset:-3px}` : '') + (selEl ? `[data-oid="${selEl}"]{outline:2px solid #ec206e!important;outline-offset:2px}` : '');
+// Any object in the page by its id (element, card, column, icon item…).
+function findObj(id) { let hit = null; const walk = o => { if (hit || !o || typeof o !== 'object') return; if (o.id === id) { hit = o; return; } Object.values(o).forEach(walk); }; st.blocks.forEach(b => walk(b.data)); return hit; }
 
 /* ---------- Preview ---------- */
 const frame = $('#frame'), wrap = $('#frameWrap'), stage = $('#stage');
@@ -1601,7 +1605,9 @@ function stepHist(from, to) {
 const undo = () => stepHist(hist.past, hist.future), redo = () => stepHist(hist.future, hist.past);
 function updUndo() { $('#undoBtn').disabled = !hist.past.length; $('#redoBtn').disabled = !hist.future.length; }
 
+let pvHold = false, pvPending = false;
 function renderPreview() {
+  if (pvHold) { pvPending = true; return; }
   try { lastScroll = frame.contentWindow ? frame.contentWindow.scrollY : 0; } catch (e) { lastScroll = 0; }
   frame.srcdoc = buildHTML(langState(st, pvLangOn()), assets, { preview: true, clean: fsOn, sel: selId, selEl, grid: gridOn && !fsOn, live: st.liveImg !== false, liveBase: st.imgBase || DEFAULT_IMG_BASE }).html;
   const dot = $('#liveDot'); dot.classList.remove('pulse'); void dot.offsetWidth; dot.classList.add('pulse');
@@ -1650,9 +1656,58 @@ frame.addEventListener('load', () => {
     // Open every panel from the section down to the clicked element, then jump to it.
     const keys = []; for (let n = e.target.closest('[data-oid]'); n && el.contains(n); n = n.parentElement.closest('[data-oid]')) keys.push(n.dataset.oid);
     keys.forEach(k => openItems.add(k));
-    select(el.dataset.bid, false, keys[0] || null);
+    selId = el.dataset.bid; selEl = keys[0] || null; tab = 'block'; renderOutline(); renderInspector(); // no reload: double-click and drag keep working
+    const ss = doc.getElementById('pdp-sel'); if (ss) ss.textContent = selCss(selId, selEl) + (gridOn && !fsOn ? GRID_CSS : ''); else schedulePreview(true);
+    const det = selEl && $('#insp').querySelector(`details[data-key="${selEl}"]`); if (det) det.scrollIntoView({ block: 'nearest' });
+    drawGrip(doc);
   });
+  // Double-click a text to type in it. Saved when you click away; Esc cancels.
+  doc.addEventListener('dblclick', e => {
+    const n = e.target.closest('[data-tx]'); if (!n || n.isContentEditable) return;
+    const [id, f] = n.dataset.tx.split('.'), o = findObj(id); if (!o) return;
+    const lang = pvLangOn(), before = n.innerHTML; pvHold = true; clearTimeout(pvTimer);
+    n.contentEditable = 'true'; n.focus(); doc.getElementById('pdp-grip')?.remove();
+    const win = doc.defaultView, tb = doc.createElement('div'); tb.className = 'rx-bar';
+    tb.innerHTML = '<button data-c="bold"><b>B</b></button><button data-c="italic"><i>I</i></button><button data-c="link">Link</button><button data-c="done">Done</button>';
+    doc.body.appendChild(tb); const r = n.getBoundingClientRect(); tb.style.top = Math.max(0, r.top + win.scrollY - 36) + 'px'; tb.style.left = Math.max(4, r.left + win.scrollX) + 'px';
+    tb.addEventListener('mousedown', ev => ev.preventDefault());
+    tb.addEventListener('click', ev => { ev.stopPropagation(); const c = ev.target.closest('[data-c]'); if (!c) return; if (c.dataset.c === 'done') return n.blur();
+      if (c.dataset.c === 'link') { const u = win.prompt('Link address (leave empty to remove the link)', 'https://'); if (u === null) return; doc.execCommand(u.trim() && u.trim() !== 'https://' ? 'createLink' : 'unlink', false, u.trim()); return; }
+      doc.execCommand(c.dataset.c); });
+    let cancel = false;
+    n.addEventListener('keydown', ev => { if (ev.key === 'Escape') { cancel = true; n.innerHTML = before; n.blur(); } if (ev.key === 'Enter' && f !== 'v' && f !== 'body' && !ev.shiftKey) { ev.preventDefault(); n.blur(); } });
+    n.addEventListener('paste', ev => { ev.preventDefault(); doc.execCommand('insertText', false, (ev.clipboardData || win.clipboardData).getData('text/plain')); }); // paste as plain text
+    n.addEventListener('blur', () => {
+      tb.remove(); n.removeAttribute('contenteditable'); pvHold = false; lastScroll = win.scrollY;
+      const md = rteToMd(n);
+      if (!cancel && n.innerHTML !== before) {
+        commitSnap();
+        if (lang === 'en') o[f] = md; else ((st.tr || (st.tr = {}))[lang] || (st.tr[lang] = {}))[id + '.' + f] = md; // other languages save as the translation
+        renderAll(); toast(lang === 'en' ? 'Text updated' : `${LANGS[lang]} translation updated`);
+      } else if (pvPending) { pvPending = false; schedulePreview(true); }
+    }, { once: true });
+  });
+  drawGrip(doc);
 });
+// Drag the small handle under the selected element to change the space below it (saved for the device in the top bar).
+function drawGrip(doc) {
+  doc.getElementById('pdp-grip')?.remove();
+  if (fsOn || !selEl) return; const o = findObj(selEl), n = doc.querySelector(`[data-oid="${selEl}"]`); if (!o || !o.t || !n) return;
+  if (!doc.getElementById('pdp-grip-css')) { const s = doc.createElement('style'); s.id = 'pdp-grip-css'; s.textContent = `#pdp-grip{position:absolute;z-index:2147483645;height:14px;width:46px;margin-left:-23px;margin-top:-7px;border-radius:7px;background:#ec206e;cursor:ns-resize;box-shadow:0 1px 4px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;touch-action:none}#pdp-grip::before{content:"";width:18px;height:2px;border-top:2px solid #fff;border-bottom:2px solid #fff;height:2px}#pdp-grip span{position:absolute;left:52px;white-space:nowrap;font:600 11px/1 system-ui,sans-serif;color:#fff;background:#2a211a;padding:3px 6px;border-radius:5px;pointer-events:none}.rx-bar{position:absolute;z-index:2147483646;display:flex;gap:2px;padding:3px;background:#2a211a;border-radius:7px;box-shadow:0 4px 14px rgba(0,0,0,.25);font:600 12px/1 system-ui,sans-serif}.rx-bar button{all:unset;color:#fff;padding:5px 8px;border-radius:5px;cursor:pointer}.rx-bar button:hover{background:rgba(255,255,255,.18)}[data-tx]:hover{cursor:text}[contenteditable="true"]{outline:2px solid #ec206e!important;outline-offset:3px;background:rgba(236,32,110,.05);cursor:text}`; doc.head.appendChild(s); }
+  const win = doc.defaultView, g = doc.createElement('div'); g.id = 'pdp-grip'; g.title = 'Drag to change the space below'; g.innerHTML = '<span hidden></span>'; doc.body.appendChild(g);
+  const place = () => { const r = n.getBoundingClientRect(), mb = parseFloat(win.getComputedStyle(n).marginBottom) || 0; g.style.top = (r.bottom + mb / 2 + win.scrollY) + 'px'; g.style.left = (r.left + r.width / 2 + win.scrollX) + 'px'; };
+  place();
+  g.addEventListener('pointerdown', e => {
+    e.preventDefault(); e.stopPropagation(); g.setPointerCapture(e.pointerId);
+    const y0 = e.clientY, m0 = parseFloat(win.getComputedStyle(n).marginBottom) || 0, lab = g.firstChild; lab.hidden = false; let v = Math.round(m0);
+    const move = ev => { v = Math.max(0, Math.round(m0 + ev.clientY - y0)); n.style.setProperty('margin-bottom', v + 'px', 'important'); lab.textContent = `${v}px below · ${device}`; place(); };
+    const up = () => { g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); lab.hidden = true;
+      if (v === Math.round(m0)) return; commitSnap(); const k = { desktop: 'sp', tablet: 'spT', mobile: 'spM' }[device], s = o[k] || (o[k] = {}); s.pad = s.pad || ['', '', '', '']; s.mb = String(v);
+      lastScroll = win.scrollY; renderInspector(); schedulePreview(true); toast(`Space below: ${v}px (${device})`); };
+    g.addEventListener('pointermove', move); g.addEventListener('pointerup', up);
+  });
+  g.addEventListener('click', e => e.stopPropagation());
+}
 function fit() {
   const w = DEV[device], avail = stage.clientWidth - 32, s = Math.min(1, avail / w);
   wrap.style.width = w + 'px'; wrap.style.transform = `scale(${s})`;
@@ -3319,7 +3374,7 @@ $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 // GitHub Pages sends the upload time as Last-Modified (document.lastModified). Without that header the browser reports "now",
 // so then the time this file was built is shown instead.
 (() => {
-  const built = new Date('2026-10-23T09:22:29Z'), lm = new Date(document.lastModified);
+  const built = new Date('2026-10-23T09:31:43Z'), lm = new Date(document.lastModified);
   const d = !isNaN(lm) && Math.abs(Date.now() - lm) > 10000 ? lm : built;
   if (isNaN(d)) return;
   const p = n => String(n).padStart(2, '0'), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
