@@ -81,7 +81,12 @@ header.bar {
 .btn.ghost { border-color: transparent; background: transparent }
 .btn.danger { color: var(--danger) }
 
-.work { min-height: 0; display: grid; grid-template-columns: 260px minmax(0, 1fr) 360px }
+.work { min-height: 0; display: grid; grid-template-columns: 260px minmax(0, 1fr) var(--rw, 440px) }
+.pane.right { position: relative }
+.rgrip { position: absolute; left: -4px; top: 0; bottom: 0; width: 8px; cursor: col-resize; z-index: 5; touch-action: none }
+.rgrip::after { content: ""; position: absolute; left: 3px; top: 50%; width: 2px; height: 36px; margin-top: -18px; border-radius: 2px; background: var(--line); transition: background .15s }
+.rgrip:hover::after, .rgrip.on::after { background: var(--accent); height: 60px; margin-top: -30px }
+body.rdrag, body.rdrag * { cursor: col-resize !important; user-select: none } body.rdrag iframe { pointer-events: none }
 .pane { min-height: 0; overflow: auto; background: var(--surface) }
 .left { border-right: 1px solid var(--line) }
 .right { border-left: 1px solid var(--line) }
@@ -279,7 +284,7 @@ kbd { display: inline-block; min-width: 22px; padding: 2px 6px; border: 1px soli
 
 .toast { position: fixed; left: 50%; top: 66px; transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: 13px; z-index: 30 }
 
-@media (max-width: 1100px) { .work { grid-template-columns: 230px minmax(0, 1fr) 320px } }
+@media (max-width: 1100px) { .work { grid-template-columns: 230px minmax(0, 1fr) var(--rw, 360px) } }
 @media (max-width: 1100px) { .footbar { width: 230px } }
 @media (max-width: 900px) { .footbar { position: static; width: auto; border-right: 0 } .pane.left { padding-bottom: 0 } }
 @media (max-width: 1100px) { .footbar { width: 230px } }
@@ -360,7 +365,7 @@ details.item[open] > .body { animation: rise .2s ease-out }
       <div class="stage" id="stage"><div class="fsbar" id="fsBar"><div class="seg" role="group" aria-label="Screen size"><button data-fsdev="desktop">Desktop</button><button data-fsdev="tablet">Tablet</button><button data-fsdev="mobile">Mobile</button></div><button class="fsx" id="fsExit" title="Exit full screen (Esc)">✕ Exit</button></div><div class="frame-wrap" id="frameWrap"><iframe id="frame" title="Page preview"></iframe></div></div>
     </main>
 
-    <aside class="pane right">
+    <aside class="pane right"><div class="rgrip" id="rgrip" role="separator" aria-orientation="vertical" aria-label="Drag to resize the settings panel" title="Drag to resize · double-click to reset" tabindex="0"></div>
       <div class="tabs" role="tablist">
         <button role="tab" id="tabBlock" aria-selected="true"><i data-ico="layers"></i>Section</button>
         <button role="tab" id="tabPage" aria-selected="false"><i data-ico="settings"></i>Page settings</button>
@@ -3296,7 +3301,7 @@ $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 // GitHub Pages sends the upload time as Last-Modified (document.lastModified). Without that header the browser reports "now",
 // so then the time this file was built is shown instead.
 (() => {
-  const built = new Date('2026-10-23T09:13:09Z'), lm = new Date(document.lastModified);
+  const built = new Date('2026-10-23T09:15:29Z'), lm = new Date(document.lastModified);
   const d = !isNaN(lm) && Math.abs(Date.now() - lm) > 10000 ? lm : built;
   if (isNaN(d)) return;
   const p = n => String(n).padStart(2, '0'), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -3370,6 +3375,19 @@ function enhanceColors(root) {
     w.querySelectorAll('[data-sw]').forEach(b => b.onclick = () => set(b.dataset.sw));
   });
 }
+// Settings panel width: drag its left edge (saved in this browser), double-click resets.
+(() => {
+  const g = $('#rgrip'), work = g.closest('.work'), set = w => { w = Math.round(Math.min(Math.max(320, w), Math.max(360, innerWidth - 640))); work.style.setProperty('--rw', w + 'px'); return w; };
+  try { const s = +localStorage.getItem('pdpRw'); if (s) set(s); } catch (e) { }
+  const save = w => { try { localStorage.setItem('pdpRw', w); } catch (e) { } };
+  g.addEventListener('pointerdown', e => { e.preventDefault(); g.setPointerCapture(e.pointerId); g.classList.add('on'); document.body.classList.add('rdrag');
+    let moved = false; const x0 = e.clientX;
+    const move = ev => { if (!moved && Math.abs(ev.clientX - x0) < 3) return; moved = true; set(innerWidth - ev.clientX); };
+    const up = ev => { g.releasePointerCapture(e.pointerId); g.classList.remove('on'); document.body.classList.remove('rdrag'); if (moved) save(set(innerWidth - ev.clientX)); g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); };
+    g.addEventListener('pointermove', move); g.addEventListener('pointerup', up); });
+  g.addEventListener('dblclick', () => { work.style.removeProperty('--rw'); try { localStorage.removeItem('pdpRw'); } catch (e) { } });
+  g.addEventListener('keydown', e => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; e.preventDefault(); const cur = g.parentElement.getBoundingClientRect().width; save(set(cur + (e.key === 'ArrowLeft' ? 20 : -20))); });
+})();
 new MutationObserver(() => enhanceColors($('#insp'))).observe($('#insp'), { childList: true, subtree: true });
 renderLib(); renderAll(); fit(); commitSnap();
 offerRestore();
