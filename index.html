@@ -242,6 +242,23 @@ details.el > summary .tt { font-weight: 500 }
 
 .pvlang { font: inherit; font-size: 12px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--fg); margin-right: 6px }
 .insp.simple .adv { display: none !important }
+/* inspector hierarchy: groups > panels > nested panels */
+.igrp { border: 1px solid var(--line); border-left: 3px solid var(--gc, var(--accent)); border-radius: 10px; background: var(--surface); padding: 10px 10px 12px; display: flex; flex-direction: column; gap: 10px }
+.igrp-content { --gc: #9F672E } .igrp-layout { --gc: #3E7CB1 } .igrp-style { --gc: #B8577E }
+.ighead { display: flex; align-items: center; gap: 7px; cursor: pointer; list-style: none; user-select: none; font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--gc) }
+.ighead .igico { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; background: color-mix(in srgb, var(--gc) 14%, transparent) }
+.ighead .ighint { margin-left: auto; font-size: 10.5px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--muted) }
+.igbody { display: flex; flex-direction: column; gap: 12px; min-width: 0; margin-top: 10px }
+.ighead::-webkit-details-marker { display: none } .ighead::after { content: "▾"; color: var(--muted); font-size: 11px; margin-left: 6px; transition: transform .18s } .igrp:not([open]) > .ighead::after { transform: rotate(-90deg) }
+.igrp:not([open]) { padding-bottom: 10px } .igrp { gap: 0 }
+.insp.simple .igrp:not(:has(> .igbody > :not(.adv))) { display: none }
+.insp details.item > summary .pico { display: inline-grid; place-items: center; color: var(--gc, var(--accent)); opacity: .9 }
+.insp details.item details.item { background: var(--raised) }
+.insp details.item details.item > summary { padding: 6px 9px; font-size: 13px }
+.insp details.item details.item details.item { background: var(--surface) }
+.insp details.item details.item details.item > summary { font-size: 12.5px }
+.insp details.item[open] > .body { border-left: 2px solid color-mix(in srgb, var(--gc, var(--accent)) 30%, transparent); margin-left: 8px; padding-left: 10px }
+.insp .field > .flabel, .insp .field > label { color: var(--fg) }
 .devnote { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; color: var(--muted); background: var(--soft, rgba(159,103,46,.08)); border-radius: 6px; padding: 6px 8px; margin-bottom: 4px } .devnote span { flex: 1; min-width: 140px }
 .cpx { display: flex; flex-direction: column; gap: 4px; min-width: 0 } .cpx .cpr { display: flex; gap: 6px; align-items: center }
 .cpx .hex { width: 84px; font: 12px/1.2 ui-monospace, Menlo, monospace; text-transform: uppercase }
@@ -1552,6 +1569,14 @@ const ICONS = {
   brand: '<circle cx="12" cy="9" r="6"/><path d="m8.5 14.5-1.5 7 5-3 5 3-1.5-7"/>',
   image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
   moreinfo: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
+  palette: '<circle cx="13.5" cy="6.5" r="1.3"/><circle cx="17.5" cy="10.5" r="1.3"/><circle cx="8.5" cy="7.5" r="1.3"/><circle cx="6.5" cy="12.5" r="1.3"/><path d="M12 2a10 10 0 0 0 0 20 2 2 0 0 0 2-2v-.5a2 2 0 0 1 2-2h1.5A4.5 4.5 0 0 0 22 13 10 10 0 0 0 12 2Z"/>',
+  ruler: '<path d="M21.3 15.3 8.7 2.7a1 1 0 0 0-1.4 0L2.7 7.3a1 1 0 0 0 0 1.4l12.6 12.6a1 1 0 0 0 1.4 0l4.6-4.6a1 1 0 0 0 0-1.4Z"/><path d="m7.5 10.5 2-2M10.5 13.5l2-2M13.5 16.5l2-2"/>',
+  spacing: '<path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4M3 12h4M17 12h4"/>',
+  square: '<rect x="4" y="4" width="16" height="16" rx="3"/>',
+  eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
+  type: '<path d="M4 7V4h16v3M9 20h6M12 4v16"/>',
+  sliders: '<path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/>',
+  edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
   leaf: '<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>',
   banner: '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 15h18"/>',
   headline: '<path d="M6 4v16M18 4v16M6 12h12"/>',
@@ -1899,6 +1924,7 @@ $('#tabBlock').onclick = () => setTab('block'); $('#tabPage').onclick = () => se
 let lastInsp = null;
 // Simple mode hides the advanced controls (marked .adv) so first-time users see only the essentials.
 let simpleMode = true; try { simpleMode = localStorage.getItem('pdpSimple') !== '0'; } catch (e) {}
+let grpOpen = {}; try { grpOpen = JSON.parse(localStorage.getItem('pdpGrp') || '{}') || {}; } catch (e) { }
 function renderInspector() {
   $('#tabBlock').setAttribute('aria-selected', tab === 'block'); $('#tabPage').setAttribute('aria-selected', tab === 'page');
   const box = $('#insp'); box.innerHTML = ''; box.classList.toggle('simple', simpleMode && tab !== 'page');
@@ -1914,11 +1940,17 @@ function renderInspector() {
   mode.querySelectorAll('[data-m]').forEach(x => x.onclick = () => { simpleMode = x.dataset.m === '1'; try { localStorage.setItem('pdpSimple', simpleMode ? '1' : '0'); } catch (e) {} renderInspector(); });
   box.appendChild(mode);
   const names = autoNames(st);
-  box.appendChild(showOnRow(b, 'Show this section on'));
-  box.appendChild(sizeEditor(b));
-  for (const f of TYPES[b.type].fields) box.appendChild(fieldEl(f, b.data, b.id, names, b));
-  for (const [g, lbl] of STYLES[b.type] || []) box.appendChild(styleEditor(b, g, lbl));
-  if (TYPES[b.type].fields.some(f => f.fmt || (f.fields || []).some(x => x.fmt))) box.appendChild(cheat());
+  // Three groups so the panel reads top-down: what's in it, how it's laid out, how it looks.
+  const G = {}, grp = (k, icon, title, hint) => { const s = document.createElement('details'), key = 'grp-' + k; s.className = 'igrp igrp-' + k; s.open = grpOpen[k] !== false;
+    s.innerHTML = `<summary class="ighead"><span class="igico">${ico(icon, 'sm')}</span><span>${title}</span><span class="ighint">${hint}</span></summary><div class="igbody"></div>`;
+    s.addEventListener('toggle', () => { grpOpen[k] = s.open; try { localStorage.setItem('pdpGrp', JSON.stringify(grpOpen)); } catch (e) { } }); G[k] = s.querySelector('.igbody'); return s; };
+  const gs = [grp('content', 'edit', 'Content', 'text, pictures, items'), grp('layout', 'columns', 'Layout', 'size, arrangement, visibility'), grp('style', 'palette', 'Style', 'colours, outlines, fonts')];
+  const kind = f => ['bg', 'stroke', 'boxes', 'box1'].includes(f.t) ? 'style' : ['split', 'cardlayout', 'heropos', 'check', 'gaps', 'logocount'].includes(f.t) || ['halign', 'valign', 'calign', 'per'].includes(f.k) || /align|line up|place|per line|per row|widths/i.test(f.label || '') ? 'layout' : 'content';
+  for (const f of TYPES[b.type].fields) G[kind(f)].appendChild(fieldEl(f, b.data, b.id, names, b));
+  G.layout.appendChild(sizeEditor(b)); G.layout.appendChild(showOnRow(b, 'Show this section on'));
+  for (const [g, lbl] of STYLES[b.type] || []) G.style.appendChild(styleEditor(b, g, lbl));
+  if (TYPES[b.type].fields.some(f => f.fmt || (f.fields || []).some(x => x.fmt))) G.content.appendChild(cheat());
+  gs.forEach(s => { if (s.querySelector('.igbody').children.length) box.appendChild(s); });
   if (b.type === 'raw') {
     const hint = document.createElement('div'); hint.className = 'tipbox';
     hint.innerHTML = '<b>Edit in the preview:</b> click text to type over it (B, I and Link on the bar), and click an image or video to replace it. For other changes use the HTML code below.';
@@ -1932,7 +1964,8 @@ function renderInspector() {
 }
 function panel(key, title, sumText) {
   const det = document.createElement('details'); det.className = 'item'; det.open = openItems.has(key);
-  det.innerHTML = `<summary><span class="tt">${esc(title)}</span><span class="psum">${esc(sumText)}</span></summary><div class="body"></div>`;
+  const pi = /background/i.test(title) ? 'palette' : /outline/i.test(title) ? 'square' : /section size|width|height/i.test(title) ? 'ruler' : /spacing/i.test(title) ? 'spacing' : /style/i.test(title) ? 'type' : /layout|position/i.test(title) ? 'columns' : /picture|image|icon/i.test(title) ? 'image' : /settings/i.test(title) ? 'sliders' : '';
+  det.innerHTML = `<summary>${pi ? `<span class="pico">${ico(pi, 'sm')}</span>` : ''}<span class="tt">${esc(title)}</span><span class="psum">${esc(sumText)}</span></summary><div class="body"></div>`;
   det.addEventListener('toggle', () => det.open ? openItems.add(key) : openItems.delete(key));
   return det;
 }
@@ -2583,7 +2616,10 @@ function colsEditor(d, b, names) {
       if (a === 'del') d.cols.splice(i, 1);
       renderAll();
     });
-    const body = det.querySelector('.body');
+    const body0 = det.querySelector('.body');
+    body0.appendChild(elsEditor('Elements', col.els, b, names));
+    const cset = panel('cset' + col.id, 'Column settings', [col.w && col.w + '%', (col.bgx || {}).type && 'background', +(col.stroke || {}).w > 0 && 'outline', (col.h || col.v) && 'position'].filter(Boolean).join(' · ') || 'Width, background, position');
+    body0.appendChild(cset); const body = cset.querySelector('.body');
     const wId = fid(), hId = fid();
     body.insertAdjacentHTML('beforeend', `<div class="prow"><label for="${wId}">Width</label><div class="pin"><input type="number" min="5" max="100" id="${wId}" placeholder="Auto"><span class="fhint">% of the row</span></div></div>
       <div class="prow adv"><label for="${hId}">Height</label><div class="pin"><input type="number" min="1" id="${hId}" placeholder="Auto"><span class="fhint">px, at least</span></div></div>`);
@@ -2599,7 +2635,6 @@ function colsEditor(d, b, names) {
     pf.innerHTML = '<div class="flabel">Content position</div>';
     pf.appendChild(posControls(col, { label: 'Place content', reset: true, hint: 'Top/middle/bottom shows when the column is taller than its content. Padding is a % of the column width.' }));
     body.appendChild(pf);
-    body.appendChild(elsEditor('Elements', col.els, b, names));
     list.appendChild(det);
   });
   wrapEl.querySelector('[data-addcol]').onclick = () => { const c = newCol([newEl('title'), newEl('text')]); d.cols.push(c); openItems.add('col' + c.id); renderAll(); };
@@ -3512,7 +3547,7 @@ $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 // GitHub Pages sends the upload time as Last-Modified (document.lastModified). Without that header the browser reports "now",
 // so then the time this file was built is shown instead.
 (() => {
-  const built = new Date('2026-10-23T14:41:08Z'), lm = new Date(document.lastModified);
+  const built = new Date('2026-10-23T14:46:22Z'), lm = new Date(document.lastModified);
   const d = !isNaN(lm) && Math.abs(Date.now() - lm) > 10000 ? lm : built;
   if (isNaN(d)) return;
   const p = n => String(n).padStart(2, '0'), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
