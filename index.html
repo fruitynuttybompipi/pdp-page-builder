@@ -1053,12 +1053,14 @@ function buildHTML(st, assets, opt) {
       if (setv(el.gap)) css.push(`--tg:${Math.max(0, +el.gap || 0)}px`);
       const AL = { left: 'flex-start', center: 'center', right: 'flex-end' };
       if (AL[el.calign]) css.push(`--ia:${AL[el.calign]}`, `--ta:${el.calign}`); // align content in every item
+      const iwD = d => +el['iw' + d] > 0 ? [`--iw:${Math.min(100, Math.max(5, +el['iw' + d]))}%!important`] : [];
+      const iwk = devRule2(iwD('T'), iwD('M'));
       const caD = d => AL[el['calign' + d]] ? [`--ia:${AL[el['calign' + d]]}!important`, `--ta:${el['calign' + d]}!important`] : [];
       const ck = devRule2(caD('T'), caD('M'));
       if (AL[el.place]) css.push(`justify-content:${AL[el.place]}`); // where a short last line sits
       if (setv(el.igap)) css.push(`--irg:${Math.max(0, +el.igap || 0)}px`);
       css.push(`--imin:${setv(el.imin) ? Math.max(0, +el.imin || 0) : 150}px`);
-      const lc = (ck ? ' ' + ck : '') + (el.place === 'stretch' ? ' pdp-its-grow' : '') + (nt ? ' pdp-its-nt' : '') + (nm ? ' pdp-its-nm' : '') + [['d', lay.d], ['t', lay.t], ['m', lay.m]].filter(([, v]) => v).map(([k, v]) => ` pdp-its-${k}-${v}`).join('');
+      const lc = (ck ? ' ' + ck : '') + (iwk ? ' ' + iwk : '') + (el.place === 'stretch' ? ' pdp-its-grow' : '') + (nt ? ' pdp-its-nt' : '') + (nm ? ' pdp-its-nm' : '') + [['d', lay.d], ['t', lay.t], ['m', lay.m]].filter(([, v]) => v).map(([k, v]) => ` pdp-its-${k}-${v}`).join('');
       return `<div class="pdp-ititles${lc}${mb}" style="${css.join(';')}">${items.map(({ it, f }) => `
           <div class="pdp-ititle">${f || P ? devPic(it, 'icon', [300, 300], `<div class="pdp-ititle-img"><img src="${src(f, [300, 300])}" alt="${esc(String(it.title || '').replace(/[*]/g, ''))}"></div>`) : ''}${String(it.title || '').trim() ? `<div${txs(el.tStyle, 'bold font-lg')}>${inl(it.title)}</div>` : ''}</div>`).join('')}
         </div>`;
@@ -1067,10 +1069,12 @@ function buildHTML(st, assets, opt) {
       const items = (el.items || []).map(it => ({ it, f: R(it.img, it.id, 'icon') })).filter(x => x.f || P);
       if (!items.length) return '';
       const css = [];
-      if (+el.isz > 0) css.push(`--isz:${+el.isz}${el.isu === 'px' ? 'px' : 'vw'}`);
+      const un = el.isu === 'px' ? 'px' : 'vw';
+      if (+el.isz > 0) css.push(`--isz:${+el.isz}${un}`);
       if (setv(el.gap)) css.push(`gap:${Math.max(0, +el.gap || 0)}px`);
       if (s.align) css.push('justify-content:' + ({ left: 'flex-start', center: 'center', right: 'flex-end' }[s.align] || 'flex-start'));
-      return `<div class="pdp-icons${mb}"${css.length ? ` style="${css.join(';')}"` : ''}>${items.map(({ it, f }) => `
+      const izD = d => +el['isz' + d] > 0 ? [`--isz:${+el['isz' + d]}${un}!important`] : [], izk = devRule2(izD('T'), izD('M')); // icon size per device
+      return `<div class="pdp-icons${izk ? ' ' + izk : ''}${mb}"${css.length ? ` style="${css.join(';')}"` : ''}>${items.map(({ it, f }) => `
           <div class="pdp-icon-item"><img src="${src(f, [160, 160])}" alt="${esc(it.cap || '')}">${it.cap.trim() ? `<div class="font-xs"${okColor(s.color) ? ` style="color:${s.color}"` : ''}>${inl(it.cap)}</div>` : ''}</div>`).join('')}
         </div>`;
     }
@@ -1912,15 +1916,17 @@ function elsEditor(label, els, b, names) {
 // Width / height of one element's row.
 function sizeRows(el, isText, opt) {
   const box = document.createElement('div'); box.className = 'list'; const wId = fid(), hId = fid();
-  box.innerHTML = `<div class="prow"><label for="${wId}">Width</label><div class="pin"><input type="range" min="5" max="100" step="1" aria-label="Width slider" style="flex:1"><input type="number" min="1" max="100" id="${wId}" placeholder="Auto" style="width:64px">%</div></div>
+  const D = devSuf(), wo = D ? (el['sp' + D] || (el['sp' + D] = { pad: ['', '', '', ''] })) : el;
+  box.innerHTML = `<div class="prow"><label for="${wId}">Width${devTag()}</label><div class="pin"><input type="range" min="5" max="100" step="1" aria-label="Width slider" style="flex:1"><input type="number" min="1" max="100" id="${wId}" placeholder="Auto" style="width:64px">%</div></div>
     <div class="prow adv"><label for="${hId}">Height</label><div class="pin"><input type="number" min="1" id="${hId}" placeholder="Auto"><select aria-label="Height unit"><option value="px">px</option><option value="vw">% of screen width</option></select></div></div>
     <div class="fhint">Width is a % of the column this element sits in. ${isText ? 'Use Align to place a narrower text box. Height is a minimum, so text is never cut off.' : 'Set a height and the width follows the image shape. Use % of screen width to scale with the banner.'}</div>`;
   if (opt && opt.noWidth) { box.querySelector('.prow').remove(); box.querySelector('.fhint').textContent = 'Height is a minimum.'; }
   const wi = box.querySelector('#' + wId) || document.createElement('input'), hi = box.querySelector('#' + hId), hu = box.querySelector('select');
   const ws = box.querySelector('input[type=range]') || document.createElement('input');
-  wi.value = el.w || ''; ws.value = el.w || 100; hi.value = el.ht || ''; hu.value = el.hu || 'px';
-  wi.oninput = () => { el.w = wi.value; ws.value = wi.value || 100; schedulePreview(); };
-  ws.oninput = () => { el.w = ws.value === '100' ? '' : ws.value; wi.value = el.w; schedulePreview(); };
+  const eff = D === 'M' ? ((el.spM || {}).w || (el.spT || {}).w || el.w) : D === 'T' ? ((el.spT || {}).w || el.w) : el.w;
+  wi.value = wo.w || ''; wi.placeholder = D ? 'Same' : 'Auto'; ws.value = eff || 100; hi.value = el.ht || ''; hu.value = el.hu || 'px';
+  wi.oninput = () => { wo.w = wi.value; ws.value = wi.value || eff || 100; schedulePreview(); };
+  ws.oninput = () => { wo.w = !D && ws.value === '100' ? '' : ws.value; wi.value = wo.w; schedulePreview(); };
   hi.oninput = () => { el.ht = hi.value; schedulePreview(); };
   hu.onchange = () => { el.hu = hu.value; schedulePreview(); };
   return box;
@@ -2238,11 +2244,11 @@ function ititlesEditor(el, body, names, b, tt) {
     lb.querySelectorAll(`[data-pr${k}]`).forEach(x => x.onclick = () => { el['n' + k] = x.dataset['pr' + k]; lb.querySelectorAll(`[data-pr${k}]`).forEach(y => y.setAttribute('aria-pressed', y === x)); schedulePreview(); });
   });
   body.appendChild(lp);
-  body.insertAdjacentHTML('beforeend', `<div class="prow"><label for="${wId}">Icon size</label><div class="pin"><input type="number" min="5" max="100" id="${wId}" style="width:64px">% of its space</div></div>
+  body.insertAdjacentHTML('beforeend', `<div class="prow"><label for="${wId}">Icon size${devTag()}</label><div class="pin"><input type="number" min="5" max="100" id="${wId}" style="width:64px">% of its space</div></div>
     <div class="prow"><label for="${gId}">Space</label><div class="pin"><input type="number" min="0" id="${gId}" placeholder="Auto" style="width:64px">px between icon and title</div></div>`);
   const wi = body.querySelector('#' + wId), gi = body.querySelector('#' + gId);
-  wi.value = el.iw || 45; gi.value = el.gap || '';
-  wi.oninput = () => { el.iw = wi.value; schedulePreview(); }; gi.oninput = () => { el.gap = gi.value; schedulePreview(); };
+  const iwK = 'iw' + devSuf(); wi.value = devSuf() ? (el[iwK] || '') : (el.iw || 45); wi.placeholder = devGet(el, 'iw') || 45; gi.value = el.gap || '';
+  wi.oninput = () => { el[iwK] = wi.value; schedulePreview(); }; gi.oninput = () => { el.gap = gi.value; schedulePreview(); };
   const sp = panel('its' + el.id, 'Title style', ''); sp.querySelector('.body').appendChild(styleRows(el.tStyle || (el.tStyle = {}), () => schedulePreview(), true)); body.appendChild(sp);
   body.appendChild(sizeRows(el, false));
 }
@@ -2267,13 +2273,13 @@ function iconsEditor(el, body, names, b, tt) {
   });
   body.appendChild(list);
   body.insertAdjacentHTML('beforeend', `<div><button class="btn sm" data-addico>+ Add icon</button></div>
-    <div class="prow"><label for="${sId}">Icon size</label><div class="pin"><input type="number" min="1" id="${sId}" placeholder="Auto" style="width:64px"><select aria-label="Icon size unit"><option value="vw">% of screen width</option><option value="px">px</option></select></div></div>
+    <div class="prow"><label for="${sId}">Icon size${devTag()}</label><div class="pin"><input type="number" min="1" id="${sId}" placeholder="${devSuf() ? 'Same' : 'Auto'}" style="width:64px"><select aria-label="Icon size unit"><option value="vw">% of screen width</option><option value="px">px</option></select></div></div>
     <div class="prow"><label for="${gId}">Spacing</label><div class="pin"><input type="range" min="0" max="80" step="2" style="flex:1" aria-label="Space between icons"><input type="number" min="0" id="${gId}" placeholder="Auto" style="width:58px">px</div></div>
     <div class="fhint">Icons sit side by side and wrap to a new line if they run out of space. Auto size matches the feature-row icons.</div>`);
   body.querySelector('[data-addico]').onclick = () => { items.push(newIco()); renderAll(); };
   const si = body.querySelector('#' + sId), su = si.nextElementSibling, gi = body.querySelector('#' + gId), gr = gi.previousElementSibling;
-  si.value = el.isz || ''; su.value = el.isu || 'vw'; gi.value = el.gap ?? ''; gr.value = el.gap || 0;
-  si.oninput = () => { el.isz = si.value; schedulePreview(); };
+  const izK = 'isz' + devSuf(); si.value = el[izK] || ''; su.value = el.isu || 'vw'; gi.value = el.gap ?? ''; gr.value = el.gap || 0;
+  si.oninput = () => { el[izK] = si.value; schedulePreview(); };
   su.onchange = () => { el.isu = su.value; schedulePreview(); };
   gr.oninput = () => { el.gap = gi.value = gr.value; schedulePreview(); };
   gi.oninput = () => { el.gap = gi.value; gr.value = gi.value || 0; schedulePreview(); };
@@ -3301,7 +3307,7 @@ $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 // GitHub Pages sends the upload time as Last-Modified (document.lastModified). Without that header the browser reports "now",
 // so then the time this file was built is shown instead.
 (() => {
-  const built = new Date('2026-10-23T09:15:29Z'), lm = new Date(document.lastModified);
+  const built = new Date('2026-10-23T09:19:50Z'), lm = new Date(document.lastModified);
   const d = !isNaN(lm) && Math.abs(Date.now() - lm) > 10000 ? lm : built;
   if (isNaN(d)) return;
   const p = n => String(n).padStart(2, '0'), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
