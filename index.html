@@ -1666,7 +1666,7 @@ frame.addEventListener('load', () => {
     const n = e.target.closest('[data-tx]'); if (!n || n.isContentEditable) return;
     const [id, f] = n.dataset.tx.split('.'), o = findObj(id); if (!o) return;
     const lang = pvLangOn(), before = n.innerHTML; pvHold = true; clearTimeout(pvTimer);
-    n.contentEditable = 'true'; n.focus(); doc.getElementById('pdp-grip')?.remove();
+    n.contentEditable = 'true'; n.focus(); doc.querySelectorAll('.pdp-grip').forEach(x => x.remove());
     const win = doc.defaultView, tb = doc.createElement('div'); tb.className = 'rx-bar';
     tb.innerHTML = '<button data-c="bold"><b>B</b></button><button data-c="italic"><i>I</i></button><button data-c="link">Link</button><button data-c="done">Done</button>';
     doc.body.appendChild(tb); const r = n.getBoundingClientRect(); tb.style.top = Math.max(0, r.top + win.scrollY - 36) + 'px'; tb.style.left = Math.max(4, r.left + win.scrollX) + 'px';
@@ -1689,24 +1689,32 @@ frame.addEventListener('load', () => {
   });
   drawGrip(doc);
 });
-// Drag the small handle under the selected element to change the space below it (saved for the device in the top bar).
+// Drag the small handles around the selected element: top / bottom = space above / below, left / right = padding. Saved for the device in the top bar.
 function drawGrip(doc) {
-  doc.getElementById('pdp-grip')?.remove();
+  doc.querySelectorAll('.pdp-grip').forEach(x => x.remove());
   if (fsOn || !selEl) return; const o = findObj(selEl), n = doc.querySelector(`[data-oid="${selEl}"]`); if (!o || !o.t || !n) return;
-  if (!doc.getElementById('pdp-grip-css')) { const s = doc.createElement('style'); s.id = 'pdp-grip-css'; s.textContent = `#pdp-grip{position:absolute;z-index:2147483645;height:14px;width:46px;margin-left:-23px;margin-top:-7px;border-radius:7px;background:#ec206e;cursor:ns-resize;box-shadow:0 1px 4px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;touch-action:none}#pdp-grip::before{content:"";width:18px;height:2px;border-top:2px solid #fff;border-bottom:2px solid #fff;height:2px}#pdp-grip span{position:absolute;left:52px;white-space:nowrap;font:600 11px/1 system-ui,sans-serif;color:#fff;background:#2a211a;padding:3px 6px;border-radius:5px;pointer-events:none}.rx-bar{position:absolute;z-index:2147483646;display:flex;gap:2px;padding:3px;background:#2a211a;border-radius:7px;box-shadow:0 4px 14px rgba(0,0,0,.25);font:600 12px/1 system-ui,sans-serif}.rx-bar button{all:unset;color:#fff;padding:5px 8px;border-radius:5px;cursor:pointer}.rx-bar button:hover{background:rgba(255,255,255,.18)}[data-tx]:hover{cursor:text}[contenteditable="true"]{outline:2px solid #ec206e!important;outline-offset:3px;background:rgba(236,32,110,.05);cursor:text}`; doc.head.appendChild(s); }
-  const win = doc.defaultView, g = doc.createElement('div'); g.id = 'pdp-grip'; g.title = 'Drag to change the space below'; g.innerHTML = '<span hidden></span>'; doc.body.appendChild(g);
-  const place = () => { const r = n.getBoundingClientRect(), mb = parseFloat(win.getComputedStyle(n).marginBottom) || 0; g.style.top = (r.bottom + mb / 2 + win.scrollY) + 'px'; g.style.left = (r.left + r.width / 2 + win.scrollX) + 'px'; };
+  if (!doc.getElementById('pdp-grip-css')) { const s = doc.createElement('style'); s.id = 'pdp-grip-css'; s.textContent = `.pdp-grip{position:absolute;z-index:2147483645;border-radius:7px;background:#ec206e;box-shadow:0 1px 4px rgba(0,0,0,.25);touch-action:none;opacity:.9}.pdp-grip:hover{opacity:1}.pdp-grip[data-s="mt"],.pdp-grip[data-s="mb"]{width:40px;height:10px;margin:-5px 0 0 -20px;cursor:ns-resize}.pdp-grip[data-s="pl"],.pdp-grip[data-s="pr"]{width:10px;height:40px;margin:-20px 0 0 -5px;cursor:ew-resize}.pdp-grip span{position:absolute;left:14px;top:-4px;white-space:nowrap;font:600 11px/1 system-ui,sans-serif;color:#fff;background:#2a211a;padding:3px 6px;border-radius:5px;pointer-events:none}.rx-bar{position:absolute;z-index:2147483646;display:flex;gap:2px;padding:3px;background:#2a211a;border-radius:7px;box-shadow:0 4px 14px rgba(0,0,0,.25);font:600 12px/1 system-ui,sans-serif}.rx-bar button{all:unset;color:#fff;padding:5px 8px;border-radius:5px;cursor:pointer}.rx-bar button:hover{background:rgba(255,255,255,.18)}[data-tx]:hover{cursor:text}[contenteditable="true"]{outline:2px solid #ec206e!important;outline-offset:3px;background:rgba(236,32,110,.05);cursor:text}`; doc.head.appendChild(s); }
+  const win = doc.defaultView, cs = () => win.getComputedStyle(n);
+  const SIDES = { mt: ['margin-top', 'above', 0, -1], mb: ['margin-bottom', 'below', 0, 1], pl: ['padding-left', 'on the left', 1, 1], pr: ['padding-right', 'on the right', 1, -1] }; // [css, label, horizontal, drag direction that adds space]
+  const grips = Object.keys(SIDES).map(k => { const g = doc.createElement('div'); g.className = 'pdp-grip'; g.dataset.s = k; g.title = 'Drag to change the space ' + SIDES[k][1]; g.innerHTML = '<span hidden></span>'; doc.body.appendChild(g); return g; });
+  const place = () => { const r = n.getBoundingClientRect(), c = cs(), sx = win.scrollX, sy = win.scrollY, mt = parseFloat(c.marginTop) || 0, mb = parseFloat(c.marginBottom) || 0;
+    const pos = { mt: [r.left + r.width / 2, r.top - mt / 2], mb: [r.left + r.width / 2, r.bottom + mb / 2], pl: [r.left + 6, r.top + r.height / 2], pr: [r.right - 6, r.top + r.height / 2] };
+    grips.forEach(g => { const [x, y] = pos[g.dataset.s]; g.style.left = (x + sx) + 'px'; g.style.top = (y + sy) + 'px'; }); };
   place();
-  g.addEventListener('pointerdown', e => {
-    e.preventDefault(); e.stopPropagation(); g.setPointerCapture(e.pointerId);
-    const y0 = e.clientY, m0 = parseFloat(win.getComputedStyle(n).marginBottom) || 0, lab = g.firstChild; lab.hidden = false; let v = Math.round(m0);
-    const move = ev => { v = Math.max(0, Math.round(m0 + ev.clientY - y0)); n.style.setProperty('margin-bottom', v + 'px', 'important'); lab.textContent = `${v}px below · ${device}`; place(); };
-    const up = () => { g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); lab.hidden = true;
-      if (v === Math.round(m0)) return; commitSnap(); const k = { desktop: 'sp', tablet: 'spT', mobile: 'spM' }[device], s = o[k] || (o[k] = {}); s.pad = s.pad || ['', '', '', '']; s.mb = String(v);
-      lastScroll = win.scrollY; renderInspector(); schedulePreview(true); toast(`Space below: ${v}px (${device})`); };
-    g.addEventListener('pointermove', move); g.addEventListener('pointerup', up);
+  grips.forEach(g => {
+    g.addEventListener('pointerdown', e => {
+      e.preventDefault(); e.stopPropagation(); g.setPointerCapture(e.pointerId);
+      const k = g.dataset.s, [prop, word, horiz, dir] = SIDES[k], p0 = horiz ? e.clientX : e.clientY, v0 = parseFloat(cs()[prop.replace(/-(.)/g, (m, a) => a.toUpperCase())]) || 0, lab = g.firstChild; lab.hidden = false; let v = Math.round(v0);
+      const move = ev => { v = Math.max(0, Math.round(v0 + ((horiz ? ev.clientX : ev.clientY) - p0) * dir)); n.style.setProperty(prop, v + 'px', 'important'); lab.textContent = `${v}px ${word} · ${device}`; place(); };
+      const up = () => { g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); lab.hidden = true;
+        if (v === Math.round(v0)) return; commitSnap();
+        const key = { desktop: 'sp', tablet: 'spT', mobile: 'spM' }[device], s = o[key] || (o[key] = {}); s.pad = s.pad || ['', '', '', ''];
+        if (k === 'mt' || k === 'mb') s[k] = String(v); else s.pad[k === 'pl' ? 3 : 1] = String(v);
+        lastScroll = win.scrollY; renderInspector(); schedulePreview(true); toast(`Space ${word}: ${v}px (${device})`); };
+      g.addEventListener('pointermove', move); g.addEventListener('pointerup', up);
+    });
+    g.addEventListener('click', e => e.stopPropagation());
   });
-  g.addEventListener('click', e => e.stopPropagation());
 }
 function fit() {
   const w = DEV[device], avail = stage.clientWidth - 32, s = Math.min(1, avail / w);
@@ -3374,7 +3382,7 @@ $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 // GitHub Pages sends the upload time as Last-Modified (document.lastModified). Without that header the browser reports "now",
 // so then the time this file was built is shown instead.
 (() => {
-  const built = new Date('2026-10-23T09:31:43Z'), lm = new Date(document.lastModified);
+  const built = new Date('2026-10-23T09:36:18Z'), lm = new Date(document.lastModified);
   const d = !isNaN(lm) && Math.abs(Date.now() - lm) > 10000 ? lm : built;
   if (isNaN(d)) return;
   const p = n => String(n).padStart(2, '0'), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
