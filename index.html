@@ -237,6 +237,10 @@ details.el > summary .tt { font-weight: 500 }
 
 .pvlang { font: inherit; font-size: 12px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--fg); margin-right: 6px }
 .insp.simple .adv { display: none !important }
+.cpx { display: flex; flex-direction: column; gap: 4px; min-width: 0 } .cpx .cpr { display: flex; gap: 6px; align-items: center }
+.cpx .hex { width: 84px; font: 12px/1.2 ui-monospace, Menlo, monospace; text-transform: uppercase }
+.cpx .sw { display: flex; flex-wrap: wrap; gap: 4px; max-width: 220px } .cpx .sw button { width: 18px; height: 18px; border-radius: 4px; border: 1px solid rgba(0,0,0,.18); padding: 0; cursor: pointer }
+.cpx .sw button:hover, .cpx .sw button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px }
 .modebar { display: flex; flex-direction: column; gap: 4px }
 .tipbox { font-size: 12.5px; line-height: 1.45; padding: 8px 10px; border-radius: 8px; background: var(--raised); border: 1px solid var(--line); border-left: 3px solid #ec206e }
 .impopts { margin: 10px 0; padding-left: 18px; font-size: 13.5px; line-height: 1.5 } .impopts li { margin-bottom: 6px }
@@ -592,13 +596,13 @@ const TYPES = {
   features: { label: 'Feature rows', fields: [
     { k: 'startRev', t: 'check', label: 'First row has the image on the left' },
     { k: 'textW', t: 'split', label: 'Column widths' },
-    { k: 'bg', t: 'bg', label: 'Section background' },
+    { k: 'bg', t: 'bg', label: 'Section background', simple: true },
     { k: 'head', t: 'els', label: 'Section heading (above the rows)' },
     { k: 'items', t: 'list', label: 'Rows', add: 'Add row', title: it => elSum(it.els),
       make: () => ({ id: uid('i'), els: [newEl('icon'), newEl('title', 'Feature title'), newEl('text', 'Feature description.')], media: [newEl('image')] }),
       fields: [
         { k: 'els', t: 'els', label: 'Text column', ctx: 'feature' },
-        { k: 'bg', t: 'bg', label: 'Text column background' },
+        { k: 'bg', t: 'bg', label: 'Text column background', simple: true },
         { k: 'box', t: 'boxes', label: 'Corners & padding' },
         { k: 'media', t: 'els', label: 'Photo column', ctx: 'media' } ] } ],
     make: () => ({ startRev: false, items: [TYPES.features.fields.find(f => f.k === 'items').make()] }), sum: d => d.items.length + ' rows' },
@@ -836,10 +840,24 @@ const PDP_CSS = `
       @media only screen and (min-width: 1201px) { .pdp-hide-d { display: none !important; } }
       @media only screen and (min-width: 769px) and (max-width: 1200px) { .pdp-hide-t { display: none !important; } }
       @media only screen and (max-width: 768px) { .pdp-hide-m { display: none !important; } }
-      .pdp-ititles { display: flex; flex-wrap: wrap; justify-content: space-around; align-items: flex-start; row-gap: 3vw; width: 100%; align-self: stretch; }
-      .pdp-ititle { flex: 0 0 calc(100% / var(--n, 3)); max-width: calc(100% / var(--n, 3)); padding: 0 1.5vw; display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--tg, 1.5vw); }
+      .pdp-ititles { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; row-gap: var(--irg, 4vw); width: 100%; align-self: stretch; }
+      .pdp-ititle { flex: 0 0 calc(100% / var(--n, 3)); max-width: calc(100% / var(--n, 3)); min-width: min(var(--imin, 150px), 100%); padding: 0 2.5vw; display: flex; flex-direction: column; align-items: var(--ia, center); text-align: var(--ta, center); gap: var(--tg, 1.5vw); }
+      .pdp-its-grow .pdp-ititle { flex-grow: 1 !important; max-width: none !important; }
       .pdp-ititle-img { width: var(--iw, 45%); } .pdp-ititle-img img { width: 100%; height: auto; display: block; }
-      @media only screen and (max-width: 768px) { .pdp-ititles[style*="--n:4"] .pdp-ititle, .pdp-ititles[style*="--n:5"] .pdp-ititle, .pdp-ititles[style*="--n:6"] .pdp-ititle { flex-basis: 50%; max-width: 50%; } } /* phones: 4-6 icons go 2 per row */
+      .pdp-its-d-side .pdp-ititle { flex-direction: row; text-align: var(--ta, left); align-items: center; } .pdp-its-d-side .pdp-ititle-img { flex: none; width: calc(var(--iw, 45%) * .5); }
+      @media only screen and (max-width: 1200px) {
+        .pdp-ititle { flex-basis: calc(100% / var(--nt, var(--n, 3))); max-width: calc(100% / var(--nt, var(--n, 3))); }
+        .pdp-its-nt .pdp-ititle { min-width: 0; }
+        .pdp-its-t-side .pdp-ititle { flex-direction: row; text-align: var(--ta, left); align-items: center; } .pdp-its-t-side .pdp-ititle-img { flex: none; width: calc(var(--iw, 45%) * .5); }
+        .pdp-its-t-top .pdp-ititle { flex-direction: column; text-align: var(--ta, center); align-items: var(--ia, center); } .pdp-its-t-top .pdp-ititle-img { width: var(--iw, 45%); }
+      }
+      @media only screen and (max-width: 768px) {
+        .pdp-ititle { flex-basis: calc(100% / var(--nm, 1)); max-width: calc(100% / var(--nm, 1)); padding: 0 2vw; } /* phones: one icon + title per line unless chosen */
+        .pdp-ititles { row-gap: var(--irg, 9vw); }
+        .pdp-its-nm .pdp-ititle { min-width: 0; }
+        .pdp-its-m-side .pdp-ititle { flex-direction: row; text-align: var(--ta, left); align-items: center; } .pdp-its-m-side .pdp-ititle-img { flex: none; width: calc(var(--iw, 45%) * .5); }
+        .pdp-its-m-top .pdp-ititle { flex-direction: column; text-align: var(--ta, center); align-items: var(--ia, center); } .pdp-its-m-top .pdp-ititle-img { width: var(--iw, 45%); }
+      }
       .pdp-icons { display: flex; flex-wrap: wrap; gap: 2vw; align-items: flex-start; align-self: stretch; }
       .pdp-icon-item { width: var(--isz, 5.5vw); display: flex; flex-direction: column; align-items: center; text-align: center; gap: .4em; }
       .pdp-icon-item img { width: 100%; height: auto; }
@@ -1004,9 +1022,16 @@ function buildHTML(st, assets, opt) {
     if (el.t === 'ititles') { // 1-6 icons side by side, each with a bold title below
       const items = (el.items || []).map(it => ({ it, f: R(it.img, it.id, 'icon') }));
       if (!items.length) return '';
-      const css = [`--n:${items.length}`, `--iw:${Math.min(100, Math.max(5, +el.iw || 45))}%`, ...sz];
+      const n = items.length, lay = el.lay || {}, nt = +el.nt || 0, nm = +el.nm || 0; // tablet / mobile per row (empty = drop to the next line when there's no room)
+      const css = [`--n:${n}`, ...(nt ? [`--nt:${nt}`] : []), ...(nm ? [`--nm:${nm}`] : []), `--iw:${Math.min(100, Math.max(5, +el.iw || 45))}%`, ...sz];
       if (setv(el.gap)) css.push(`--tg:${Math.max(0, +el.gap || 0)}px`);
-      return `<div class="pdp-ititles${mb}" style="${css.join(';')}">${items.map(({ it, f }) => `
+      const AL = { left: 'flex-start', center: 'center', right: 'flex-end' };
+      if (AL[el.calign]) css.push(`--ia:${AL[el.calign]}`, `--ta:${el.calign}`); // align content in every item
+      if (AL[el.place]) css.push(`justify-content:${AL[el.place]}`); // where a short last line sits
+      if (setv(el.igap)) css.push(`--irg:${Math.max(0, +el.igap || 0)}px`);
+      css.push(`--imin:${setv(el.imin) ? Math.max(0, +el.imin || 0) : 150}px`);
+      const lc = (el.place === 'stretch' ? ' pdp-its-grow' : '') + (nt ? ' pdp-its-nt' : '') + (nm ? ' pdp-its-nm' : '') + [['d', lay.d], ['t', lay.t], ['m', lay.m]].filter(([, v]) => v).map(([k, v]) => ` pdp-its-${k}-${v}`).join('');
+      return `<div class="pdp-ititles${lc}${mb}" style="${css.join(';')}">${items.map(({ it, f }) => `
           <div class="pdp-ititle">${f || P ? devPic(it, 'icon', [300, 300], `<div class="pdp-ititle-img"><img src="${src(f, [300, 300])}" alt="${esc(String(it.title || '').replace(/[*]/g, ''))}"></div>`) : ''}${String(it.title || '').trim() ? `<div${txs(el.tStyle, 'bold font-lg')}>${inl(it.title)}</div>` : ''}</div>`).join('')}
         </div>`;
     }
@@ -2141,7 +2166,15 @@ function dividerEditor(el, body) {
 }
 function ititlesEditor(el, body, names, b, tt) {
   const items = el.items || (el.items = []), wId = fid(), gId = fid();
-  body.insertAdjacentHTML('beforeend', `<div class="prow"><span>How many</span><div class="seg seg-full" role="group" aria-label="Number of icons">${[1, 2, 3, 4, 5, 6].map(k => `<button data-n="${k}" aria-pressed="${items.length === k}">${k}</button>`).join('')}</div></div><div class="fhint">Side by side in one row. On phones, 4–6 go 2 per row.</div>`);
+  body.insertAdjacentHTML('beforeend', `<div class="prow"><span>How many</span><div class="seg seg-full" role="group" aria-label="Number of icons">${[1, 2, 3, 4, 5, 6].map(k => `<button data-n="${k}" aria-pressed="${items.length === k}">${k}</button>`).join('')}</div></div><div class="fhint">Side by side in one row on desktop. Set tablet and mobile in "Layout on each screen".</div>
+    <div class="prow"><span>Align content in every item</span><div class="seg seg-full" role="group" aria-label="Align content in every item">${[['', 'Center'], ['left', 'Left'], ['right', 'Right']].map(([v, l]) => `<button data-ca="${v}" aria-pressed="${(el.calign || '') === v}">${l}</button>`).join('')}</div></div>
+    <div class="prow"><span>Place items across the line</span><div class="seg seg-full" role="group" aria-label="Place items across the line">${[['', 'Center'], ['left', 'Left'], ['right', 'Right'], ['stretch', 'Stretch']].map(([v, l]) => `<button data-pl="${v}" aria-pressed="${(el.place || '') === v}">${l}</button>`).join('')}</div></div>
+    <div class="prow"><label for="${wId}r">Space between</label><div class="pin"><input type="number" min="0" id="${wId}r" placeholder="Auto" style="width:64px">px between lines of icons</div></div>
+    <div class="prow"><label for="${wId}m">Minimum width</label><div class="pin"><input type="number" min="0" id="${wId}m" placeholder="150" style="width:64px">px per item</div></div>
+    <div class="fhint">When the space is narrower than this, icons drop to the next line, like Cards. "Place" decides where the shorter line sits, and Stretch widens them to fill it.</div>`);
+  const ri = body.querySelector('#' + wId + 'r'); ri.value = el.igap ?? ''; ri.oninput = () => { el.igap = ri.value; schedulePreview(); };
+  const mi = body.querySelector('#' + wId + 'm'); mi.value = el.imin ?? ''; mi.oninput = () => { el.imin = mi.value; schedulePreview(); };
+  [['ca', 'calign'], ['pl', 'place']].forEach(([a, k]) => body.querySelectorAll(`[data-${a}]`).forEach(x => x.onclick = () => { el[k] = x.dataset[a]; body.querySelectorAll(`[data-${a}]`).forEach(y => y.setAttribute('aria-pressed', y === x)); schedulePreview(); }));
   body.querySelectorAll('[data-n]').forEach(x => x.onclick = () => { const n = +x.dataset.n; while (items.length > n) items.pop(); while (items.length < n) items.push(newIT()); renderAll(); });
   const list = document.createElement('div'); list.className = 'list';
   items.forEach((it, i) => {
@@ -2153,6 +2186,18 @@ function ititlesEditor(el, body, names, b, tt) {
     list.appendChild(p);
   });
   body.appendChild(list);
+  // Layout per device, like Cards: icon on top or on the left, and how many per row on tablet / mobile.
+  const lay = el.lay || (el.lay = {}), segs = (k, opts, cur) => opts.map(([v, l]) => `<button data-${k}="${v}" aria-pressed="${String(cur || '') === v}">${l}</button>`).join('');
+  const lp = panel('itl' + el.id, 'Layout on each screen', [lay.t, lay.m, el.nt, el.nm].some(Boolean) ? 'Custom' : 'Same everywhere'), lb = lp.querySelector('.body');
+  lb.innerHTML = [['d', 'Desktop'], ['t', 'Tablet'], ['m', 'Mobile']].map(([k, l]) => `<div class="fhint" style="margin:6px 0 2px;font-weight:600;color:var(--fg)">${l}</div>
+    <div class="prow"><span>Style</span><div class="seg seg-full" role="group" aria-label="${l} style">${segs('ly' + k, [...(k === 'd' ? [] : [['', 'Same']]), [k === 'd' ? '' : 'top', 'Icon on top'], ['side', 'Icon on left']], lay[k])}</div></div>
+    ${k === 'd' ? '' : `<div class="prow"><span>Per row</span><div class="seg seg-full" role="group" aria-label="${l} per row">${segs('pr' + k, k === 'm' ? [['', '1'], ...[2, 3, 4, 5, 6].map(x => [String(x), String(x)])] : [['', 'Same'], ...[1, 2, 3, 4, 5, 6].map(x => [String(x), String(x)])], el['n' + k])}</div></div>`}`).join('')
+    + '<div class="fhint">"Same" follows the bigger screen. Tablet per row "Same" lets icons drop to the next line on their own when there is no room. Mobile shows 1 per line unless you pick more.</div>';
+  ['d', 't', 'm'].forEach(k => {
+    lb.querySelectorAll(`[data-ly${k}]`).forEach(x => x.onclick = () => { lay[k] = x.dataset['ly' + k]; lb.querySelectorAll(`[data-ly${k}]`).forEach(y => y.setAttribute('aria-pressed', y === x)); schedulePreview(); });
+    lb.querySelectorAll(`[data-pr${k}]`).forEach(x => x.onclick = () => { el['n' + k] = x.dataset['pr' + k]; lb.querySelectorAll(`[data-pr${k}]`).forEach(y => y.setAttribute('aria-pressed', y === x)); schedulePreview(); });
+  });
+  body.appendChild(lp);
   body.insertAdjacentHTML('beforeend', `<div class="prow"><label for="${wId}">Icon size</label><div class="pin"><input type="number" min="5" max="100" id="${wId}" style="width:64px">% of its space</div></div>
     <div class="prow"><label for="${gId}">Space</label><div class="pin"><input type="number" min="0" id="${gId}" placeholder="Auto" style="width:64px">px between icon and title</div></div>`);
   const wi = body.querySelector('#' + wId), gi = body.querySelector('#' + gId);
@@ -3216,7 +3261,7 @@ $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 // GitHub Pages sends the upload time as Last-Modified (document.lastModified). Without that header the browser reports "now",
 // so then the time this file was built is shown instead.
 (() => {
-  const built = new Date('2026-10-23T08:28:58Z'), lm = new Date(document.lastModified);
+  const built = new Date('2026-10-23T08:53:43Z'), lm = new Date(document.lastModified);
   const d = !isNaN(lm) && Math.abs(Date.now() - lm) > 10000 ? lm : built;
   if (isNaN(d)) return;
   const p = n => String(n).padStart(2, '0'), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -3271,6 +3316,26 @@ function onKey(e) {
   if (k === 'escape') { $('#modal').hidden = true; $('#keysModal').hidden = true; if (fsOn) setFs(false); }
 }
 document.addEventListener('keydown', onKey);
+// Colour boxes: a hex field next to the picker (the picker can be blocked in some browsers) and swatches of the colours already used on this page.
+function pageColors() {
+  const n = {}; (JSON.stringify(st.blocks) + ' ' + (st.pageCss || ORIG_CSS)).replace(/#([0-9a-f]{6})\b/gi, (m, h) => { h = '#' + h.toUpperCase(); n[h] = (n[h] || 0) + 1; });
+  return Object.entries(n).sort((a, b) => b[1] - a[1]).slice(0, 18).map(x => x[0]);
+}
+function enhanceColors(root) {
+  const cols = pageColors();
+  root.querySelectorAll('input[type=color]:not([data-cpx])').forEach(ci => {
+    ci.dataset.cpx = '1';
+    const w = document.createElement('div'); w.className = 'cpx'; ci.replaceWith(w);
+    w.innerHTML = `<div class="cpr"></div>${cols.length ? `<div class="sw" role="group" aria-label="Colours used on this page">${cols.map(c => `<button type="button" data-sw="${c}" title="${c}" aria-label="${c}" style="background:${c}"></button>`).join('')}</div>` : ''}`;
+    const row = w.firstChild; row.appendChild(ci);
+    const hx = document.createElement('input'); hx.type = 'text'; hx.className = 'hex'; hx.maxLength = 7; hx.setAttribute('aria-label', 'Colour code'); hx.value = (ci.value || '').toUpperCase(); row.appendChild(hx);
+    const set = v => { ci.value = v; hx.value = v.toUpperCase(); ci.dispatchEvent(new Event('input', { bubbles: true })); ci.dispatchEvent(new Event('change', { bubbles: true })); };
+    ci.addEventListener('input', () => { hx.value = ci.value.toUpperCase(); });
+    hx.addEventListener('input', () => { let v = hx.value.trim(); if (!v.startsWith('#')) v = '#' + v; if (/^#[0-9a-f]{6}$/i.test(v)) set(v); });
+    w.querySelectorAll('[data-sw]').forEach(b => b.onclick = () => set(b.dataset.sw));
+  });
+}
+new MutationObserver(() => enhanceColors($('#insp'))).observe($('#insp'), { childList: true, subtree: true });
 renderLib(); renderAll(); fit(); commitSnap();
 offerRestore();
 </script>
