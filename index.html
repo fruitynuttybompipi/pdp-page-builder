@@ -237,6 +237,7 @@ details.el > summary .tt { font-weight: 500 }
 
 .pvlang { font: inherit; font-size: 12px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--fg); margin-right: 6px }
 .insp.simple .adv { display: none !important }
+.devnote { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; color: var(--muted); background: var(--soft, rgba(159,103,46,.08)); border-radius: 6px; padding: 6px 8px; margin-bottom: 4px } .devnote span { flex: 1; min-width: 140px }
 .cpx { display: flex; flex-direction: column; gap: 4px; min-width: 0 } .cpx .cpr { display: flex; gap: 6px; align-items: center }
 .cpx .hex { width: 84px; font: 12px/1.2 ui-monospace, Menlo, monospace; text-transform: uppercase }
 .cpx .sw { display: flex; flex-wrap: wrap; gap: 4px; max-width: 220px } .cpx .sw button { width: 18px; height: 18px; border-radius: 4px; border: 1px solid rgba(0,0,0,.18); padding: 0; cursor: pointer }
@@ -948,9 +949,24 @@ function buildHTML(st, assets, opt) {
   // Text style (align/weight/size/colour) and section size. Empty = template default.
   const SIZE_RE = /^font-(xs|sm|md|lg|xlg)$/;
   const okColor = c => /^#[0-9a-f]{3,8}$/i.test(c || '');
+  const devRules = [], DSZ = { T: { xlg: 32, lg: 24, md: 18, sm: 16, xs: 14 }, M: { xlg: 18, lg: 16, md: 14, sm: 12, xs: 12 } }; // template font sizes on tablet / mobile
+  const devStyle = s => { // tablet / mobile overrides of weight, italic, size and colour -> one class + media rules
+    const rule = d => { const x = s[d] || {}, p = [];
+      if (x.size && DSZ[d][x.size]) p.push(`font-size:${DSZ[d][x.size]}px!important`);
+      if (x.weight) p.push(`font-weight:${x.weight === 'bold' ? 700 : 400}!important`);
+      if (x.italic != null) p.push(`font-style:${x.italic ? 'italic' : 'normal'}!important`);
+      if (okColor(x.color)) p.push(`color:${x.color}!important`);
+      return p; };
+    const pt = rule('T'), pm = rule('M'); if (!pt.length && !pm.length) return '';
+    const k = 'pdpx-' + (devRules.length + 1);
+    if (pt.length) devRules.push(`@media only screen and (max-width: 1200px) { .${k} { ${pt.join('; ')} } }`); else devRules.push('');
+    if (pm.length) devRules.push(`@media only screen and (max-width: 768px) { .${k} { ${pm.join('; ')} } }`);
+    return k;
+  };
   const txs = (s, cls, o) => {
     o = o || {}; s = s || {}; const css = [];
     let c = String(cls || '').split(' ').filter(Boolean);
+    if (o.part !== 'align') { const k = devStyle(s); if (k) c.push(k); }
     const dev = o.part !== 'font' && !o.alignVar && (s.alignT || s.alignM);
     if (dev) { // tablet / mobile align: everything through variables so the media rules can win
       if (s.align) css.push('--alD:' + s.align); if (s.alignT) css.push('--alT:' + s.alignT); if (s.alignM) css.push('--alM:' + s.alignM);
@@ -1379,6 +1395,7 @@ ${items}
   // Builder (LIVARA) styles only when LIVARA sections are used and the page's own CSS doesn't already style them.
   if (st.pageCss) css = (/class="[^"]*\b(livara-|more-info)/.test(body) && !/\.livara-banner|\.more-info/.test(st.pageCss) ? ORIG_CSS + '\n' : '') + st.pageCss + css;
   if (body.includes('pdp-') || body.includes('--tw:')) css += PDP_CSS;
+  if (devRules.some(Boolean)) css += '\n      /* text style per device */\n      ' + devRules.filter(Boolean).join('\n      ');
   // desktop More Information: bottom space same as top (original CSS has top padding only)
   if (body.includes('video-section')) css += `\n      .video-section { padding-top: 4vw; padding-bottom: 4vw; }\n      @media only screen and (max-width: 768px) { .video-section { padding-top: 6vw; padding-bottom: 6vw; } }`; // same space above and below the video
   if (body.includes('class="more-info"')) css += `\n      @media only screen and (min-width: 1201px) { .more-info .info-body { padding-bottom: 5vw; } }`;
@@ -1627,6 +1644,7 @@ function fit() {
 new ResizeObserver(fit).observe(stage);
 document.querySelectorAll('[data-dev]').forEach(b => b.addEventListener('click', () => {
   device = b.dataset.dev; document.querySelectorAll('[data-dev]').forEach(x => x.setAttribute('aria-pressed', x === b)); fsMark(); fit();
+  spDev = { desktop: 'd', tablet: 't', mobile: 'm' }[device]; renderInspector(); // edit what this screen size shows
 }));
 // Full screen preview: only the page, on black, with its own screen-size switch.
 let fsOn = false;
@@ -1787,21 +1805,25 @@ const alignSeg = (cur, label) => `<div class="prow"><span>${label || 'Align'}</s
 function styleRows(s, onChange, withFont) {
   const box = document.createElement('div'); box.className = 'list';
   const wId = fid(), zId = fid(), cId = fid();
-  box.innerHTML = alignSeg(s.align) + (withFont ? `
-    ${[['alignT', 'Tablet align'], ['alignM', 'Mobile align']].map(([k, l]) => `<div class="prow adv"><span>${l}</span><div class="seg" role="group" aria-label="${l}" data-dev="${k}">${[['', 'Same'], ['left', 'Left'], ['center', 'Center'], ['right', 'Right']].map(([v, tx]) => `<button data-v="${v}" aria-pressed="${(s[k] || '') === v}">${tx}</button>`).join('')}</div></div>`).join('')}
+  // Text style follows the preview size picked in the top bar: Desktop sets the base, Tablet / Mobile save their own changes.
+  const D = withFont ? { tablet: 'T', mobile: 'M' }[device] || '' : '', AK = { T: 'alignT', M: 'alignM' }[D];
+  const o = D ? (s[D] || (s[D] = {})) : s, get = k => D === 'M' ? (o[k] ?? (s.T || {})[k] ?? s[k]) : D === 'T' ? (o[k] ?? s[k]) : s[k];
+  const has = d => Object.keys(s[d] || {}).length || s[{ T: 'alignT', M: 'alignM' }[d]];
+  const curAlign = D ? (s[AK] || (D === 'M' ? s.alignT : '') || s.align) : s.align;
+  box.innerHTML = (withFont ? `<div class="devnote">${ico({ '': 'desktop', T: 'tablet', M: 'mobile' }[D], 'sm')}<span>${D ? `<b>${D === 'T' ? 'Tablet' : 'Mobile'}</b> style. Changes here apply to ${D === 'T' ? 'tablet (and mobile unless it has its own)' : 'mobile only'}.` : '<b>Desktop</b> style. Tablet and mobile follow it unless you change them there.'}</span>${D && has(D) ? '<button class="btn sm ghost" data-reset>Same as ' + (D === 'T' ? 'desktop' : 'tablet') + '</button>' : ''}</div>` : '') + alignSeg(curAlign) + (withFont ? `
     <div class="prow"><label for="${wId}">Weight</label><div class="pin"><select id="${wId}"><option value="">Default</option><option value="bold">Bold</option><option value="regular">Regular</option></select><label class="check"><input type="checkbox" data-ital> <i>Italic</i></label></div></div>
     <div class="prow"><label for="${zId}">Size</label><select id="${zId}"><option value="">Default</option><option value="xs">XS</option><option value="sm">S</option><option value="md">M</option><option value="lg">L</option><option value="xlg">XL</option></select></div>
     <div class="prow"><label for="${cId}">Colour</label><div class="pin"><input type="color" id="${cId}"><button class="btn sm ghost" data-c>Default</button></div></div>` : '');
-  box.querySelectorAll('.seg:not([data-dev]) button').forEach(btn => btn.onclick = () => { s.align = btn.dataset.v; box.querySelectorAll('.seg:not([data-dev]) button').forEach(x => x.setAttribute('aria-pressed', x === btn)); onChange(); });
-  box.querySelectorAll('.seg[data-dev]').forEach(sg => sg.querySelectorAll('button').forEach(btn => btn.onclick = () => { s[sg.dataset.dev] = btn.dataset.v; sg.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', x === btn)); onChange(); }));
+  box.querySelectorAll('.seg:not([data-dev]) button').forEach(btn => btn.onclick = () => { if (AK) s[AK] = btn.dataset.v; else s.align = btn.dataset.v; box.querySelectorAll('.seg:not([data-dev]) button').forEach(x => x.setAttribute('aria-pressed', x === btn)); onChange(); });
   if (withFont) {
     const [we, ze] = box.querySelectorAll('select'), ce = box.querySelector('input[type=color]'), cb = box.querySelector('[data-c]');
-    const it = box.querySelector('[data-ital]'); it.checked = !!s.italic; it.onchange = () => { s.italic = it.checked; onChange(); };
-    we.value = s.weight || ''; ze.value = s.size || ''; ce.value = s.color || '#000000'; cb.hidden = !s.color;
-    we.onchange = () => { s.weight = we.value; onChange(); };
-    ze.onchange = () => { s.size = ze.value; onChange(); };
-    ce.oninput = () => { s.color = ce.value.toUpperCase(); cb.hidden = false; onChange(); };
-    cb.onclick = () => { s.color = ''; cb.hidden = true; onChange(); };
+    const it = box.querySelector('[data-ital]'); it.checked = !!get('italic'); it.onchange = () => { o.italic = it.checked; onChange(); };
+    we.value = get('weight') || ''; ze.value = get('size') || ''; ce.value = get('color') || '#000000'; cb.hidden = !get('color');
+    we.onchange = () => { o.weight = we.value; onChange(); };
+    ze.onchange = () => { o.size = ze.value; onChange(); };
+    ce.oninput = () => { o.color = ce.value.toUpperCase(); cb.hidden = false; onChange(); };
+    cb.onclick = () => { o.color = ''; cb.hidden = true; onChange(); };
+    const rs = box.querySelector('[data-reset]'); if (rs) rs.onclick = () => { delete s[D]; delete s[AK]; onChange(); renderInspector(); };
   }
   return box;
 }
@@ -1877,7 +1899,7 @@ function elsEditor(label, els, b, names) {
 function sizeRows(el, isText, opt) {
   const box = document.createElement('div'); box.className = 'list'; const wId = fid(), hId = fid();
   box.innerHTML = `<div class="prow"><label for="${wId}">Width</label><div class="pin"><input type="range" min="5" max="100" step="1" aria-label="Width slider" style="flex:1"><input type="number" min="1" max="100" id="${wId}" placeholder="Auto" style="width:64px">%</div></div>
-    <div class="prow"><label for="${hId}">Height</label><div class="pin"><input type="number" min="1" id="${hId}" placeholder="Auto"><select aria-label="Height unit"><option value="px">px</option><option value="vw">% of screen width</option></select></div></div>
+    <div class="prow adv"><label for="${hId}">Height</label><div class="pin"><input type="number" min="1" id="${hId}" placeholder="Auto"><select aria-label="Height unit"><option value="px">px</option><option value="vw">% of screen width</option></select></div></div>
     <div class="fhint">Width is a % of the column this element sits in. ${isText ? 'Use Align to place a narrower text box. Height is a minimum, so text is never cut off.' : 'Set a height and the width follows the image shape. Use % of screen width to scale with the banner.'}</div>`;
   if (opt && opt.noWidth) { box.querySelector('.prow').remove(); box.querySelector('.fhint').textContent = 'Height is a minimum.'; }
   const wi = box.querySelector('#' + wId) || document.createElement('input'), hi = box.querySelector('#' + hId), hu = box.querySelector('select');
@@ -3105,7 +3127,7 @@ function rawMediaEditor(b) {
 /* ---------- Simple mode: which controls count as advanced ---------- */
 {
   const ADV = el => { if (el && el.classList) el.classList.add('adv'); return el; };
-  for (const n of ['sizeRows', 'spacingEditor', 'boxEditor', 'fitRows', 'showOnRow']) { const f = window[n]; window[n] = (...a) => ADV(f(...a)); }
+  for (const n of ['spacingEditor', 'boxEditor', 'fitRows', 'showOnRow']) { const f = window[n]; window[n] = (...a) => ADV(f(...a)); }
   const fe = window.fieldEl; window.fieldEl = (f, ...a) => { const el = fe(f, ...a); return ['gaps', 'boxes', 'box1'].includes(f.t) || (f.t === 'bg' && f.k !== 'bgx' && !f.simple) || ['halign', 'valign'].includes(f.k) ? ADV(el) : el; };
 }
 
@@ -3261,7 +3283,7 @@ $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 // GitHub Pages sends the upload time as Last-Modified (document.lastModified). Without that header the browser reports "now",
 // so then the time this file was built is shown instead.
 (() => {
-  const built = new Date('2026-10-23T08:53:43Z'), lm = new Date(document.lastModified);
+  const built = new Date('2026-10-23T09:06:31Z'), lm = new Date(document.lastModified);
   const d = !isNaN(lm) && Math.abs(Date.now() - lm) > 10000 ? lm : built;
   if (isNaN(d)) return;
   const p = n => String(n).padStart(2, '0'), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
