@@ -251,6 +251,15 @@ details.el > summary .tt { font-weight: 500 }
 
 .pvlang { font: inherit; font-size: 12px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--fg); margin-right: 6px }
 .insp.simple .adv { display: none !important }
+.exdone { display: grid; justify-items: start; gap: 10px; padding: 6px 2px 4px }
+.exdone-mark { width: 56px; height: 56px; border-radius: 50%; background: var(--ok); display: grid; place-items: center; animation: exdone-in .45s cubic-bezier(.2, .9, .3, 1.2) both }
+.exdone-mark svg { width: 30px; height: 30px; fill: none; stroke: #fff; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 24; stroke-dashoffset: 24; animation: exdone-tick .35s .2s ease-out forwards }
+@keyframes exdone-in { from { transform: scale(.6); opacity: 0 } } @keyframes exdone-tick { to { stroke-dashoffset: 0 } }
+.exdone h4 { margin: 4px 0 0; font-size: 20px; letter-spacing: -0.01em } .exdone p { margin: 0 }
+.exdone-list { list-style: none; margin: 4px 0 0; padding: 0; width: 100%; border: 1px solid var(--line); border-radius: 10px; overflow: hidden }
+.exdone-list li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 12px; font-size: 13px } .exdone-list li + li { border-top: 1px solid var(--line) } .exdone-list li span { color: var(--muted) }
+.exdone-next { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; width: 100%; padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); font-size: 13px } .exdone-next code { font-weight: 700 }
+@media (prefers-reduced-motion: reduce) { .exdone-mark { animation: fadeOnly .2s ease-out !important } .exdone-mark svg { stroke-dashoffset: 0; animation: none !important } }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0 }
 .rowwrap { position: relative; min-width: 0 } .insp .rowwrap > details.item > summary { padding-right: var(--acts, 8px) !important } .insp.simple .rowwrap > details.item > summary { padding-right: var(--acts-s, var(--acts, 8px)) !important }
 .rowacts { position: absolute; top: 0; right: 6px; height: 38px; display: flex; align-items: center; gap: 2px }
@@ -1499,7 +1508,13 @@ ${items}
   if (!(st.desc || '').trim()) warns.push('Page settings: the meta description is empty.');
 
   if (!st.blocks.length) warns.push('The page has no sections yet.');
-  const body = out.length || !P ? out.join('\n\n') : '<div style="display:grid;place-items:center;min-height:70vh;color:#8a7d70;font:600 30px/1.4 system-ui,sans-serif;text-align:center;padding:40px"><div><div style="font-size:72px;font-weight:300;line-height:1">+</div>Blank page<br><span style="font-size:22px;font-weight:400">Add a section from the left to start.</span></div></div>';
+  const startStep = (n, done, act, title, sub) => `<button type="button" data-start="${act}" style="all:unset;box-sizing:border-box;display:grid;grid-template-columns:64px 1fr;gap:22px;align-items:center;width:100%;padding:22px 26px;border-radius:16px;cursor:pointer;background:${done ? '#f3ece3' : '#fff'};border:2px solid ${done ? '#e5d6c4' : '#9a5d22'};text-align:left"><span style="display:grid;place-items:center;width:64px;height:64px;border-radius:50%;font:700 30px/1 system-ui,sans-serif;background:${done ? '#2f7a4a' : '#9a5d22'};color:#fff">${done ? '✓' : n}</span><span><span style="display:block;font:700 30px/1.25 system-ui,sans-serif;color:#221c16${done ? ';text-decoration:line-through;text-decoration-color:#b9ab9b' : ''}">${title}</span><span style="display:block;font:400 22px/1.4 system-ui,sans-serif;color:#6e6359;margin-top:4px">${sub}</span></span></button>`;
+  const body = out.length || !P ? out.join('\n\n') : `<div style="display:grid;place-items:center;min-height:90vh;padding:60px 40px;background:#faf8f5"><div style="width:min(860px,100%);display:grid;gap:18px">
+    <div style="font:700 44px/1.15 system-ui,sans-serif;color:#221c16;margin-bottom:10px">A new product page, three steps from the server.</div>
+    ${startStep(1, !!(st.sku || '').trim(), 'sku', 'Type the product SKU', (st.sku || '').trim() ? `Files will be named ${esc(st.sku.trim())}_en.html, ${esc(st.sku.trim())}_PDP_banner1.jpg…` : 'It names every file, like 343136_en.html.')}
+    ${startStep(2, false, 'hero', 'Add your first section', 'Start with a Hero banner, or pick any section on the left.')}
+    ${startStep(3, false, 'export', 'Export when it looks right', 'You get the pages and images, ready for pdpcontent/MYBN/.')}
+  </div></div>`;
   if (devT.length) css += `\n      @media only screen and (max-width: 1200px) { ${devT.join(' ')} }`;
   if (devM.length) css += `\n      @media only screen and (max-width: 768px) { ${devM.join(' ')} }`;
   // Builder (LIVARA) styles only when LIVARA sections are used and the page's own CSS doesn't already style them.
@@ -1744,6 +1759,8 @@ frame.addEventListener('load', () => {
   doc.addEventListener('click', e => {
     if (e.target.closest('a')) e.preventDefault();
     if (e.target.closest('.rx-bar, [contenteditable="true"]')) return; // editing in place
+    const go = e.target.closest('[data-start]'); // first-use steps on the blank page
+    if (go) { const a = go.dataset.start; if (a === 'sku') { const s = $('#sku'); s.focus(); s.select(); } else if (a === 'hero') addBlock('hero', 0); else openExport(); return; }
     const el = e.target.closest('[data-bid]'); if (!el) return;
     if (rawClick(e, el)) return;
     // Open every panel from the section down to the clicked element, then jump to it.
@@ -3071,6 +3088,7 @@ async function optimise(blob, name, o) {
 const mb = n => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
 
 function openExport() {
+  $("#exZip").textContent = "Save .zip";
   const { files, html: enHtml } = buildHTML(st, assets, {});
   for (const l of pageLangs(st).slice(1)) for (const [k, f] of buildHTML(langState(st, l), assets, { lang: l }).files) if (![...files.values()].some(x => x.name === f.name)) files.set(k + '@' + l, f);
   // Images referenced in Custom HTML / page CSS that the builder doesn't track as slots.
@@ -3162,10 +3180,29 @@ $('#exZip').onclick = async () => {
   }
   const zb = await zip.generateAsync({ type: 'blob' });
   const saved = O.on && before ? ` Images ${mb(before)} → ${mb(after)}.` : '';
-  try { await saveFile(sku + '_en.zip', zb); dirty = false; $('#exStatus').textContent = 'Saved ' + sku + '_en.zip.' + saved; }
+  try { await saveFile(sku + '_en.zip', zb); dirty = false; $('#exStatus').textContent = ''; exportDone(sku, files, saved); }
   catch (e) { $('#exStatus').textContent = saveMsg(e) + saved; }
 };
 
+// After the zip is saved: what's inside, and the one place it goes.
+function exportDone(sku, files, saved) {
+  const langs = pageLangs(st), news = [...files.values()].filter(f => f.kind === 'new'), olds = [...files.values()].filter(f => f.kind !== 'new');
+  const row = (name, note) => `<li><code>${esc(name)}</code><span>${note}</span></li>`;
+  $('#exBody').innerHTML = `<div class="exdone" role="status">
+      <div class="exdone-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+      <h4>${esc(sku)} is ready to upload</h4>
+      <p><code>${esc(sku)}_en.zip</code> is in your downloads.${saved ? ' ' + esc(saved.trim()) : ''}</p>
+      <ul class="exdone-list">
+        ${langs.map(l => row(`${sku}_${l}.html`, LANGS[l])).join('')}
+        ${news.length ? row('assets/img/', `${plural(news.length, 'new image')}`) : ''}
+        ${olds.length ? row('on the server', `${plural(olds.length, 'image')} already there, not in the zip`) : ''}
+      </ul>
+      <div class="exdone-next"><span>Upload everything to</span><code>pdpcontent/MYBN/</code><button class="btn sm" type="button" data-copy="pdpcontent/MYBN/">Copy path</button></div>
+      <p class="fhint">Keep the <code>assets/img/</code> folder as it is in the zip.</p>
+    </div>`;
+  const c = $('#exBody [data-copy]'); c.onclick = async () => { try { await navigator.clipboard.writeText(c.dataset.copy); c.textContent = 'Copied'; } catch (e) { c.textContent = 'Select and copy'; } };
+  $('#exZip').textContent = 'Save again';
+}
 /* ---------- Import a live PDP page (.html) into editable sections ---------- */
 function importPdp(html, fname) {
   const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -3596,7 +3633,7 @@ $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 // GitHub Pages sends the upload time as Last-Modified (document.lastModified). Without that header the browser reports "now",
 // so then the time this file was built is shown instead.
 (() => {
-  const built = new Date('2026-10-30T03:05:47Z'), lm = new Date(document.lastModified);
+  const built = new Date('2026-10-30T03:13:14Z'), lm = new Date(document.lastModified);
   const d = !isNaN(lm) && Math.abs(Date.now() - lm) > 10000 ? lm : built;
   if (isNaN(d)) return;
   const p = n => String(n).padStart(2, '0'), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
