@@ -185,7 +185,9 @@ details.item .body { padding: 10px; display: flex; flex-direction: column; gap: 
 .divprev i { display: block; max-width: 100% }
 .seg-full { display: flex; width: 100% }
 .seg-full > button { flex: 1 1 0; justify-content: center; min-width: 0 }
-.showon > button { gap: 5px; padding: 6px 4px }
+.seg.showon { width: fit-content; justify-self: start }
+.showon > button { gap: 5px; padding: 6px 4px; position: relative; min-width: 42px; min-height: 30px; justify-content: center }
+.showon > button[aria-pressed="false"]::after { content: ""; position: absolute; left: 50%; top: 50%; width: 20px; height: 2px; border-radius: 2px; background: currentColor; transform: translate(-50%, -50%) rotate(-45deg) } /* hidden on this screen: icon struck through */
 .showon > button[aria-pressed="false"] { color: var(--muted); text-decoration: line-through; opacity: .7 }
 .showon > button[aria-pressed="true"] .ico { color: var(--accent) }
 .chk-head { font-weight: 700; padding: 8px 12px; border-radius: 8px; font-size: 14px }
@@ -222,6 +224,18 @@ input[type=range] { width: 100%; accent-color: var(--accent) }
 .tbar button { border: 1px solid var(--line); background: var(--surface); border-radius: 5px; padding: 2px 8px; font-size: 12px; min-width: 28px }
 .tbar button:hover { border-color: var(--muted) }
 .addbar { display: flex; flex-wrap: wrap; gap: 5px; align-items: center }
+.bh-stick { position: sticky; top: 45px; height: 0; z-index: 4; margin: -16px 0 0 }
+.bh-mini { all: unset; box-sizing: border-box; position: absolute; left: -16px; right: -16px; top: 0; display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--accent-soft); border-bottom: 1px solid color-mix(in srgb, var(--accent) 22%, transparent); font-size: 13px; cursor: pointer; opacity: 0; transform: translateY(-6px); pointer-events: none; transition: opacity .18s, transform .18s }
+.bh-mini .hico { width: 24px; height: 24px; border-radius: 6px; background: var(--accent); color: var(--accent-fg) } .bh-mini > span:last-child { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0 }
+.bh-stick.on .bh-mini { opacity: 1; transform: none; pointer-events: auto }
+.insp details.item { scroll-margin-top: 110px }
+.addwrap { display: flex; flex-direction: column; align-items: flex-start; gap: 8px }
+.addtoggle.on { background: var(--accent-soft); border-color: var(--accent) }
+.addmenu { width: 100%; display: grid; gap: 10px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--raised) }
+.addgrp { display: flex; flex-wrap: wrap; gap: 5px; align-items: center } .addgrp > span { flex-basis: 100%; font-size: 12px; font-weight: 700; color: var(--muted) }
+details.slottip > summary { cursor: pointer; color: var(--accent); font-weight: 600; list-style: none } details.slottip > summary::-webkit-details-marker { display: none }
+details.slottip > summary::before { content: "?"; display: inline-grid; place-items: center; width: 16px; height: 16px; margin-right: 6px; border-radius: 50%; border: 1px solid currentColor; font-size: 11px }
+details.slottip:not([open]) { border: 0; background: none; padding: 0 } details.slottip[open] > summary { margin-bottom: 4px }
 .addbar > span { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; margin-right: 2px }
 .etag { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); min-width: 62px }
 details.el > summary .tt { font-weight: 500 }
@@ -602,11 +616,13 @@ const EL = {
   logo: { label: 'Logo', img: true, ph: [600, 200] },
   ititles: { label: 'Icon + title', init: () => ({ items: [newIT(), newIT(), newIT()], iw: '45', gap: '', tStyle: {} }) },
   icons: { label: 'Icon row', init: () => ({ items: [newIco(), newIco(), newIco()], isz: '', isu: 'vw', gap: '' }) },
-  divider: { label: 'Divider', init: () => ({ dv: { w: '100', th: '2', cap: 'round', fill: 'solid', c1: '#9F672E', c2: '#4E2312', sp: '' }, style: { align: 'center' } }) },
+  divider: { label: 'Divider', init: () => ({ dv: { w: '100', th: '2', cap: 'round', fill: 'solid', c1: '#000000', c2: '#666666', sp: '' }, style: { align: 'center' } }) },
   video: { label: 'Video', init: () => ({ vsrc: 'yt', url: '', ctrl: false }) },
   item: { label: 'Image + text', def: 'Item title', init: () => ({ sub: '3 x 30g', body: 'Short description of this item.', iw: '30' }) },
-  button: { label: 'Button', def: 'Shop now', init: () => ({ href: '', iconPos: 'left', btn: { fill: 'solid', c1: '#9F672E', c2: '#4E2312', tc: '#FFFFFF', angle: '135', r: '6', size: 'md' } }) },
+  button: { label: 'Button', def: 'Shop now', init: () => ({ href: '', iconPos: 'left', btn: { fill: 'solid', c1: '#000000', c2: '#333333', tc: '#FFFFFF', angle: '135', r: '6', size: 'md' } }) },
 };
+// The Add element menu, in the order an editor reaches for things.
+const ADD_GROUPS = [['Text', ['headline', 'title', 'text']], ['Pictures & video', ['image', 'icon', 'logo', 'video']], ['Picture with text', ['item', 'ititles', 'icons']], ['Button & line', ['button', 'divider']]];
 const EL_ORDER = ['headline', 'title', 'text', 'icon', 'icons', 'ititles', 'image', 'video', 'item', 'logo', 'button', 'divider'];
 const newIT = () => ({ id: uid('k'), img: S(), title: 'Icon title' });
 function newIco() { return { id: uid('k'), img: S(), cap: '' }; }
@@ -840,7 +856,7 @@ function resolveSlot(slot, ref, names, assets, key) {
 }
 function phSVG(text, wh, empty) {
   const [w, h] = wh || [1200, 600], fs = Math.max(11, Math.round(Math.min(w, h * 3) / 32));
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}' viewBox='0 0 ${w} ${h}'><rect width='100%' height='100%' fill='${empty ? '#f1ebe4' : '#d8d0c6'}'/><rect x='1' y='1' width='${w - 2}' height='${h - 2}' fill='none' stroke='#b9ada0' stroke-dasharray='8 6'/><text x='50%' y='50%' font-family='monospace' font-size='${fs}' fill='#6e6359' text-anchor='middle' dominant-baseline='middle'>${esc(text)}</text></svg>`;
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${w}' height='${h}' viewBox='0 0 ${w} ${h}'><rect width='100%' height='100%' fill='${empty ? '#efefef' : '#dcdcdc'}'/><rect x='1' y='1' width='${w - 2}' height='${h - 2}' fill='none' stroke='#b3b3b3' stroke-dasharray='8 6'/><text x='50%' y='50%' font-family='monospace' font-size='${fs}' fill='#666666' text-anchor='middle' dominant-baseline='middle'>${esc(text)}</text></svg>`;
   return 'data:image/svg+xml,' + encodeURIComponent(svg);
 }
 
@@ -885,7 +901,7 @@ const PDP_CSS = `
       @media only screen and (max-width: 768px) { .pdp-logos > * { max-width: 40vw; } }
       .pdp-video { width: 100%; max-width: 100%; }
       .pdp-stroke { position: relative; }
-      .pdp-stroke::after { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: var(--sw, 1px); background: var(--sg, #9F672E); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude; pointer-events: none; z-index: 2; }
+      .pdp-stroke::after { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: var(--sw, 1px); background: var(--sg, #000000); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude; pointer-events: none; z-index: 2; }
       .pdp-info-media { display: flex; flex-direction: column; gap: 1vw; margin-top: .8vw; } .pdp-info-media img { max-width: 100%; height: auto; }
       .pdp-clean { padding: 45px 8%; text-align: center; }
       .pdp-clean .container-sm { max-width: 760px; width: 100%; margin: 0 auto; padding: 0; }
@@ -1043,7 +1059,7 @@ function buildHTML(st, assets, opt) {
   const AL3 = { left: 'flex-start', center: 'center', right: 'flex-end' };
   // Outline around a column / card / feature row: solid colour or gradient, drawn by .pdp-stroke::after so it follows the corners.
   const strokeCss = x => { x = x || {}; const w = Math.max(0, +x.w || 0); if (!w) return [];
-    const c1 = okColor(x.c1) ? x.c1 : '#9F672E', c2 = okColor(x.c2) ? x.c2 : '#4E2312';
+    const c1 = okColor(x.c1) ? x.c1 : '#000000', c2 = okColor(x.c2) ? x.c2 : '#666666';
     return [`--sw:${w}px`, `--sg:${x.fill === 'gradient' ? `linear-gradient(${+x.angle || 135}deg, ${c1}, ${c2})` : c1}`]; };
   const strokeCls = x => strokeCss(x).length ? ' pdp-stroke' : '';
   const txs = (s, cls, o) => {
@@ -1115,7 +1131,7 @@ function buildHTML(st, assets, opt) {
     if (def.text && +el.w > 0 && s.align && ALIGN[s.align]) sz.push(...ALIGN[s.align].filter(x => x.startsWith('margin')));
     if (el.t === 'divider') {
       const D = el.dv || {}, th = Math.max(1, +D.th || 2), c = [];
-      const c1 = okColor(D.c1) ? D.c1 : '#9F672E', c2 = okColor(D.c2) ? D.c2 : '#4E2312';
+      const c1 = okColor(D.c1) ? D.c1 : '#000000', c2 = okColor(D.c2) ? D.c2 : '#666666';
       c.push(`width:${Math.min(100, Math.max(1, +D.w || 100))}%`, `height:${th}px`, D.fill === 'gradient' ? `background-image:linear-gradient(90deg, ${c1}, ${c2})` : 'background-color:' + c1, `border-radius:${D.cap === 'square' ? 0 : th}px`);
       if (setv(D.sp)) c.push(`margin-top:${+D.sp || 0}px`, `margin-bottom:${+D.sp || 0}px`);
       c.push(...(ALIGN[s.align || 'center'] || ALIGN.center));
@@ -1156,7 +1172,7 @@ function buildHTML(st, assets, opt) {
     }
     if (el.t === 'button') {
       const B = el.btn || {}, fill = B.fill || 'solid', css = [];
-      const c1 = okColor(B.c1) ? B.c1 : '#9F672E', c2 = okColor(B.c2) ? B.c2 : '#4E2312';
+      const c1 = okColor(B.c1) ? B.c1 : '#000000', c2 = okColor(B.c2) ? B.c2 : '#333333';
       const tc = okColor(B.tc) ? B.tc : (fill === 'outline' || fill === 'line' ? c1 : '#FFFFFF');
       const line = fill === 'line', lt = Math.max(1, +B.lt || 2);
       if (line) css.push(`--lt:${lt}px`, `background-image:linear-gradient(90deg, ${c1}, ${B.lg ? c2 : c1})`, `background-size:100% ${lt}px`);
@@ -1200,7 +1216,7 @@ function buildHTML(st, assets, opt) {
     }
     if (el.t === 'video') { // YouTube link or a video file (assets/video/{SKU}_PDP_video{n}.mp4)
       const vcss = [...sz, ...(s.align && ALIGN[s.align] ? ALIGN[s.align] : [])], vst = vcss.length ? ` style="${vcss.join(';')}"` : '';
-      const box = txt => `<div class="pdp-video${mb}"${vst}><div style="aspect-ratio:16/9;background:#151210;color:#e9e1d7;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;font:13px/1.4 system-ui,sans-serif;text-align:center;padding:10px"><div style="font-size:34px;line-height:1">&#9654;</div><div style="opacity:.75;word-break:break-all">${esc(txt)}</div></div></div>`;
+      const box = txt => `<div class="pdp-video${mb}"${vst}><div style="aspect-ratio:16/9;background:#1c1c1c;color:#e6e6e6;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;font:13px/1.4 system-ui,sans-serif;text-align:center;padding:10px"><div style="font-size:34px;line-height:1">&#9654;</div><div style="opacity:.75;word-break:break-all">${esc(txt)}</div></div></div>`;
       if (el.vsrc !== 'file') {
         const u = ytEmbed(el.url); if (!u) return P ? box('YouTube video · no link yet') : '';
         return P ? box(u) : `<div class="pdp-video${mb}"${vst}><iframe src="${esc(u)}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>`;
@@ -1348,7 +1364,7 @@ ${cols}
       const x = b.box || {}, vw = +x.w > 0 ? `width:${+x.w}${x.wu === 'px' ? 'px' : '%'};max-width:100%` : '', vh = +x.h > 0 ? `height:${+x.h}${x.hu === 'vh' ? 'vh' : 'px'};aspect-ratio:auto` : '';
       const vst = [vw, vh].filter(Boolean).join(';'), vsec = sec(b, 'video-section', bgCss(d.sbg, b.id + '.sbg.bg'));
       out.push(P
-        ? `    ${vsec}<div style="${vst ? vst + ';' : 'width:100%;'}aspect-ratio:16/9;${vh}background:#151210;color:#e9e1d7;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;font:14px/1.4 system-ui,sans-serif;text-align:center;padding:12px"><div style="font-size:40px;line-height:1">&#9654;</div><div>YouTube video</div><div style="opacity:.65;font:12px monospace;word-break:break-all">${esc(u || 'No link yet')}</div></div></section>`
+        ? `    ${vsec}<div style="${vst ? vst + ';' : 'width:100%;'}aspect-ratio:16/9;${vh}background:#1c1c1c;color:#e6e6e6;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;font:14px/1.4 system-ui,sans-serif;text-align:center;padding:12px"><div style="font-size:40px;line-height:1">&#9654;</div><div>YouTube video</div><div style="opacity:.65;font:12px monospace;word-break:break-all">${esc(u || 'No link yet')}</div></div></section>`
         : `    ${vsec}
       <iframe src="${esc(u)}"${vst ? ` style="${vst}"` : ''}
         title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media;
@@ -1520,6 +1536,7 @@ ${items}
   // Builder (LIVARA) styles only when LIVARA sections are used and the page's own CSS doesn't already style them.
   if (st.pageCss) css = (/class="[^"]*\b(livara-|more-info)/.test(body) && !/\.livara-banner|\.more-info/.test(st.pageCss) ? ORIG_CSS + '\n' : '') + st.pageCss + css;
   if (body.includes('pdp-') || body.includes('--tw:')) css += PDP_CSS;
+  if (st.neutral && !st.pageCss) css += `\n      /* neutral template colours */\n      .livara-details-title { color: #000000; }\n      table > tr, td { border-color: #999999 !important; }\n      .livara-profile { background-color: #F3F3F3; }\n      .livara-brand { background-color: #000000; }\n      .more-info { background-color: #FFFFFF; }`;
   if (devRules.some(Boolean)) css += '\n      /* text style per device */\n      ' + devRules.filter(Boolean).join('\n      ');
   // desktop More Information: bottom space same as top (original CSS has top padding only)
   if (body.includes('video-section')) css += `\n      .video-section { padding-top: 4vw; padding-bottom: 4vw; }\n      @media only screen and (max-width: 768px) { .video-section { padding-top: 6vw; padding-bottom: 6vw; } }`; // same space above and below the video
@@ -1541,7 +1558,7 @@ ${items}
 /* ---------- Starting content: the 343136 page ---------- */
 // New sessions start empty; defaultState() keeps the 343136 example for reference/tests.
 function blankState() {
-  return { sku: '', title: '', desc: '', kw: '', colors: Object.fromEntries(COLOR_KEYS.map(([k, v]) => [k, v])), blocks: [] };
+  return { sku: '', title: '', desc: '', kw: '', neutral: true, colors: Object.fromEntries(COLOR_KEYS.map(([k, v]) => [k, v])), blocks: [] };
 }
 function defaultState() {
   const sku = '343136', f = n => S(sku + '_PDP_' + n);
@@ -1910,6 +1927,7 @@ function renderLib() {
   });
 }
 function addBlock(type, at) {
+  if (!st.blocks.length && st.neutral == null && !st.pageCss) st.neutral = true; // a fresh page starts in black, grey and white
   const b = { id: uid(), type: TYPES[type].as || type, data: TYPES[type].make() };
   (b.data.cols || []).forEach(c => openItems.add('col' + c.id));
   st.blocks.splice(at, 0, b); enterIds.add(b.id); scrollToSel = true; select(b.id, true); toast(TYPES[type].label + ' added');
@@ -1968,14 +1986,14 @@ function select(id, scroll, eid) {
   const det = eid && $('#insp').querySelector(`details[data-key="${eid}"]`);
   if (det) {
     let sc = det.parentElement; while (sc && !/(auto|scroll)/.test(getComputedStyle(sc).overflowY)) sc = sc.parentElement;
-    if (sc) sc.scrollTop += det.getBoundingClientRect().top - sc.getBoundingClientRect().top - 60;
+    if (sc) sc.scrollTop += det.getBoundingClientRect().top - sc.getBoundingClientRect().top - 110; // clear of the tabs and the slim header
     det.classList.remove('flash'); void det.offsetWidth; det.classList.add('flash');
   }
 }
 
 /* ---------- Inspector ---------- */
 const fid = () => 'f' + (++_uid);
-function setTab(t) { tab = t; $('#tabBlock').setAttribute('aria-selected', t === 'block'); $('#tabPage').setAttribute('aria-selected', t === 'page'); renderInspector(); }
+function setTab(t) { tab = t; $('#tabBlock').setAttribute('aria-selected', t === 'block'); $('#tabPage').setAttribute('aria-selected', t === 'page'); renderInspector(); const sc = $('#insp').closest('.pane'); if (sc) sc.scrollTop = 0; }
 $('#tabBlock').onclick = () => setTab('block'); $('#tabPage').onclick = () => setTab('page');
 
 let lastInsp = null;
@@ -1999,6 +2017,12 @@ function renderInspector() {
   const modeHint = 'Simple shows the main options only. All options adds sizes, spacing, backgrounds, corners and per-device settings.';
   mode.innerHTML = `<div class="seg" role="group" aria-label="How many options" title="${modeHint}"><button data-m="1" aria-pressed="${simpleMode}">Simple</button><button data-m="0" aria-pressed="${!simpleMode}">All options</button></div><span class="mode-note">${simpleMode ? 'Main options only' : 'Every option'}</span>`;
   head.appendChild(mode);
+  // A slim copy of the header stays at the top once the big one scrolls away, so you always see which section you're in.
+  const stick = document.createElement('div'); stick.className = 'bh-stick';
+  stick.innerHTML = `<button type="button" class="bh-mini" tabindex="-1" aria-hidden="true"><span class="hico">${ico(TYPE_ICON[b.type], 'sm')}</span><b>${esc(TYPES[b.type].label)}</b><span>${head.querySelector('.bh-meta').textContent}</span></button>`;
+  stick.firstChild.onclick = () => { const sc = box.closest('.pane'); if (sc) sc.scrollTo({ top: 0, behavior: 'smooth' }); };
+  box.appendChild(stick);
+  const sc = box.closest('.pane'); if (sc && !sc.__bh) { sc.__bh = 1; sc.addEventListener('scroll', () => { const h = sc.querySelector('.blockhead'), s = sc.querySelector('.bh-stick'); if (h && s) s.classList.toggle('on', h.getBoundingClientRect().bottom < sc.querySelector('.tabs').getBoundingClientRect().bottom + 4); }, { passive: true }); }
   mode.querySelectorAll('[data-m]').forEach(x => x.onclick = () => { simpleMode = x.dataset.m === '1'; try { localStorage.setItem('pdpSimple', simpleMode ? '1' : '0'); } catch (e) {} renderInspector(); });
   const names = autoNames(st);
   // Three groups so the panel reads top-down: what's in it, how it's laid out, how it looks.
@@ -2066,7 +2090,8 @@ function styleRows(s, onChange, withFont) {
   const o = D ? (s[D] || (s[D] = {})) : s, get = k => D === 'M' ? (o[k] ?? (s.T || {})[k] ?? s[k]) : D === 'T' ? (o[k] ?? s[k]) : s[k];
   const has = d => Object.keys(s[d] || {}).length || s[{ T: 'alignT', M: 'alignM' }[d]];
   const curAlign = D ? (s[AK] || (D === 'M' ? s.alignT : '') || s.align) : s.align;
-  box.innerHTML = (withFont ? `<div class="devnote">${ico({ '': 'desktop', T: 'tablet', M: 'mobile' }[D], 'sm')}<span>${D ? `<b>${D === 'T' ? 'Tablet' : 'Mobile'}</b> style. Changes here apply to ${D === 'T' ? 'tablet (and mobile unless it has its own)' : 'mobile only'}.` : '<b>Desktop</b> style. Tablet and mobile follow it unless you change them there.'}</span>${D && has(D) ? '<button class="btn sm ghost" data-reset>Same as ' + (D === 'T' ? 'desktop' : 'tablet') + '</button>' : ''}</div>` : '') + alignSeg(curAlign) + (withFont ? `
+  const showNote = withFont && (D || has('T') || has('M'));
+  box.innerHTML = (showNote ? `<div class="devnote">${ico({ '': 'desktop', T: 'tablet', M: 'mobile' }[D], 'sm')}<span>${D ? `<b>${D === 'T' ? 'Tablet' : 'Mobile'}</b> style. Changes here apply to ${D === 'T' ? 'tablet (and mobile unless it has its own)' : 'mobile only'}.` : '<b>Desktop</b> style. Tablet and mobile follow it unless you change them there.'}</span>${D && has(D) ? '<button class="btn sm ghost" data-reset>Same as ' + (D === 'T' ? 'desktop' : 'tablet') + '</button>' : ''}</div>` : '') + alignSeg(curAlign) + (withFont ? `
     <div class="prow"><label for="${wId}">Weight</label><div class="pin"><select id="${wId}"><option value="">Default</option><option value="bold">Bold</option><option value="regular">Regular</option></select><label class="check"><input type="checkbox" data-ital> <i>Italic</i></label></div></div>
     <div class="prow"><label for="${zId}">Size</label><select id="${zId}"><option value="">Default</option><option value="xs">XS</option><option value="sm">S</option><option value="md">M</option><option value="lg">L</option><option value="xlg">XL</option></select></div>
     <div class="prow"><label for="${cId}">Colour</label><div class="pin"><input type="color" id="${cId}"><button class="btn sm ghost" data-c>Default</button></div></div>` : '');
@@ -2094,7 +2119,12 @@ function styleEditor(b, g, lbl) {
 function elsEditor(label, els, b, names) {
   const wrapEl = document.createElement('div'); wrapEl.className = 'field';
   wrapEl.innerHTML = `<div class="flabel">${esc(label)}</div><div class="list"></div>
-    <div class="addbar"><span>Add</span>${EL_ORDER.map(t => `<button class="btn sm addel" data-add="${t}">${ico(EL_ICON[t], 'sm')}${EL[t].label}</button>`).join('')}</div>`;
+    <div class="addwrap"><button type="button" class="btn sm addtoggle" aria-expanded="false">${ico('plus', 'sm')}Add element</button>
+      <div class="addmenu" hidden>${ADD_GROUPS.map(([g, ts]) => `<div class="addgrp" role="group" aria-label="${g}"><span>${g}</span>${ts.map(t => `<button type="button" class="btn sm addel" data-add="${t}">${ico(EL_ICON[t], 'sm')}${EL[t].label}</button>`).join('')}</div>`).join('')}</div></div>`;
+  const tg = wrapEl.querySelector('.addtoggle'), mn = wrapEl.querySelector('.addmenu');
+  const setMenu = on => { mn.hidden = !on; tg.setAttribute('aria-expanded', on); tg.classList.toggle('on', on); if (on) mn.querySelector('button').focus(); };
+  tg.onclick = () => setMenu(mn.hidden);
+  mn.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); setMenu(false); tg.focus(); } });
   const list = wrapEl.querySelector('.list');
   if (!els.length) list.innerHTML = '<p class="fhint" style="margin:0">Empty. Add an element below.</p>';
   els.forEach((el, i) => {
@@ -2124,7 +2154,7 @@ function elsEditor(label, els, b, names) {
     else if (el.t === 'item') itemEditor(el, body, names, b, tt);
     else if (def.text) {
       const id = fid();
-      body.insertAdjacentHTML('beforeend', `<div class="field"><label id="${id}l">Text</label>${def.area ? TOOLBAR : TOOLBAR_SHORT}<div class="rte${def.area ? ' tall' : ''}" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="${id}l" id="${id}"></div><div class="linkbar" hidden><input type="text" placeholder="https://www.amway.my/…" aria-label="Link address"><button class="btn sm">Add link</button><button class="btn sm ghost">Cancel</button></div><div class="fhint">Select words, then use the buttons (or Ctrl+B / Ctrl+I). Click again to undo the style.</div></div>`);
+      body.insertAdjacentHTML('beforeend', `<div class="field"><label id="${id}l">Text</label>${def.area ? TOOLBAR : TOOLBAR_SHORT}<div class="rte${def.area ? ' tall' : ''}" contenteditable="true" role="textbox" aria-multiline="true" aria-labelledby="${id}l" id="${id}"></div><div class="linkbar" hidden><input type="text" placeholder="https://www.amway.my/…" aria-label="Link address"><button class="btn sm">Add link</button><button class="btn sm ghost">Cancel</button></div><div class="fhint adv">Select words, then use the buttons (or Ctrl+B / Ctrl+I). Click again to undo the style.</div></div>`);
       const rte = body.querySelector('.rte');
       rte.innerHTML = mdToRte(el.v);
       bindRte(body.querySelector('.tbar'), rte, body.querySelector('.linkbar'));
@@ -2157,7 +2187,7 @@ function sizeRows(el, isText, opt) {
   const D = devSuf(), wo = D ? (el['sp' + D] || (el['sp' + D] = { pad: ['', '', '', ''] })) : el;
   box.innerHTML = `<div class="prow"><label for="${wId}">Width${devTag()}</label><div class="pin"><input type="range" min="5" max="100" step="1" aria-label="Width slider" style="flex:1"><input type="number" min="1" max="100" id="${wId}" placeholder="Auto" style="width:64px">%</div></div>
     <div class="prow adv"><label for="${hId}">Height</label><div class="pin"><input type="number" min="1" id="${hId}" placeholder="Auto"><select aria-label="Height unit"><option value="px">px</option><option value="vw">% of screen width</option></select></div></div>
-    <div class="fhint">Width is a % of the column this element sits in. ${isText ? 'Use Align to place a narrower text box. Height is a minimum, so text is never cut off.' : 'Set a height and the width follows the image shape. Use % of screen width to scale with the banner.'}</div>`;
+    <div class="fhint adv">Width is a % of the column this element sits in. ${isText ? 'Use Align to place a narrower text box. Height is a minimum, so text is never cut off.' : 'Set a height and the width follows the image shape. Use % of screen width to scale with the banner.'}</div>`;
   if (opt && opt.noWidth) { box.querySelector('.prow').remove(); box.querySelector('.fhint').textContent = 'Height is a minimum.'; }
   const wi = box.querySelector('#' + wId) || document.createElement('input'), hi = box.querySelector('#' + hId), hu = box.querySelector('select');
   const ws = box.querySelector('input[type=range]') || document.createElement('input');
@@ -2270,7 +2300,7 @@ function strokeEditor(label, x, key) {
     const upd = () => { det.querySelector('.psum').textContent = sum(); schedulePreview(); };
     rg.oninput = () => { x.w = rg.value === '0' ? '' : rg.value; nb.value = x.w; upd(); };
     nb.oninput = () => { x.w = nb.value; rg.value = nb.value || 0; upd(); };
-    if (!x.c1) x.c1 = '#9F672E'; if (!x.c2) x.c2 = '#4E2312';
+    if (!x.c1) x.c1 = '#000000'; if (!x.c2) x.c2 = '#666666';
     body.querySelectorAll('[data-k]').forEach(i => { i.value = x[i.dataset.k]; i.addEventListener('input', () => { x[i.dataset.k] = i.value.toUpperCase(); upd(); }); });
     body.querySelectorAll('[data-f]').forEach(btn => btn.onclick = () => { x.fill = btn.dataset.f; if (!(+x.w > 0)) x.w = '2'; draw(); upd(); });
     const ab = body.querySelector('[data-angle]'); if (ab) { if (!x.angle) x.angle = '135'; ab.appendChild(angleRow(x, 'angle', upd)); }
@@ -2293,7 +2323,7 @@ function bgEditor(label, g, ref, names, b) {
       <div class="prow"><label for="${ids[4]}">Position</label><select id="${ids[4]}" data-k="pos"><option value="center">Centre</option><option value="top">Top</option><option value="bottom">Bottom</option><option value="left">Left</option><option value="right">Right</option><option value="left top">Top left</option><option value="right top">Top right</option><option value="left bottom">Bottom left</option><option value="right bottom">Bottom right</option></select></div>
       <div class="prow"><label for="${ids[0]}">Behind</label><input type="color" id="${ids[0]}" data-k="c1"></div>
       <div class="fhint">The colour shows behind the image when it doesn't fill the space. Make sure text stays readable on top.</div>` : ''}`;
-  const def = { c1: g.type === 'gradient' ? '#F3E6D8' : '#F3F3F3', c2: '#FFFFFF', angle: '135', size: 'cover', pos: 'center' };
+  const def = { c1: g.type === 'gradient' ? '#E6E6E6' : '#F3F3F3', c2: '#FFFFFF', angle: '135', size: 'cover', pos: 'center' };
   const upd = () => {
     const pv = body.querySelector('.gradprev'); if (pv) pv.style.background = `linear-gradient(${g.angle}deg, ${g.c1}, ${g.c2})`;
 
@@ -2303,7 +2333,7 @@ function bgEditor(label, g, ref, names, b) {
     const k = inp.dataset.k; if (g[k] == null || g[k] === '') g[k] = def[k];
     inp.value = g[k]; inp.addEventListener('input', () => { g[k] = inp.type === 'color' ? inp.value.toUpperCase() : inp.value; upd(); });
   });
-  body.querySelectorAll('[data-t]').forEach(btn => btn.onclick = () => { g.type = btn.dataset.t; if (g.type === 'gradient' && (!g.c1 || g.c1 === '#F3F3F3')) g.c1 = '#F3E6D8'; openItems.add('bg' + ref); renderInspector(); schedulePreview(); });
+  body.querySelectorAll('[data-t]').forEach(btn => btn.onclick = () => { g.type = btn.dataset.t; if (g.type === 'gradient' && (!g.c1 || g.c1 === '#F3F3F3')) g.c1 = '#E6E6E6'; openItems.add('bg' + ref); renderInspector(); schedulePreview(); });
   if (g.type === 'image') { g.img = g.img || S(); body.querySelector('.slotbox').appendChild(slotEl({ k: 'img', ext: 'bg', label: 'Background image' }, g, ref, names, b)); }
   const angBox = body.querySelector('[data-angle]'); if (angBox) { if (g.angle == null || g.angle === '') g.angle = '135'; angBox.appendChild(angleRow(g, 'angle', upd)); }
   if (g.type) upd();
@@ -2596,11 +2626,11 @@ const hideSum = o => { const h = o.hide || {}; const on = [['d', 'Desktop'], ['t
 // Desktop / Tablet / Mobile toggles. Pressed = shown on that screen.
 function showOnRow(o, label) {
   const h = o.hide || (o.hide = {}), row = document.createElement('div'); row.className = 'prow';
-  row.innerHTML = `<span>${esc(label)}</span><div class="seg seg-full showon" role="group" aria-label="${esc(label)}">${[['d', 'Desktop', 'desktop'], ['t', 'Tablet', 'tablet'], ['m', 'Mobile', 'mobile']].map(([k, l, i]) => `<button data-h="${k}" aria-pressed="${!h[k]}" title="${l}: click to ${h[k] ? 'show' : 'hide'}">${ico(i, 'sm')}<span>${l}</span></button>`).join('')}</div>`;
+  row.innerHTML = `<span>${esc(label)}</span><div class="seg showon" role="group" aria-label="${esc(label)}">${[['d', 'Desktop', 'desktop'], ['t', 'Tablet', 'tablet'], ['m', 'Mobile', 'mobile']].map(([k, l, i]) => `<button data-h="${k}" aria-pressed="${!h[k]}" title="${l}: click to ${h[k] ? 'show' : 'hide'}" aria-label="${l}" data-l="${l}">${ico(i, 'sm')}</button>`).join('')}</div>`;
   row.querySelectorAll('[data-h]').forEach(btn => btn.onclick = () => {
-    const k = btn.dataset.h; h[k] = !h[k]; btn.setAttribute('aria-pressed', !h[k]); btn.title = `${btn.textContent}: click to ${h[k] ? 'show' : 'hide'}`;
+    const k = btn.dataset.h; h[k] = !h[k]; btn.setAttribute('aria-pressed', !h[k]); btn.title = `${btn.dataset.l}: click to ${h[k] ? 'show' : 'hide'}`;
     if (h.d && h.t && h.m) toast('Hidden on every screen. It will not appear anywhere.');
-    else if (h[k]) toast(`Hidden on ${btn.textContent}. Switch the preview to ${btn.textContent} to check.`);
+    else if (h[k]) toast(`Hidden on ${btn.dataset.l}. Switch the preview to ${btn.dataset.l} to check.`);
     renderOutline(); schedulePreview();
   });
   return row;
@@ -2920,7 +2950,7 @@ function slotEl(f, obj, ref, names, b) {
       </div>
       <label for="${fnId}" style="font-size:12px;color:var(--muted)">${slot.a ? 'Filename (leave blank for automatic)' : 'Or use a file already on the server (name or full link)'}</label>
       <input class="fn" id="${fnId}" type="text" placeholder="${esc(slot.a ? auto : 'e.g. ' + (auto || 'brand_PDP_logo.png'))}">
-      ${slot.a ? '' : `<div class="slottip"><b>Tip:</b> open the live page, right-click the image → <i>Copy image address</i>, then paste it here, e.g. <code>${esc((st.imgBase || DEFAULT_IMG_BASE).replace(/\/?$/, '/'))}longxevity_PDP_logo.png</code>. Only the file name is kept, and the zip won't include it.</div>`}
+      ${slot.a ? '' : `<details class="slottip"><summary>How do I find the file name?</summary>Open the live page, right-click the image → <i>Copy image address</i>, then paste it here, e.g. <code>${esc((st.imgBase || DEFAULT_IMG_BASE).replace(/\/?$/, '/'))}longxevity_PDP_logo.png</code>. Only the file name is kept, and the zip won't include it.</details>`}
     </div>`;
   const fn = el.querySelector('.fn'); fn.value = slot.name;
   fn.addEventListener('change', () => {
@@ -3633,7 +3663,7 @@ $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 // GitHub Pages sends the upload time as Last-Modified (document.lastModified). Without that header the browser reports "now",
 // so then the time this file was built is shown instead.
 (() => {
-  const built = new Date('2026-10-30T03:13:14Z'), lm = new Date(document.lastModified);
+  const built = new Date('2026-10-30T09:56:33Z'), lm = new Date(document.lastModified);
   const d = !isNaN(lm) && Math.abs(Date.now() - lm) > 10000 ? lm : built;
   if (isNaN(d)) return;
   const p = n => String(n).padStart(2, '0'), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -3690,8 +3720,11 @@ function onKey(e) {
 document.addEventListener('keydown', onKey);
 // Colour boxes: a hex field next to the picker (the picker can be blocked in some browsers) and swatches of the colours already used on this page.
 function pageColors() {
-  const n = {}; (JSON.stringify(st.blocks) + ' ' + (st.pageCss || ORIG_CSS)).replace(/#([0-9a-f]{6})\b/gi, (m, h) => { h = '#' + h.toUpperCase(); n[h] = (n[h] || 0) + 1; });
-  return Object.entries(n).sort((a, b) => b[1] - a[1]).slice(0, 18).map(x => x[0]);
+  const n = {}; (JSON.stringify(st.blocks) + ' ' + (st.pageCss || (st.neutral ? '' : ORIG_CSS))).replace(/#([0-9a-f]{6})\b/gi, (m, h) => { h = '#' + h.toUpperCase(); n[h] = (n[h] || 0) + 1; });
+  const BASE = ['#000000', '#333333', '#666666', '#999999', '#CCCCCC', '#F3F3F3', '#FFFFFF']; // neutrals always come first
+  const grey = h => { const [r, g, b] = [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); return Math.max(r, g, b) - Math.min(r, g, b) < 12; };
+  const used = Object.entries(n).sort((a, b) => b[1] - a[1]).map(x => x[0]).filter(h => !BASE.includes(h));
+  return [...BASE, ...used.filter(grey), ...used.filter(h => !grey(h))].slice(0, 21);
 }
 function enhanceColors(root) {
   const cols = pageColors();
