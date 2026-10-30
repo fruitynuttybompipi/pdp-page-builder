@@ -13,6 +13,7 @@
   --muted: #6e6359; --accent: #9a5d22; --accent-soft: #f3e6d8; --accent-fg: #ffffff;
   --stage: #e7e2db; --ok: #2f7a4a; --warn: #a3620b; --danger: #b3362b;
   --g-content: #9a5d22; --g-layout: #2f6699; --g-style: #a2486f;
+  --toast-bg: #ffffff; --toast-line: #e2dbd2; --toast-shadow: 0 6px 20px rgba(0,0,0,.14);
   --sans: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
 }
@@ -20,12 +21,12 @@
   --bg: #16130f; --surface: #201c17; --raised: #26211b; --line: #3a322a; --fg: #efe8df;
   --muted: #a79a8c; --accent: #d79a5c; --accent-soft: #3a2b1d; --accent-fg: #1b130b;
   --stage: #0e0c0a; --ok: #6cc28f; --warn: #e2a64f; --danger: #ec7b70; color-scheme: dark;
-  --g-content: #d79a5c; --g-layout: #7fb0de; --g-style: #e08aae } }
+  --g-content: #d79a5c; --g-layout: #7fb0de; --g-style: #e08aae; --toast-bg: #463d33; --toast-line: #6b5d4e; --toast-shadow: 0 8px 28px rgba(0,0,0,.6) } }
 :root[data-theme="dark"] {
   --bg: #16130f; --surface: #201c17; --raised: #26211b; --line: #3a322a; --fg: #efe8df;
   --muted: #a79a8c; --accent: #d79a5c; --accent-soft: #3a2b1d; --accent-fg: #1b130b;
   --stage: #0e0c0a; --ok: #6cc28f; --warn: #e2a64f; --danger: #ec7b70; color-scheme: dark;
-  --g-content: #d79a5c; --g-layout: #7fb0de; --g-style: #e08aae }
+  --g-content: #d79a5c; --g-layout: #7fb0de; --g-style: #e08aae; --toast-bg: #463d33; --toast-line: #6b5d4e; --toast-shadow: 0 8px 28px rgba(0,0,0,.6) }
 
 * { box-sizing: border-box }
 .ico { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; vertical-align: -3px }
@@ -50,7 +51,7 @@
 .addel:hover { border-color: var(--accent); background: var(--accent-soft) }
 details.item > summary button .ico { width: 14px; height: 14px }
 .toast { display: flex; align-items: center; gap: 8px }
-.toast .ico { color: var(--ok) }
+.toast .ico { color: #fff; background: var(--ok); border-radius: 50%; padding: 3px; width: 18px; height: 18px; flex: none }
 body.theming, body.theming * { transition: background-color .35s, color .35s, border-color .35s !important }
 @media (max-width: 1100px) { .hide-sm { display: none } }
 [hidden] { display: none !important }
@@ -282,6 +283,8 @@ details.el > summary .tt { font-weight: 500 }
 .tbar button { min-height: 26px }
 .rowacts button:hover { color: var(--fg); background: var(--raised) } .rowacts button:disabled { opacity: .35 } .rowacts button .ico { width: 15px; height: 15px }
 .insp.simple .rowacts .adv { display: none !important }
+.rowwrap { container-type: inline-size } /* narrow panel: drop Send to top/bottom so the row name stays readable */
+@container (max-width: 330px) { .rowwrap > .rowacts .adv { display: none !important } .insp .rowwrap > details.item > summary { padding-right: var(--acts-s, var(--acts, 8px)) !important } .rowwrap > details.item > summary .etag { font-size: 0; min-width: 0; gap: 0 } }
 /* inspector hierarchy: groups > panels > nested panels */
 .igrp { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); padding: 0 10px 12px; overflow: clip; display: flex; flex-direction: column; gap: 10px }
 .igrp-content { --gc: var(--g-content) } .igrp-layout { --gc: var(--g-layout) } .igrp-style { --gc: var(--g-style) }
@@ -339,7 +342,7 @@ kbd { display: inline-block; min-width: 22px; padding: 2px 6px; border: 1px soli
 .dialog .acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end }
 .status { font-size: 12.5px; color: var(--muted); min-height: 1.2em }
 
-.toast { position: fixed; left: 50%; top: 66px; transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 14px; border-radius: 8px; font-size: 13px; z-index: 30 }
+.toast { position: fixed; left: 50%; top: 66px; transform: translateX(-50%); background: var(--toast-bg); color: var(--fg); border: 1px solid var(--toast-line); box-shadow: var(--toast-shadow); padding: 8px 14px 8px 10px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 30 }
 
 @media (max-width: 1100px) { .work { grid-template-columns: 230px minmax(0, 1fr) var(--rw, 360px) } }
 @media (max-width: 1100px) { .footbar { width: 230px } }
@@ -3663,7 +3666,7 @@ $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 // GitHub Pages sends the upload time as Last-Modified (document.lastModified). Without that header the browser reports "now",
 // so then the time this file was built is shown instead.
 (() => {
-  const built = new Date('2026-10-30T09:56:33Z'), lm = new Date(document.lastModified);
+  const built = new Date('2026-10-30T10:06:49Z'), lm = new Date(document.lastModified);
   const d = !isNaN(lm) && Math.abs(Date.now() - lm) > 10000 ? lm : built;
   if (isNaN(d)) return;
   const p = n => String(n).padStart(2, '0'), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
