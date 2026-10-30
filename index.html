@@ -12,17 +12,20 @@
   --bg: #f4f1ec; --surface: #ffffff; --raised: #faf8f5; --line: #e2dbd2; --fg: #221c16;
   --muted: #6e6359; --accent: #9a5d22; --accent-soft: #f3e6d8; --accent-fg: #ffffff;
   --stage: #e7e2db; --ok: #2f7a4a; --warn: #a3620b; --danger: #b3362b;
+  --g-content: #9a5d22; --g-layout: #2f6699; --g-style: #a2486f;
   --sans: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #16130f; --surface: #201c17; --raised: #26211b; --line: #3a322a; --fg: #efe8df;
   --muted: #a79a8c; --accent: #d79a5c; --accent-soft: #3a2b1d; --accent-fg: #1b130b;
-  --stage: #0e0c0a; --ok: #6cc28f; --warn: #e2a64f; --danger: #ec7b70; color-scheme: dark } }
+  --stage: #0e0c0a; --ok: #6cc28f; --warn: #e2a64f; --danger: #ec7b70; color-scheme: dark;
+  --g-content: #d79a5c; --g-layout: #7fb0de; --g-style: #e08aae } }
 :root[data-theme="dark"] {
   --bg: #16130f; --surface: #201c17; --raised: #26211b; --line: #3a322a; --fg: #efe8df;
   --muted: #a79a8c; --accent: #d79a5c; --accent-soft: #3a2b1d; --accent-fg: #1b130b;
-  --stage: #0e0c0a; --ok: #6cc28f; --warn: #e2a64f; --danger: #ec7b70; color-scheme: dark }
+  --stage: #0e0c0a; --ok: #6cc28f; --warn: #e2a64f; --danger: #ec7b70; color-scheme: dark;
+  --g-content: #d79a5c; --g-layout: #7fb0de; --g-style: #e08aae }
 
 * { box-sizing: border-box }
 .ico { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; vertical-align: -3px }
@@ -40,7 +43,7 @@
 .row .t { display: flex; align-items: center; gap: 6px }
 .row .t .ico { color: var(--accent) }
 .row .acts button .ico { width: 14px; height: 14px }
-.insp .blockhead h3 { display: flex; align-items: center; gap: 8px }
+
 .hico { width: 30px; height: 30px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); display: inline-grid; place-items: center; animation: pop .3s ease-out }
 .etag { display: inline-flex; align-items: center; gap: 4px }
 .addel .ico { color: var(--accent) }
@@ -65,9 +68,9 @@ header.bar {
   border-bottom: 1px solid var(--line); background: var(--surface);
 }
 .brand { font-weight: 700; letter-spacing: .01em; display: flex; align-items: baseline; gap: 8px }
-.brand small { color: var(--muted); font-weight: 500 }
+.brand small { color: var(--muted); font-weight: 500; font-size: 12px }
 .sku { display: flex; align-items: center; gap: 8px }
-.sku label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600 }
+.sku label { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600 }
 .sku input { width: 110px; font-family: var(--mono); font-size: 14px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--raised) }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 7px; overflow: hidden }
 .seg button { border: 0; background: transparent; padding: 6px 10px; color: var(--muted) }
@@ -90,7 +93,7 @@ body.rdrag, body.rdrag * { cursor: col-resize !important; user-select: none } bo
 .pane { min-height: 0; overflow: auto; background: var(--surface) }
 .left { border-right: 1px solid var(--line) }
 .right { border-left: 1px solid var(--line) }
-.pane h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); margin: 0; padding: 14px 14px 8px; font-weight: 700 }
+.pane h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); margin: 0; padding: 14px 14px 8px; font-weight: 700 }
 
 .lib { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 0 12px 12px }
 .chip { border: 1px dashed var(--line); background: var(--raised); border-radius: 7px; padding: 7px 8px; text-align: left; font-size: 12.5px; line-height: 1.25; cursor: grab }
@@ -103,12 +106,12 @@ body.rdrag, body.rdrag * { cursor: col-resize !important; user-select: none } bo
 .row.sel { background: var(--accent-soft); border-color: var(--accent) }
 .row .grip { color: var(--muted); cursor: grab; font-size: 13px; text-align: center; user-select: none }
 .row .lbl { min-width: 0 }
-.row .t { font-weight: 600; font-size: 13px }
+.row .t { font-weight: 600; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis } .row .t > span:last-child, .row .t { min-width: 0 }
 .row .s .hid { color: var(--warn); font-weight: 600 }
 .row .s { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
-.row .acts { display: flex; gap: 0; opacity: .55 }
+.row .acts { display: flex; gap: 2px; opacity: .8 }
 .row:hover .acts, .row.sel .acts { opacity: 1 }
-.row .acts button { border: 0; background: transparent; padding: 2px 4px; color: var(--muted); font-size: 13px; border-radius: 4px }
+.row .acts button { border: 0; background: transparent; padding: 0; width: 26px; height: 26px; display: inline-grid; place-items: center; color: var(--muted); font-size: 13px; border-radius: 5px }
 .row .acts button:hover { color: var(--fg); background: var(--surface) }
 .drop-line { height: 3px; background: var(--accent); border-radius: 2px; margin: -1px 4px 1px }
 .row.dragging { opacity: .4 }
@@ -129,34 +132,40 @@ body.fs .frame-wrap { box-shadow: none }
 .tabs button { border: 0; background: transparent; padding: 8px 10px; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; font-weight: 600 }
 .tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent) }
 .insp { padding: 16px; display: flex; flex-direction: column; gap: 16px }
-.insp .blockhead { display: flex; align-items: baseline; justify-content: space-between; gap: 8px }
-.insp .blockhead h3 { margin: 0; font-size: 16px }
+.insp .blockhead { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 4px 12px; padding: 14px; border-radius: 12px; background: var(--accent-soft) }
+.insp .blockhead .hico { width: 44px; height: 44px; border-radius: 11px; background: var(--accent); color: var(--accent-fg) }
+.insp .blockhead .hico .ico { width: 22px; height: 22px }
+.insp .blockhead h3 { margin: 0; font-size: 21px; line-height: 1.15; letter-spacing: -0.01em; font-weight: 700; text-wrap: balance }
+.bh-meta { margin-top: 2px; font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.insp .blockhead .modebar { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 10px; margin-top: 8px; padding-top: 10px; border-top: 1px solid color-mix(in srgb, var(--accent) 18%, transparent) }
+.insp .blockhead .modebar .seg { background: var(--surface) } .insp .blockhead .modebar .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg) }
+.mode-note { font-size: 12px; color: var(--muted) }
 .field { display: flex; flex-direction: column; gap: 5px; min-width: 0 }
 .field > label, .field > .flabel { font-size: 12px; font-weight: 600 }
-.fhint, .field .fhint { font-size: 11.5px; color: var(--muted); line-height: 1.45 }
+.fhint, .field .fhint { font-size: 12px; color: var(--muted); line-height: 1.45 }
 .field input[type=text], .field textarea, .field input[type=url] { width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; background: var(--raised) }
 .field textarea { min-height: 96px; resize: vertical; line-height: 1.45 }
 .check { display: flex; gap: 8px; align-items: center; font-size: 13px }
 
 .slot { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 10px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--raised) }
 .slot.over { border-color: var(--accent); background: var(--accent-soft) }
-.thumb { width: 76px; height: 64px; border-radius: 5px; overflow: hidden; background: var(--stage); display: grid; place-items: center; color: var(--muted); font-size: 11px; text-align: center }
+.thumb { width: 76px; height: 64px; border-radius: 5px; overflow: hidden; background: var(--stage); display: grid; place-items: center; color: var(--muted); font-size: 12px; text-align: center }
 .thumb img { width: 100%; height: 100%; object-fit: contain }
 .slot .meta { min-width: 0; display: flex; flex-direction: column; gap: 4px }
 .slot .top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap }
 .slot .fl { font-size: 12px; font-weight: 600 }
-.badge { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 1px 6px; border-radius: 99px; border: 1px solid currentColor }
+.badge { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 1px 6px; border-radius: 99px; border: 1px solid currentColor }
 .badge.new { color: var(--ok) } .badge.existing { color: var(--muted) } .badge.empty { color: var(--warn) }
 .slot code { overflow-wrap: anywhere; color: var(--fg) }
 .slot .acts { display: flex; gap: 6px; flex-wrap: wrap }
-.slot .fn { width: 100%; border: 1px solid var(--line); border-radius: 5px; padding: 4px 7px; background: var(--surface); font-family: var(--mono); font-size: 11.5px }
+.slot .fn { width: 100%; border: 1px solid var(--line); border-radius: 5px; padding: 4px 7px; background: var(--surface); font-family: var(--mono); font-size: 12px }
 
 details.item.flash { animation: flash 1.2s ease-out }
 @keyframes flash { 0%, 30% { box-shadow: 0 0 0 3px var(--accent, #c27a35) } 100% { box-shadow: 0 0 0 0 transparent } }
 details.item { border: 1px solid var(--line); border-radius: 8px; background: var(--surface) }
 details.item > summary { display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: pointer; list-style: none }
 details.item > summary::-webkit-details-marker { display: none }
-details.item > summary .n { font-family: var(--mono); font-size: 11px; color: var(--muted) }
+details.item > summary .n { font-family: var(--mono); font-size: 12px; color: var(--muted) }
 details.item > summary .tt { flex: 1; min-width: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
 details.item > summary button { border: 0; background: transparent; color: var(--muted); padding: 2px 5px; border-radius: 4px }
 details.item > summary button:hover { color: var(--fg); background: var(--raised) }
@@ -169,7 +178,7 @@ details.item .body { padding: 10px; display: flex; flex-direction: column; gap: 
 .corners input { width: 60px; border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; background: var(--raised) }
 .icoitem { border: 1px solid var(--line); border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 8px; background: var(--surface) }
 .icohead { display: flex; align-items: center; gap: 4px }
-.icohead .n { font-family: var(--mono); font-size: 11px; color: var(--muted) }
+.icohead .n { font-family: var(--mono); font-size: 12px; color: var(--muted) }
 .poscard { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 10px; background: var(--raised) }
 .poshead { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 12.5px; color: var(--accent) }
 .divprev { height: 34px; display: flex; align-items: center; justify-content: center; border: 1px dashed var(--line); border-radius: 8px; background: var(--surface); padding: 0 12px }
@@ -192,11 +201,11 @@ details.item .body { padding: 10px; display: flex; flex-direction: column; gap: 
 .optrow select { border: 1px solid var(--line); border-radius: 6px; padding: 3px 6px; background: var(--raised) }
 .angles { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px }
 .angles button { border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 3px 0 2px; display: flex; flex-direction: column; align-items: center; font-size: 14px; line-height: 1.1; color: var(--fg) }
-.angles button small { font-size: 9.5px; color: var(--muted) }
+.angles button small { font-size: 12px; color: var(--muted) }
 .angles button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft) }
 .angles button:hover { border-color: var(--muted) }
-.slottip { font-size: 11px; line-height: 1.45; color: var(--muted); background: var(--surface); border: 1px dashed var(--line); border-radius: 6px; padding: 6px 8px }
-.slottip code { font-size: 10.5px; overflow-wrap: anywhere; color: var(--fg) }
+.slottip { font-size: 12px; line-height: 1.45; color: var(--muted); background: var(--surface); border: 1px dashed var(--line); border-radius: 6px; padding: 6px 8px }
+.slottip code { font-size: 12px; overflow-wrap: anywhere; color: var(--fg) }
 .slottip b { color: var(--accent) }
 .gradprev { height: 28px; border-radius: 6px; border: 1px solid var(--line) }
 .splitlbl { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted) }
@@ -213,8 +222,8 @@ input[type=range] { width: 100%; accent-color: var(--accent) }
 .tbar button { border: 1px solid var(--line); background: var(--surface); border-radius: 5px; padding: 2px 8px; font-size: 12px; min-width: 28px }
 .tbar button:hover { border-color: var(--muted) }
 .addbar { display: flex; flex-wrap: wrap; gap: 5px; align-items: center }
-.addbar > span { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; margin-right: 2px }
-.etag { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); min-width: 62px }
+.addbar > span { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; margin-right: 2px }
+.etag { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); min-width: 62px }
 details.el > summary .tt { font-weight: 500 }
 .posrow { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap }
 .grid9 { display: grid; grid-template-columns: repeat(3, 30px); gap: 4px; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--stage) }
@@ -226,7 +235,7 @@ details.el > summary .tt { font-weight: 500 }
 .pads label { display: flex; flex-direction: column; gap: 3px }
 .pads input { width: 64px; border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; background: var(--raised) }
 .psum { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55% }
-.prow { display: grid; grid-template-columns: 76px minmax(0, 1fr); align-items: center; gap: 8px; font-size: 12.5px }
+.prow { display: grid; grid-template-columns: minmax(76px, 36%) minmax(0, 1fr); align-items: center; gap: 8px; font-size: 12.5px }
 .prow select, .pin input[type=number] { border: 1px solid var(--line); border-radius: 6px; padding: 5px 7px; background: var(--raised); min-width: 0 }
 .pin { display: flex; gap: 6px; align-items: center; min-width: 0 }
 .pin input[type=number] { width: 90px }
@@ -242,27 +251,35 @@ details.el > summary .tt { font-weight: 500 }
 
 .pvlang { font: inherit; font-size: 12px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--fg); margin-right: 6px }
 .insp.simple .adv { display: none !important }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0 }
+.rowwrap { position: relative; min-width: 0 } .insp .rowwrap > details.item > summary { padding-right: var(--acts, 8px) !important } .insp.simple .rowwrap > details.item > summary { padding-right: var(--acts-s, var(--acts, 8px)) !important }
+.rowacts { position: absolute; top: 0; right: 6px; height: 38px; display: flex; align-items: center; gap: 2px }
+.insp details.item details.item + .rowacts, .rowwrap .rowwrap > .rowacts { height: 34px }
+.rowacts button { width: 28px; height: 28px; display: inline-grid; place-items: center; border: 0; background: transparent; color: var(--muted); border-radius: 6px; padding: 0 }
+.tbar button { min-height: 26px }
+.rowacts button:hover { color: var(--fg); background: var(--raised) } .rowacts button:disabled { opacity: .35 } .rowacts button .ico { width: 15px; height: 15px }
+.insp.simple .rowacts .adv { display: none !important }
 /* inspector hierarchy: groups > panels > nested panels */
-.igrp { border: 1px solid var(--line); border-left: 3px solid var(--gc, var(--accent)); border-radius: 10px; background: var(--surface); padding: 10px 10px 12px; display: flex; flex-direction: column; gap: 10px }
-.igrp-content { --gc: #9F672E } .igrp-layout { --gc: #3E7CB1 } .igrp-style { --gc: #B8577E }
-.ighead { display: flex; align-items: center; gap: 7px; cursor: pointer; list-style: none; user-select: none; font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--gc) }
-.ighead .igico { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; background: color-mix(in srgb, var(--gc) 14%, transparent) }
-.ighead .ighint { margin-left: auto; font-size: 10.5px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--muted) }
+.igrp { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); padding: 0 10px 12px; overflow: clip; display: flex; flex-direction: column; gap: 10px }
+.igrp-content { --gc: var(--g-content) } .igrp-layout { --gc: var(--g-layout) } .igrp-style { --gc: var(--g-style) }
+.ighead { display: flex; align-items: center; gap: 9px; cursor: pointer; list-style: none; user-select: none; min-height: 44px; margin: 0 -10px; padding: 8px 12px; background: color-mix(in srgb, var(--gc) 9%, var(--surface)); border-bottom: 1px solid color-mix(in srgb, var(--gc) 18%, transparent); font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--gc) }
+.ighead .igico { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 7px; background: color-mix(in srgb, var(--gc) 14%, transparent) }
+.ighead .ighint { margin-left: auto; font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--muted) }
 .igbody { display: flex; flex-direction: column; gap: 12px; min-width: 0; margin-top: 10px }
-.ighead::-webkit-details-marker { display: none } .ighead::after { content: "▾"; color: var(--muted); font-size: 11px; margin-left: 6px; transition: transform .18s } .igrp:not([open]) > .ighead::after { transform: rotate(-90deg) }
-.igrp:not([open]) { padding-bottom: 10px } .igrp { gap: 0 }
+.ighead::-webkit-details-marker { display: none } .ighead::after { content: "▾"; color: var(--muted); font-size: 12px; margin-left: 6px; transition: transform .18s } .igrp:not([open]) > .ighead::after { transform: rotate(-90deg) }
+.igrp:not([open]) { padding-bottom: 0 } .igrp:not([open]) > .ighead { border-bottom-color: transparent } .igrp { gap: 0 }
 .insp.simple .igrp:not(:has(> .igbody > :not(.adv))) { display: none }
 .insp details.item > summary .pico { display: inline-grid; place-items: center; color: var(--gc, var(--accent)); opacity: .9 }
 .insp details.item details.item { background: var(--raised) }
 .insp details.item details.item > summary { padding: 6px 9px; font-size: 13px }
 .insp details.item details.item details.item { background: var(--surface) }
 .insp details.item details.item details.item > summary { font-size: 12.5px }
-.insp details.item[open] > .body { border-left: 2px solid color-mix(in srgb, var(--gc, var(--accent)) 30%, transparent); margin-left: 8px; padding-left: 10px }
+.insp details.item details.item[open] > .body { border-top: 0 }
 .insp .field > .flabel, .insp .field > label { color: var(--fg) }
-.devnote { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; color: var(--muted); background: var(--soft, rgba(159,103,46,.08)); border-radius: 6px; padding: 6px 8px; margin-bottom: 4px } .devnote span { flex: 1; min-width: 140px }
+.devnote { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; color: var(--muted); background: var(--accent-soft); color: var(--fg); border-radius: 6px; padding: 6px 8px; margin-bottom: 4px } .devnote span { flex: 1; min-width: 140px }
 .cpx { display: flex; flex-direction: column; gap: 4px; min-width: 0 } .cpx .cpr { display: flex; gap: 6px; align-items: center }
 .cpx .hex { width: 84px; font: 12px/1.2 ui-monospace, Menlo, monospace; text-transform: uppercase }
-.cpx .sw { display: flex; flex-wrap: wrap; gap: 4px; max-width: 220px } .cpx .sw button { width: 18px; height: 18px; border-radius: 4px; border: 1px solid rgba(0,0,0,.18); padding: 0; cursor: pointer }
+.cpx .sw { display: flex; flex-wrap: wrap; gap: 4px; max-width: 260px } .cpx .sw button { width: 24px; height: 24px; border-radius: 4px; border: 1px solid rgba(0,0,0,.18); padding: 0; cursor: pointer }
 .cpx .sw button:hover, .cpx .sw button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px }
 .modebar { display: flex; flex-direction: column; gap: 4px }
 .tipbox { font-size: 12.5px; line-height: 1.45; padding: 8px 10px; border-radius: 8px; background: var(--raised); border: 1px solid var(--line); border-left: 3px solid #ec206e }
@@ -280,8 +297,8 @@ details.el > summary .tt { font-weight: 500 }
 .pane.left { padding-bottom: 60px } /* room for the ? button and credit line */
 .guide-link { align-self: flex-start; text-decoration: none }
 .footbar { position: fixed; left: 0; bottom: 0; width: 260px; display: flex; align-items: center; gap: 10px; padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)); background: var(--surface); border-top: 1px solid var(--line); border-right: 1px solid var(--line); z-index: 15 }
-.lastupd { display: block; font-size: 9.5px; opacity: .8; margin-top: 1px }
-.credit { font-size: 10.5px; line-height: 1.35; color: var(--muted) }
+.lastupd { display: block; font-size: 12px; opacity: .8; margin-top: 1px }
+.credit { font-size: 12px; line-height: 1.35; color: var(--muted) }
 .keysbtn:hover { border-color: var(--accent, #c27a35); color: var(--accent, #c27a35) }
 .keys { width: 100%; border-collapse: collapse; font-size: 13px }
 .keys td { padding: 6px 4px; border-bottom: 1px solid var(--line); vertical-align: middle }
@@ -293,7 +310,7 @@ kbd { display: inline-block; min-width: 22px; padding: 2px 6px; border: 1px soli
 .ftable-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px }
 .ftable { width: 100%; border-collapse: collapse; font-size: 12.5px }
 .ftable th, .ftable td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); vertical-align: top }
-.ftable th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted) }
+.ftable th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted) }
 .ftable tr:last-child td { border-bottom: 0 }
 .warns { margin: 0; padding: 10px 12px 10px 28px; border-radius: 8px; background: var(--accent-soft); color: var(--fg); font-size: 13px }
 .dialog .acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end }
@@ -324,7 +341,7 @@ kbd { display: inline-block; min-width: 22px; padding: 2px 6px; border: 1px soli
 @keyframes glow { 50% { opacity: .35 } }
 .btn, .chip, .row, .seg button, .tabs button, .tbar button, .grid9 button, details.item > summary button, .slot, .thumb img { transition: background-color .18s, border-color .18s, color .18s, transform .18s, box-shadow .18s, opacity .18s }
 .btn:active, .chip:active, .tbar button:active, .grid9 button:active { transform: scale(.96) }
-.btn.primary:hover { box-shadow: 0 4px 14px -4px var(--accent) }
+.btn.primary:hover { box-shadow: 0 2px 6px -2px rgba(34,28,22,.35) }
 .chip:hover { transform: translateY(-1px); box-shadow: 0 6px 14px -8px rgba(0,0,0,.35) }
 .row.enter { animation: rise .3s ease-out, flash .9s ease-out .1s }
 .row.sel { box-shadow: inset 3px 0 0 var(--accent) }
@@ -345,7 +362,8 @@ details.item[open] > .body { animation: rise .2s ease-out }
 .restore span { flex: 1; min-width: 180px }
 .live { position: relative; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); flex: none }
 .live.pulse::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: var(--ok); animation: ping .7s ease-out }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important } }
+@keyframes fadeOnly { from { opacity: 0 } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; animation: none !important } .toast.in { animation: fadeOnly .2s ease-out !important } .toast.out { animation: none !important; opacity: 0 } } /* changes still show, nothing slides */
 </style>
 
 </head>
@@ -393,7 +411,7 @@ details.item[open] > .body { animation: rise .2s ease-out }
 </div>
 
 <div class="modal" id="modal" hidden>
-  <div class="dialog" role="dialog" aria-labelledby="exTitle">
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="exTitle">
     <h3 id="exTitle">Export</h3>
     <div id="exBody"></div>
     <div class="status" id="exStatus"></div>
@@ -406,7 +424,7 @@ details.item[open] > .body { animation: rise .2s ease-out }
   </div>
 </div>
 <div class="modal" id="keysModal" hidden>
-  <div class="dialog" role="dialog" aria-labelledby="keysTitle" style="width:min(460px,100%)">
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="keysTitle" style="width:min(460px,100%)">
     <h3 id="keysTitle">Keyboard shortcuts</h3>
     <table class="keys"><tbody>
       <tr><td><kbd>⌘/Ctrl</kbd> <kbd>S</kbd></td><td>Save project (.html)</td></tr>
@@ -430,20 +448,20 @@ details.item[open] > .body { animation: rise .2s ease-out }
 </div>
 <div class="footbar"><button class="keysbtn" id="keysBtn" aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">?</button><span class="credit">Vibe Coded by Claude &amp; CC. All Rights Reserved ® 2026.<span id="lastUpd" class="lastupd"></span></span></div>
 <div class="modal" id="trModal" hidden>
-  <div class="dialog" role="dialog" aria-labelledby="trTitle" style="width:min(900px,100%)">
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="trTitle" style="width:min(900px,100%)">
     <h3 id="trTitle">Translate</h3>
     <div id="trBody"></div>
     <div class="acts"><button class="btn primary" id="trClose">Done</button></div>
   </div>
 </div>
 <div class="modal" id="impModal" hidden>
-  <div class="dialog" role="dialog" aria-labelledby="impTitle" style="width:min(520px,100%)">
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="impTitle" style="width:min(520px,100%)">
     <h3 id="impTitle">How should this page come in?</h3>
     <div id="impBody"></div>
     <div class="acts"><button class="btn" id="impKeep">Keep exactly</button><button class="btn primary" id="impEdit">Make editable</button></div>
   </div>
 </div>
-<div class="toast" id="toast" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script id="core">
@@ -611,7 +629,7 @@ const TYPES = {
     { k: 'halign', t: 'select', label: 'Place columns across the line', opts: [['', 'Stretch to fill'], ['flex-start', 'Left'], ['center', 'Center'], ['flex-end', 'Right']], hint: 'Left, Center or Right keep each column at its own width (or 1 ÷ Per line) and move the group.' },
     { k: 'cols', t: 'cols', label: 'Columns' } ],
     make: () => ({ bg: '', valign: 'flex-start', cols: [newCol([newEl('image'), newEl('title'), newEl('text')]), newCol([newEl('image'), newEl('title'), newEl('text')])] }),
-    sum: d => d.cols.length + ' columns' },
+    sum: d => plural(d.cols.length, 'column') },
   video: { label: 'YouTube video', fields: [
     { k: 'url', t: 'text', label: 'YouTube link', hint: 'Paste any YouTube link. It is converted to an embed link.' },
     { k: 'urls', t: 'ytlangs', label: 'YouTube link' },
@@ -630,7 +648,7 @@ const TYPES = {
         { k: 'box', t: 'boxes', label: 'Corners & padding' },
         { k: 'stroke', t: 'stroke', label: 'Row outline' },
         { k: 'media', t: 'els', label: 'Photo column', ctx: 'media' } ] } ],
-    make: () => ({ startRev: false, items: [TYPES.features.fields.find(f => f.k === 'items').make()] }), sum: d => d.items.length + ' rows' },
+    make: () => ({ startRev: false, items: [TYPES.features.fields.find(f => f.k === 'items').make()] }), sum: d => plural(d.items.length, 'row') },
   profile: { label: 'Brand profile', fields: [{ k: 'els', t: 'els', label: 'Elements' }],
     make: () => ({ els: [newEl('title', 'BRAND: Who We Are'), newEl('text', 'About the brand.')] }), sum: d => elSum(d.els) },
   brand: { label: 'Brand strip', fields: [{ k: 'els', t: 'logocount', label: 'Number of logos' }, { k: 'els', t: 'els', label: 'Elements', ctx: 'brand' }],
@@ -651,7 +669,7 @@ const TYPES = {
     make: () => { const ic = n => ({ id: uid('k'), img: { a: null, name: n }, url: 'https://www.amway.my/pdpcontent/MYBN/assets/img/' + n }); // full links, as on the live pages
       return { title: 'CREATED CLEAN', body: 'This vegan formula meets the ARTISTRY Clean standards, a rigorous set of guidelines that ensures ARTISTRY products are pure, safe and effective. It is formulated with no mineral oil, parabens, phthalates or any of the over 1,300 banned ingredients on our No-No List. It is also fragrance-free. Contains no animal-derived ingredients; registered with the Vegan Society. No animal testing.',
         wD: '100', wM: '63', rows: [{ id: uid('r'), items: [ic('pdp_icon_arttraceability.png'), ic('pdp_icon_artistryclean.png'), ic('125547_PDP_ICON_8.png'), ic('125547_PDP_ICON_9.png'), ic('125547_PDP_ICON_10.png')] }] }; },
-    sum: d => (d.rows || []).reduce((n, r) => n + (r.items || []).length, 0) + ' icons' },
+    sum: d => plural((d.rows || []).reduce((n, r) => n + (r.items || []).length, 0), 'icon') },
   moreinfo: { label: 'More Information', fields: [
     { k: 'sbg', t: 'bg', label: 'Background' },
     { k: 'title', t: 'text', label: 'Heading' },
@@ -669,7 +687,7 @@ const TYPES = {
       { id: uid('i'), title: 'ADVISORIES AND PRECAUTIONS', body: 'For external use only.\n- Avoid contact with eyes. If contact occurs, rinse thoroughly with water.\n- Discontinue use if irritation occurs.\n- Keep out of reach of children.', specs: '' },
       { id: uid('i'), title: 'STORAGE', body: 'Store in a cool, dry place below 30°C, away from direct sunlight. Close the cap tightly after use.', specs: '' },
       { id: uid('i'), title: 'PRODUCT VOLUME & INGREDIENTS', body: 'Volume: 50ml\n\n**Ingredients:** Water, Glycerin, Butylene Glycol, Niacinamide, Sodium Hyaluronate, Panthenol, Allantoin, Tocopheryl Acetate, Phenoxyethanol, Fragrance.', specs: '' },
-    ] }), sum: d => d.items.length + ' items' },
+    ] }), sum: d => plural(d.items.length, 'item') },
   banner: { label: 'Bottom banner', fields: [
     { k: 'desk', t: 'img', label: 'Banner · desktop', ph: [1920, 700] },
     { k: 'tab', t: 'img', label: 'Banner · tablet', ph: [1200, 700], hint: IMG_HINT_T },
@@ -696,7 +714,7 @@ TYPES.cards = { label: 'Cards', fields: [
     { k: 'sbox', t: 'box1', label: 'Section corners & padding' },
     { k: 'cards', t: 'cards', label: 'Cards' } ],
   make: () => ({ layout: 'top', per: '3', imgW: '40', gap: '', cbg: { type: 'color', c1: '#F3F3F3', c2: '#FFFFFF', angle: '135' }, crad: { r: '12' }, cpad: { pad: ['', '', '', ''] }, cards: [newCard(1), newCard(2), newCard(3)] }),
-  sum: d => d.cards.length + ' cards · ' + (d.per || 3) + ' per row' };
+  sum: d => plural(d.cards.length, 'card') + ' · ' + (d.per || 3) + ' per row' };
 TYPES.imgtext = { label: 'Image + text', as: 'columns', make: () => ({ valign: 'flex-start', cols: [newCol([newEl('item')])] }) };
 const ORDER = ['blank', 'hero', 'intro', 'columns', 'cards', 'video', 'features', 'imgtext', 'brand', 'image', 'divline', 'artclean', 'moreinfo', 'banner', 'raw'];
 const iconLike = k => k === 'icon' || k === 'logo';
@@ -1481,7 +1499,7 @@ ${items}
   if (!(st.desc || '').trim()) warns.push('Page settings: the meta description is empty.');
 
   if (!st.blocks.length) warns.push('The page has no sections yet.');
-  const body = out.length || !P ? out.join('\n\n') : '<div style="display:grid;place-items:center;min-height:70vh;color:#8a7d70;font:16px/1.5 system-ui,sans-serif;text-align:center;padding:40px"><div><div style="font-size:42px">+</div>Blank page<br><span style="font-size:13px">Add a section from the left to start.</span></div></div>';
+  const body = out.length || !P ? out.join('\n\n') : '<div style="display:grid;place-items:center;min-height:70vh;color:#8a7d70;font:600 30px/1.4 system-ui,sans-serif;text-align:center;padding:40px"><div><div style="font-size:72px;font-weight:300;line-height:1">+</div>Blank page<br><span style="font-size:22px;font-weight:400">Add a section from the left to start.</span></div></div>';
   if (devT.length) css += `\n      @media only screen and (max-width: 1200px) { ${devT.join(' ')} }`;
   if (devM.length) css += `\n      @media only screen and (max-width: 768px) { ${devM.join(' ')} }`;
   // Builder (LIVARA) styles only when LIVARA sections are used and the page's own CSS doesn't already style them.
@@ -1617,6 +1635,7 @@ function toast(msg) {
 const reId = o => JSON.parse(JSON.stringify(o).replace(/"id":"[^"]+"/g, () => '"id":"' + uid('x') + '"'));
 let enterIds = new Set();
 const findBlock = id => st.blocks.find(b => b.id === id);
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
 const selCss = (sel, selEl) => (sel ? `[data-bid="${sel}"]{outline:3px solid #c27a35!important;outline-offset:-3px}` : '') + (selEl ? `[data-oid="${selEl}"]{outline:2px solid #ec206e!important;outline-offset:2px}` : '');
 // Any object in the page by its id (element, card, column, icon item…).
 function findObj(id) { let hit = null; const walk = o => { if (hit || !o || typeof o !== 'object') return; if (o.id === id) { hit = o; return; } Object.values(o).forEach(walk); }; st.blocks.forEach(b => { if (b.id === id) hit = hit || b.data; walk(b.data); }); return hit; }
@@ -1690,7 +1709,10 @@ let pvHold = false, pvPending = false;
 function renderPreview() {
   if (pvHold) { pvPending = true; return; }
   try { lastScroll = frame.contentWindow ? frame.contentWindow.scrollY : 0; } catch (e) { lastScroll = 0; }
-  frame.srcdoc = buildHTML(langState(st, pvLangOn()), assets, { preview: true, clean: fsOn, sel: selId, selEl, grid: gridOn && !fsOn, live: st.liveImg !== false, liveBase: st.imgBase || DEFAULT_IMG_BASE }).html;
+  const html = buildHTML(langState(st, pvLangOn()), assets, { preview: true, clean: fsOn, sel: selId, selEl, grid: gridOn && !fsOn, live: st.liveImg !== false, liveBase: st.imgBase || DEFAULT_IMG_BASE }).html;
+  let doc = null; try { doc = frame.dataset.ready === '1' && frame.contentDocument; } catch (e) { }
+  if (doc && doc.body && patchPreview(doc, html)) afterRender(doc);
+  else { frame.dataset.ready = '0'; frame.srcdoc = html; }
   const dot = $('#liveDot'); dot.classList.remove('pulse'); void dot.offsetWidth; dot.classList.add('pulse');
 }
 frame.addEventListener('load', () => {
@@ -1717,18 +1739,8 @@ frame.addEventListener('load', () => {
     const from = st.blocks.findIndex(b => b.id === mv); if (from < 0) return;
     const [b] = st.blocks.splice(from, 1); st.blocks.splice(from < i ? i - 1 : i, 0, b); renderAll();
   });
-  // Server images that can't load here (blocked or missing) fall back to a labelled placeholder.
-  const base = st.imgBase || DEFAULT_IMG_BASE;
-  doc.querySelectorAll('img').forEach(img => {
-    if (!img.getAttribute('src') || !img.getAttribute('src').startsWith(base)) return;
-    const fall = () => { img.onerror = null; img.src = phSVG(decodeURI(img.getAttribute('src').slice(base.length)) + ' (not found)', [480, 280]); }; // small: full-width images still stretch, icons stay icon-sized
-    if (img.complete && !img.naturalWidth) fall(); else img.onerror = fall;
-  });
-  // Scroll only inside the preview. scrollIntoView would also scroll the builder's own (non-scrollable) panel and hide the top.
-  if (scrollToSel && selId) { const el = doc.querySelector(`[data-bid="${selId}"]`); if (el) frame.contentWindow.scrollTo(0, el.getBoundingClientRect().top + frame.contentWindow.scrollY); scrollToSel = false; }
-  else frame.contentWindow.scrollTo(0, lastScroll);
-  stage.scrollTop = 0; stage.scrollLeft = 0;
-  rawEditSetup(doc);
+  frame.dataset.ready = '1';
+  afterRender(doc);
   doc.addEventListener('click', e => {
     if (e.target.closest('a')) e.preventDefault();
     if (e.target.closest('.rx-bar, [contenteditable="true"]')) return; // editing in place
@@ -1768,10 +1780,38 @@ frame.addEventListener('load', () => {
       } else if (pvPending) { pvPending = false; schedulePreview(true); }
     }, { once: true });
   });
-  drawGrip(doc);
 });
+// Everything that depends on the page content: run after a full load and after each in-place update.
+function afterRender(doc) {
+  // Server images that can't load here (blocked or missing) fall back to a labelled placeholder.
+  const base = st.imgBase || DEFAULT_IMG_BASE;
+  doc.querySelectorAll('img').forEach(img => {
+    if (!img.getAttribute('src') || !img.getAttribute('src').startsWith(base)) return;
+    const fall = () => { img.onerror = null; img.src = phSVG(decodeURI(img.getAttribute('src').slice(base.length)) + ' (not found)', [480, 280]); }; // small: full-width images still stretch, icons stay icon-sized
+    if (img.complete && !img.naturalWidth) fall(); else img.onerror = fall;
+  });
+  // Scroll only inside the preview. scrollIntoView would also scroll the builder's own (non-scrollable) panel and hide the top.
+  if (scrollToSel && selId) { const el = doc.querySelector(`[data-bid="${selId}"]`); if (el) frame.contentWindow.scrollTo(0, el.getBoundingClientRect().top + frame.contentWindow.scrollY); scrollToSel = false; }
+  else frame.contentWindow.scrollTo(0, lastScroll);
+  stage.scrollTop = 0; stage.scrollLeft = 0;
+  rawEditSetup(doc);
+  drawGrip(doc);
+  // Pictures load after an in-place update and move things: keep the handles on their edges.
+  if (!doc.__ro && doc.defaultView.ResizeObserver) { doc.__ro = new doc.defaultView.ResizeObserver(() => { clearTimeout(doc.__gt); doc.__gt = setTimeout(() => drawGrip(doc), 60); }); doc.__ro.observe(doc.body); }
+}
+// Swap the styles that changed and the page body, keeping the loaded document (no flash, no re-parse of the big template CSS).
+function patchPreview(doc, html) {
+  const nd = new DOMParser().parseFromString(html, 'text/html');
+  const mine = [...doc.head.querySelectorAll('style')].filter(s => !s.dataset.tool), next = [...nd.head.querySelectorAll('style')];
+  if (mine.length !== next.length) return false;
+  mine.forEach((s, i) => { if (s.textContent !== next[i].textContent) s.textContent = next[i].textContent; });
+  doc.documentElement.lang = nd.documentElement.lang;
+  doc.body.innerHTML = nd.body.innerHTML;
+  return true;
+}
 // Drag the small handles around the selected element: top / bottom = space above / below, left / right = padding. Saved for the device in the top bar.
 function drawGrip(doc) {
+  if (doc.querySelector('.pdp-grip.dragging')) return; // never pull a handle out from under the pointer
   doc.querySelectorAll('.pdp-grip').forEach(x => x.remove());
   if (fsOn) return;
   const sn = selId && doc.querySelector(`body > [data-bid="${selId}"]`), sb = selId && findBlock(selId); if (sn && sb) secGrip(doc, sn, sb); // top / bottom of the selected section
@@ -1787,10 +1827,10 @@ function drawGrip(doc) {
   place();
   grips.forEach(g => {
     g.addEventListener('pointerdown', e => {
-      e.preventDefault(); e.stopPropagation(); g.setPointerCapture(e.pointerId);
+      e.preventDefault(); e.stopPropagation(); g.setPointerCapture(e.pointerId); g.classList.add('dragging');
       const k = g.dataset.s, [prop, word, horiz, dir] = SIDES[k], p0 = horiz ? e.clientX : e.clientY, v0 = parseFloat(cs()[prop.replace(/-(.)/g, (m, a) => a.toUpperCase())]) || 0, lab = g.firstChild; lab.hidden = false; let v = Math.round(v0);
       const move = ev => { v = Math.max(0, Math.round(v0 + ((horiz ? ev.clientX : ev.clientY) - p0) * dir)); n.style.setProperty(prop, v + 'px', 'important'); lab.textContent = `${v}px ${word} · ${device}`; place(); };
-      const up = () => { g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); lab.hidden = true;
+      const up = () => { g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); lab.hidden = true; g.classList.remove('dragging');
         if (v === Math.round(v0)) return; commitSnap();
         const key = { desktop: 'sp', tablet: 'spT', mobile: 'spM' }[device], s = o[key] || (o[key] = {}); s.pad = s.pad || ['', '', '', ''];
         if (k === 'mt' || k === 'mb') s[k] = String(v); else s.pad[k === 'pl' ? 3 : 1] = String(v);
@@ -1800,7 +1840,7 @@ function drawGrip(doc) {
     g.addEventListener('click', e => e.stopPropagation());
   });
 }
-drawGrip.css = doc => { if (doc.getElementById('pdp-grip-css')) return; const s = doc.createElement('style'); s.id = 'pdp-grip-css'; s.textContent = `.pdp-grip-sec{background:#c27a35!important;width:72px!important;margin-left:-36px!important}`+`.pdp-grip{position:absolute;z-index:2147483645;border-radius:7px;background:#ec206e;box-shadow:0 1px 4px rgba(0,0,0,.25);touch-action:none;opacity:.9}.pdp-grip:hover{opacity:1}.pdp-grip[data-s="mt"],.pdp-grip[data-s="mb"]{width:40px;height:10px;margin:-5px 0 0 -20px;cursor:ns-resize}.pdp-grip[data-s="pl"],.pdp-grip[data-s="pr"]{width:10px;height:40px;margin:-20px 0 0 -5px;cursor:ew-resize}.pdp-grip span{position:absolute;left:14px;top:-4px;white-space:nowrap;font:600 11px/1 system-ui,sans-serif;color:#fff;background:#2a211a;padding:3px 6px;border-radius:5px;pointer-events:none}.rx-bar{position:absolute;z-index:2147483646;display:flex;gap:2px;padding:3px;background:#2a211a;border-radius:7px;box-shadow:0 4px 14px rgba(0,0,0,.25);font:600 12px/1 system-ui,sans-serif}.rx-bar button{all:unset;color:#fff;padding:5px 8px;border-radius:5px;cursor:pointer}.rx-bar button:hover{background:rgba(255,255,255,.18)}[data-tx]:hover{cursor:text}[contenteditable="true"]{outline:2px solid #ec206e!important;outline-offset:3px;background:rgba(236,32,110,.05);cursor:text}`; doc.head.appendChild(s); };
+drawGrip.css = doc => { if (doc.getElementById('pdp-grip-css')) return; const s = doc.createElement('style'); s.id = 'pdp-grip-css'; s.dataset.tool = '1'; s.textContent = `.pdp-grip-sec{background:#c27a35!important;width:72px!important;margin-left:-36px!important}`+`.pdp-grip{position:absolute;z-index:2147483645;border-radius:7px;background:#ec206e;box-shadow:0 1px 4px rgba(0,0,0,.25);touch-action:none;opacity:.9}.pdp-grip:hover{opacity:1}.pdp-grip[data-s="mt"],.pdp-grip[data-s="mb"]{width:40px;height:10px;margin:-5px 0 0 -20px;cursor:ns-resize}.pdp-grip[data-s="pl"],.pdp-grip[data-s="pr"]{width:10px;height:40px;margin:-20px 0 0 -5px;cursor:ew-resize}.pdp-grip span{position:absolute;left:14px;top:-4px;white-space:nowrap;font:600 11px/1 system-ui,sans-serif;color:#fff;background:#2a211a;padding:3px 6px;border-radius:5px;pointer-events:none}.rx-bar{position:absolute;z-index:2147483646;display:flex;gap:2px;padding:3px;background:#2a211a;border-radius:7px;box-shadow:0 4px 14px rgba(0,0,0,.25);font:600 12px/1 system-ui,sans-serif}.rx-bar button{all:unset;color:#fff;padding:5px 8px;border-radius:5px;cursor:pointer}.rx-bar button:hover{background:rgba(255,255,255,.18)}[data-tx]:hover{cursor:text}[contenteditable="true"]{outline:2px solid #ec206e!important;outline-offset:3px;background:rgba(236,32,110,.05);cursor:text}`; doc.head.appendChild(s); };
 // The selected section gets a handle on its top and bottom edge: drag to change the space inside it above / below (saved for the device in the top bar).
 function secGrip(doc, n, b) {
   drawGrip.css(doc);
@@ -1809,10 +1849,10 @@ function secGrip(doc, n, b) {
     const g = doc.createElement('div'); g.className = 'pdp-grip pdp-grip-sec'; g.dataset.s = k === 'pt' ? 'mt' : 'mb'; g.title = `Drag to change the space at the ${word} of this section · double-click for the default`; g.innerHTML = '<span hidden></span>'; doc.body.appendChild(g);
     const place = () => { const r = n.getBoundingClientRect(); g.style.left = (r.left + r.width / 2 + win.scrollX) + 'px'; g.style.top = ((k === 'pt' ? r.top + 7 : r.bottom - 7) + win.scrollY) + 'px'; }; place();
     g.addEventListener('pointerdown', e => {
-      e.preventDefault(); e.stopPropagation(); g.setPointerCapture(e.pointerId);
+      e.preventDefault(); e.stopPropagation(); g.setPointerCapture(e.pointerId); g.classList.add('dragging');
       const y0 = e.clientY, v0 = parseFloat(win.getComputedStyle(n)[k === 'pt' ? 'paddingTop' : 'paddingBottom']) || 0, lab = g.firstChild; lab.hidden = false; let v = Math.round(v0);
       const move = ev => { v = Math.max(0, Math.round(v0 + ev.clientY - y0)); n.style.setProperty(prop, v + 'px', 'important'); lab.textContent = `${v}px ${word} space · ${device}`; place(); };
-      const up = () => { g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); lab.hidden = true;
+      const up = () => { g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); lab.hidden = true; g.classList.remove('dragging');
         if (v === Math.round(v0)) return; commitSnap(); x[k + suf] = String(v); lastScroll = win.scrollY; renderInspector(); schedulePreview(true); toast(`Section ${word} space: ${v}px (${device})`); };
       g.addEventListener('pointermove', move); g.addEventListener('pointerup', up);
     });
@@ -1933,16 +1973,20 @@ function renderInspector() {
   const b = findBlock(selId);
   if (!b) { box.innerHTML = st.blocks.length ? '<p class="hint" style="padding:0">Select a section in the page list or the preview.</p>' : '<p class="hint" style="padding:0">Start by setting the <b>SKU</b> at the top, then add your first section from <b>Add a section</b> on the left.</p>'; return; }
   const head = document.createElement('div'); head.className = 'blockhead';
-  head.innerHTML = `<h3><span class="hico">${ico(TYPE_ICON[b.type])}</span>${esc(TYPES[b.type].label)}</h3><span class="mono" style="color:var(--muted)">#${st.blocks.indexOf(b) + 1}</span>`;
+  // The panel's anchor: which section you are editing, where it sits, and how much of it you are seeing.
+  let sumTxt = ''; try { sumTxt = TYPES[b.type].sum ? TYPES[b.type].sum(b.data) : ''; } catch (e) { }
+  box.insertAdjacentHTML('afterbegin', '<h2 class="sr-only">Section settings</h2>');
+  head.innerHTML = `<span class="hico">${ico(TYPE_ICON[b.type])}</span><div class="bh-txt"><h3>${esc(TYPES[b.type].label)}</h3><div class="bh-meta">Section ${st.blocks.indexOf(b) + 1} of ${st.blocks.length}${sumTxt ? ' · ' + esc(String(sumTxt).replace(/[*]/g, '')) : ''}</div></div>`;
   box.appendChild(head);
   const mode = document.createElement('div'); mode.className = 'modebar';
-  mode.innerHTML = `<div class="seg seg-full" role="group" aria-label="How many options"><button data-m="1" aria-pressed="${simpleMode}">Simple</button><button data-m="0" aria-pressed="${!simpleMode}">All options</button></div>${simpleMode ? '<div class="fhint">Main options only. Choose <b>All options</b> for sizes, spacing, backgrounds, corners and per-device settings.</div>' : ''}`;
+  const modeHint = 'Simple shows the main options only. All options adds sizes, spacing, backgrounds, corners and per-device settings.';
+  mode.innerHTML = `<div class="seg" role="group" aria-label="How many options" title="${modeHint}"><button data-m="1" aria-pressed="${simpleMode}">Simple</button><button data-m="0" aria-pressed="${!simpleMode}">All options</button></div><span class="mode-note">${simpleMode ? 'Main options only' : 'Every option'}</span>`;
+  head.appendChild(mode);
   mode.querySelectorAll('[data-m]').forEach(x => x.onclick = () => { simpleMode = x.dataset.m === '1'; try { localStorage.setItem('pdpSimple', simpleMode ? '1' : '0'); } catch (e) {} renderInspector(); });
-  box.appendChild(mode);
   const names = autoNames(st);
   // Three groups so the panel reads top-down: what's in it, how it's laid out, how it looks.
   const G = {}, grp = (k, icon, title, hint) => { const s = document.createElement('details'), key = 'grp-' + k; s.className = 'igrp igrp-' + k; s.open = grpOpen[k] !== false;
-    s.innerHTML = `<summary class="ighead"><span class="igico">${ico(icon, 'sm')}</span><span>${title}</span><span class="ighint">${hint}</span></summary><div class="igbody"></div>`;
+    s.innerHTML = `<summary class="ighead"><span class="igico">${ico(icon, 'sm')}</span><span role="heading" aria-level="4">${title}</span><span class="ighint">${hint}</span></summary><div class="igbody"></div>`;
     s.addEventListener('toggle', () => { grpOpen[k] = s.open; try { localStorage.setItem('pdpGrp', JSON.stringify(grpOpen)); } catch (e) { } }); G[k] = s.querySelector('.igbody'); return s; };
   const gs = [grp('content', 'edit', 'Content', 'text, pictures, items'), grp('layout', 'columns', 'Layout', 'size, arrangement, visibility'), grp('style', 'palette', 'Style', 'colours, outlines, fonts')];
   const kind = f => ['bg', 'stroke', 'boxes', 'box1'].includes(f.t) ? 'style' : ['split', 'cardlayout', 'heropos', 'check', 'gaps', 'logocount'].includes(f.t) || ['halign', 'valign', 'calign', 'per'].includes(f.k) || /align|line up|place|per line|per row|widths/i.test(f.label || '') ? 'layout' : 'content';
@@ -1950,6 +1994,7 @@ function renderInspector() {
   G.layout.appendChild(sizeEditor(b)); G.layout.appendChild(showOnRow(b, 'Show this section on'));
   for (const [g, lbl] of STYLES[b.type] || []) G.style.appendChild(styleEditor(b, g, lbl));
   if (TYPES[b.type].fields.some(f => f.fmt || (f.fields || []).some(x => x.fmt))) G.content.appendChild(cheat());
+  const cstyle = [...G.layout.querySelectorAll('.poscard')].find(x => /Card style/.test(x.querySelector('.poshead')?.textContent || '')); if (cstyle) G.style.prepend(cstyle);
   gs.forEach(s => { if (s.querySelector('.igbody').children.length) box.appendChild(s); });
   if (b.type === 'raw') {
     const hint = document.createElement('div'); hint.className = 'tipbox';
@@ -2038,12 +2083,12 @@ function elsEditor(label, els, b, names) {
   els.forEach((el, i) => {
     const def = EL[el.t]; if (!def) return;
     const det = document.createElement('details'); det.className = 'item el'; det.dataset.key = el.id; det.open = openItems.has(el.id);
-    const snip = el.t === 'item' ? (el.v || 'Image + text') : el.t === 'video' ? (el.vsrc === 'file' ? ((resolveSlot(el.img, el.id, names, assets, 'video') || { name: 'No file yet' }).name) : (el.url || 'No link yet')) : el.t === 'divider' ? `${(el.dv || {}).w || 100}% · ${(el.dv || {}).th || 2}px` : el.t === 'icons' || el.t === 'ititles' ? (el.items || []).length + ' icons' : def.text || el.t === 'button' ? el.v.split('\n')[0] : (resolveSlot(el.img, el.id, names, assets, el.t) || { name: 'No image' }).name;
+    const snip = el.t === 'item' ? (el.v || 'Image + text') : el.t === 'video' ? (el.vsrc === 'file' ? ((resolveSlot(el.img, el.id, names, assets, 'video') || { name: 'No file yet' }).name) : (el.url || 'No link yet')) : el.t === 'divider' ? `${(el.dv || {}).w || 100}% · ${(el.dv || {}).th || 2}px` : el.t === 'icons' || el.t === 'ititles' ? plural((el.items || []).length, 'icon') : def.text || el.t === 'button' ? el.v.split('\n')[0] : (resolveSlot(el.img, el.id, names, assets, el.t) || { name: 'No image' }).name;
     det.innerHTML = `<summary><span class="etag">${ico(EL_ICON[el.preset === 'ititle' ? 'icon' : el.t], 'sm')}${esc(el.preset === 'ititle' ? 'Icon + title' : def.label)}</span><span class="tt">${esc(snip || 'Empty')}</span>${+el.w > 0 ? `<span class="psum">${+el.w}%</span>` : ''}
       <button class="adv" data-a="top" aria-label="Send to top" title="Send to top" ${i ? '' : 'disabled'}>${ico('totop')}</button><button data-a="up" aria-label="Move up" title="Move up" ${i ? '' : 'disabled'}>${ico('up')}</button><button data-a="down" aria-label="Move down" title="Move down" ${i < els.length - 1 ? '' : 'disabled'}>${ico('down')}</button><button class="adv" data-a="bottom" aria-label="Send to bottom" title="Send to bottom" ${i < els.length - 1 ? '' : 'disabled'}>${ico('tobottom')}</button><button data-a="dup" aria-label="Duplicate">${ico('copy')}</button><button data-a="del" aria-label="Delete">${ico('trash')}</button></summary><div class="body"></div>`;
     det.addEventListener('toggle', () => det.open ? openItems.add(el.id) : openItems.delete(el.id));
     det.querySelector('summary').addEventListener('click', e => {
-      const a = e.target.closest('button')?.dataset.a; if (!a) return; e.preventDefault();
+      const a = (e.detail && e.detail.a) || e.target.closest('button')?.dataset.a; if (!a) return; e.preventDefault();
       if (a === 'up') [els[i - 1], els[i]] = [els[i], els[i - 1]];
       if (a === 'down') [els[i + 1], els[i]] = [els[i], els[i + 1]];
       if (a === 'top') els.unshift(els.splice(i, 1)[0]);
@@ -2465,7 +2510,7 @@ function iconsEditor(el, body, names, b, tt) {
       if (a === 'up') [items[i - 1], items[i]] = [items[i], items[i - 1]];
       if (a === 'down') [items[i + 1], items[i]] = [items[i], items[i + 1]];
       if (a === 'del') items.splice(i, 1);
-      tt.textContent = items.length + ' icons'; renderAll();
+      tt.textContent = plural(items.length, 'icon'); renderAll();
     });
     list.appendChild(box);
   });
@@ -2579,7 +2624,7 @@ function cardsEditor(d, b, names) {
       <button data-a="up" aria-label="Move earlier" ${i ? '' : 'disabled'}>${ico('up')}</button><button data-a="down" aria-label="Move later" ${i < d.cards.length - 1 ? '' : 'disabled'}>${ico('down')}</button><button data-a="dup" aria-label="Duplicate">${ico('copy')}</button><button data-a="del" aria-label="Delete">${ico('trash')}</button></summary><div class="body"></div>`;
     det.addEventListener('toggle', () => det.open ? openItems.add(key) : openItems.delete(key));
     det.querySelector('summary').addEventListener('click', e => {
-      const a = e.target.closest('button')?.dataset.a; if (!a) return; e.preventDefault();
+      const a = (e.detail && e.detail.a) || e.target.closest('button')?.dataset.a; if (!a) return; e.preventDefault();
       if (a === 'up') [d.cards[i - 1], d.cards[i]] = [d.cards[i], d.cards[i - 1]];
       if (a === 'down') [d.cards[i + 1], d.cards[i]] = [d.cards[i], d.cards[i + 1]];
       if (a === 'dup') { const c = reId(cd); d.cards.splice(i + 1, 0, c); openItems.add('card' + c.id); }
@@ -2609,7 +2654,7 @@ function colsEditor(d, b, names) {
       <button data-a="up" aria-label="Move left" ${i ? '' : 'disabled'}>${ico('up')}</button><button data-a="down" aria-label="Move right" ${i < d.cols.length - 1 ? '' : 'disabled'}>${ico('down')}</button><button data-a="dup" aria-label="Duplicate">${ico('copy')}</button><button data-a="del" aria-label="Delete">${ico('trash')}</button></summary><div class="body"></div>`;
     det.addEventListener('toggle', () => det.open ? openItems.add(key) : openItems.delete(key));
     det.querySelector('summary').addEventListener('click', e => {
-      const a = e.target.closest('button')?.dataset.a; if (!a) return; e.preventDefault();
+      const a = (e.detail && e.detail.a) || e.target.closest('button')?.dataset.a; if (!a) return; e.preventDefault();
       if (a === 'up') [d.cols[i - 1], d.cols[i]] = [d.cols[i], d.cols[i - 1]];
       if (a === 'down') [d.cols[i + 1], d.cols[i]] = [d.cols[i], d.cols[i + 1]];
       if (a === 'dup') { const c = reId(col); d.cols.splice(i + 1, 0, c); }
@@ -2814,7 +2859,7 @@ function fieldEl(f, obj, ref, names, b) {
         <button data-a="up" aria-label="Move up" ${i ? '' : 'disabled'}>${ico('up')}</button><button data-a="down" aria-label="Move down" ${i < arr.length - 1 ? '' : 'disabled'}>${ico('down')}</button><button data-a="dup" aria-label="Duplicate">${ico('copy')}</button><button data-a="del" aria-label="Delete">${ico('trash')}</button></summary><div class="body"></div>`;
       det.addEventListener('toggle', () => det.open ? openItems.add(it.id) : openItems.delete(it.id));
       det.querySelector('summary').addEventListener('click', e => {
-        const a = e.target.closest('button')?.dataset.a; if (!a) return; e.preventDefault();
+        const a = (e.detail && e.detail.a) || e.target.closest('button')?.dataset.a; if (!a) return; e.preventDefault();
         if (a === 'up') [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
         if (a === 'down') [arr[i + 1], arr[i]] = [arr[i], arr[i + 1]];
         if (a === 'dup') { const c = reId(it); arr.splice(i + 1, 0, c); openItems.add(c.id); }
@@ -2851,12 +2896,12 @@ function slotEl(f, obj, ref, names, b) {
     <div class="meta">
       <div class="top"><span class="fl">${esc(f.label)}</span><span class="badge ${kind}">${badge}</span></div>
       <code>${esc(same ? r.asset.name : r ? r.name : (f.hint ? 'Not set' : auto || '—'))}</code>${same ? '<div class="fhint">This file is already on the server, so the page points to it and the zip skips it.</div>' : ''}
-      ${f.hint ? `<div class="fhint" style="font-size:11.5px;color:var(--muted)">${esc(f.hint)}</div>` : ''}
+      ${f.hint ? `<div class="fhint" style="font-size:12px;color:var(--muted)">${esc(f.hint)}</div>` : ''}
       <div class="acts">
         <label class="btn sm" for="${id}">${slot.a ? 'Replace' : 'Upload'}</label><input type="file" id="${id}" accept="${ek === 'video' ? 'video/*' : 'image/*'}" hidden>
         ${slot.a || slot.name ? '<button class="btn sm ghost danger" data-clear>Clear</button>' : ''}
       </div>
-      <label for="${fnId}" style="font-size:11px;color:var(--muted)">${slot.a ? 'Filename (leave blank for automatic)' : 'Or use a file already on the server (name or full link)'}</label>
+      <label for="${fnId}" style="font-size:12px;color:var(--muted)">${slot.a ? 'Filename (leave blank for automatic)' : 'Or use a file already on the server (name or full link)'}</label>
       <input class="fn" id="${fnId}" type="text" placeholder="${esc(slot.a ? auto : 'e.g. ' + (auto || 'brand_PDP_logo.png'))}">
       ${slot.a ? '' : `<div class="slottip"><b>Tip:</b> open the live page, right-click the image → <i>Copy image address</i>, then paste it here, e.g. <code>${esc((st.imgBase || DEFAULT_IMG_BASE).replace(/\/?$/, '/'))}longxevity_PDP_logo.png</code>. Only the file name is kept, and the zip won't include it.</div>`}
     </div>`;
@@ -3302,7 +3347,8 @@ function selectQuiet(id) { // select without reloading the preview, so in-place 
 function rawEditSetup(doc) {
   const raws = [...doc.querySelectorAll('body > [data-bid]')].filter(w => (findBlock(w.dataset.bid) || {}).type === 'raw');
   if (!raws.length) return;
-  const sty = doc.createElement('style');
+  if (doc.getElementById('rx-css')) { rawEditBind(doc, raws); return; }
+  const sty = doc.createElement('style'); sty.id = 'rx-css'; sty.dataset.tool = '1';
   sty.textContent = `body>[data-bid] .rx-hl{outline:2px dashed #ec206e!important;outline-offset:2px;cursor:text}
     body>[data-bid] img:hover,body>[data-bid] video:hover{outline:2px dashed #ec206e!important;outline-offset:-2px;cursor:pointer}
     [contenteditable="true"]{outline:2px solid #ec206e!important;outline-offset:3px;background:rgba(236,32,110,.05);cursor:text}
@@ -3310,18 +3356,10 @@ function rawEditSetup(doc) {
     .rx-bar button{all:unset;color:#fff;padding:5px 8px;border-radius:5px;cursor:pointer}.rx-bar button:hover{background:rgba(255,255,255,.18)}
 `;
   doc.head.appendChild(sty);
-  let editing = null;
-  raws.forEach(w => {
-    w.addEventListener('mousemove', e => {
-      if (editing) return;
-      doc.querySelectorAll('.rx-hl').forEach(x => x.classList.remove('rx-hl'));
-      const lf = textLeaf(e.target, w); if (lf) lf.classList.add('rx-hl');
-    });
-    w.addEventListener('mouseleave', () => doc.querySelectorAll('.rx-hl').forEach(x => x.classList.remove('rx-hl')));
-  });
+  rawEditBind(doc, raws);
   // Inline text editing: contenteditable on the clicked text block; saved back to the section HTML when you click away.
   doc.addEventListener('rx-edit', e => {
-    const { leaf, w } = e.detail; editing = leaf;
+    const { leaf, w } = e.detail; doc.__rxEd = leaf;
     const before = leaf.innerHTML, b = findBlock(w.dataset.bid), p = pathOf(leaf, w);
     leaf.classList.remove('rx-hl'); leaf.contentEditable = 'true'; leaf.focus();
     const tb = doc.createElement('div'); tb.className = 'rx-bar';
@@ -3337,11 +3375,22 @@ function rawEditSetup(doc) {
     });
     leaf.addEventListener('keydown', ev => { if (ev.key === 'Escape') { leaf.innerHTML = before; leaf.blur(); } });
     leaf.addEventListener('blur', () => {
-      tb.remove(); leaf.removeAttribute('contenteditable'); editing = null;
+      tb.remove(); leaf.removeAttribute('contenteditable'); doc.__rxEd = null;
       const now = leaf.innerHTML.replace(/\s?\brx-hl\b/g, '').replace(/ class=""/g, ''); if (now === before) return;
       lastScroll = win.scrollY;
       mutateRaw(b, root => { const n = nodeAt(root, p); if (!n) return false; n.innerHTML = now; });
     }, { once: true });
+  });
+}
+// Hover highlight on the text blocks of Custom HTML sections (rebound after each preview update).
+function rawEditBind(doc, raws) {
+  raws.forEach(w => {
+    w.addEventListener('mousemove', e => {
+      if (doc.__rxEd) return;
+      doc.querySelectorAll('.rx-hl').forEach(x => x.classList.remove('rx-hl'));
+      const lf = textLeaf(e.target, w); if (lf) lf.classList.add('rx-hl');
+    });
+    w.addEventListener('mouseleave', () => doc.querySelectorAll('.rx-hl').forEach(x => x.classList.remove('rx-hl')));
   });
 }
 // Called from the preview click handler. Returns true when the click was handled as an in-place edit.
@@ -3371,8 +3420,8 @@ function rawMediaEditor(b) {
     <div class="meta"><div class="top"><span class="fl">${isVid ? 'Video' : 'Image'}</span><span class="badge ${up ? 'new' : 'existing'}">${up ? 'New upload' : 'Server file'}</span></div>
       <code>${esc(src)}</code>
       <div class="acts"><label class="btn sm" for="${fId}">${up ? 'Replace again' : 'Replace'}</label><input type="file" id="${fId}" accept="${isVid ? 'video/*' : 'image/*'}" hidden></div>
-      <label for="${nId}" style="font-size:11px;color:var(--muted)">File name (or paste a server link)</label><input class="fn" id="${nId}" type="text">
-      ${isVid ? '' : `<label for="${aId}" style="font-size:11px;color:var(--muted)">Description (alt text)</label><input class="fn" id="${aId}" type="text">`}
+      <label for="${nId}" style="font-size:12px;color:var(--muted)">File name (or paste a server link)</label><input class="fn" id="${nId}" type="text">
+      ${isVid ? '' : `<label for="${aId}" style="font-size:12px;color:var(--muted)">Description (alt text)</label><input class="fn" id="${aId}" type="text">`}
       <div class="fhint">A replacement keeps the file name, so uploading the zip replaces that file on the server. Change the name first to add it as a new file instead.</div></div></div>`;
   const nm = box.querySelector('#' + nId); nm.value = name;
   const setSrc = v => mutateRaw(b, root => { const n = nodeAt(root, rawSel.path); if (!n) return false; const tg = n.tagName === 'VIDEO' ? (n.querySelector('source[src]') || n) : n; tg.setAttribute('src', v); });
@@ -3547,7 +3596,7 @@ $('#trClose').onclick = () => { $('#trModal').hidden = true; renderAll(); };
 // GitHub Pages sends the upload time as Last-Modified (document.lastModified). Without that header the browser reports "now",
 // so then the time this file was built is shown instead.
 (() => {
-  const built = new Date('2026-10-23T14:46:22Z'), lm = new Date(document.lastModified);
+  const built = new Date('2026-10-30T03:05:47Z'), lm = new Date(document.lastModified);
   const d = !isNaN(lm) && Math.abs(Date.now() - lm) > 10000 ? lm : built;
   if (isNaN(d)) return;
   const p = n => String(n).padStart(2, '0'), M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -3634,8 +3683,36 @@ function enhanceColors(root) {
   g.addEventListener('dblclick', () => { work.style.removeProperty('--rw'); try { localStorage.removeItem('pdpRw'); } catch (e) { } });
   g.addEventListener('keydown', e => { if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return; e.preventDefault(); const cur = g.parentElement.getBoundingClientRect().width; save(set(cur + (e.key === 'ArrowLeft' ? 20 : -20))); });
 })();
-new MutationObserver(() => enhanceColors($('#insp'))).observe($('#insp'), { childList: true, subtree: true });
+// Row buttons (move, duplicate, delete) live next to the row header, not inside it: a <summary> must not hold other controls.
+function liftRowActs(root) {
+  root.querySelectorAll('details.item > summary').forEach(sm => {
+    const btns = [...sm.querySelectorAll(':scope > button[data-a]')]; if (!btns.length) return;
+    const det = sm.parentElement, wrap = document.createElement('div'), acts = document.createElement('div');
+    wrap.className = 'rowwrap'; acts.className = 'rowacts'; acts.setAttribute('role', 'toolbar'); acts.setAttribute('aria-label', (sm.querySelector('.tt')?.textContent || 'Row') + ' actions');
+    det.before(wrap); wrap.append(det, acts); btns.forEach(x => acts.appendChild(x));
+    wrap.style.setProperty('--acts', (btns.length * 30 + 8) + 'px'); wrap.style.setProperty('--acts-s', (btns.filter(x => !x.classList.contains('adv')).length * 30 + 8) + 'px'); // room for the buttons, Simple hides some
+    acts.addEventListener('click', ev => { const x = ev.target.closest('button[data-a]'); if (!x || x.disabled) return; ev.stopPropagation(); sm.dispatchEvent(new CustomEvent('click', { detail: { a: x.dataset.a } })); });
+  });
+}
+new MutationObserver(() => { liftRowActs($('#insp')); enhanceColors($('#insp')); }).observe($('#insp'), { childList: true, subtree: true });
+
+// Dialogs: focus moves in when one opens, Tab stays inside, and focus returns to where it was when it closes.
+let focusOutside = null; document.addEventListener('focusin', e => { if (!e.target.closest('.modal')) focusOutside = e.target; });
+document.querySelectorAll('.modal').forEach(m => {
+  let back = null;
+  new MutationObserver(() => {
+    if (!m.hidden) { back = focusOutside; setTimeout(() => { if (!m.contains(document.activeElement)) (m.querySelector('[autofocus], button.primary, button, input, select, textarea') || m).focus(); }, 0); }
+    else if (back && document.contains(back)) { back.focus(); back = null; }
+  }).observe(m, { attributes: true, attributeFilter: ['hidden'] });
+  m.addEventListener('keydown', e => {
+    if (e.key !== 'Tab' || m.hidden) return;
+    const f = [...m.querySelectorAll('button, [href], input, select, textarea, summary, [tabindex]:not([tabindex="-1"])')].filter(x => !x.disabled && x.offsetParent);
+    if (!f.length) return; const first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); } else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+});
 renderLib(); renderAll(); fit(); commitSnap();
+if (innerWidth < 600) document.querySelector('button[data-dev="mobile"]').click(); // phones: preview the phone layout, readable at full size
 offerRestore();
 </script>
 
